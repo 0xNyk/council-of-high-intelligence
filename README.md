@@ -88,6 +88,31 @@ Then restart Claude Code. The `/council` command will be available immediately.
 - [Claude Code](https://claude.ai/claude-code) CLI
 - Agent subagent support (enabled by default)
 
+## Contributing
+
+Contributions welcome. Read the [contribution guidelines](CONTRIBUTING.md) first.
+
+## ❤️ Support the Project
+
+If you find this project useful, consider supporting my open-source work.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-orange?logo=buymeacoffee)](https://buymeacoffee.com/nyk_builderz)
+
+**Solana donations**
+
+`BYLu8XD8hGDUtdRBWpGWu5HKoiPrWqCxYFSh4oxXuvPg`
+
 ## License
 
-MIT
+[![CC0](https://licensebuttons.net/p/zero/1.0/88x31.png)](https://creativecommons.org/publicdomain/zero/1.0/)
+
+To the extent possible under law, the authors have waived all copyright and
+related or neighboring rights to this work.
+
+---
+
+<p align="center">
+  <a href="https://star-history.com/#0xNyk/council-of-high-intelligence&Date">
+    <img src="https://api.star-history.com/svg?repos=0xNyk/council-of-high-intelligence&type=Date" alt="Star History" width="400">
+  </a>
+</p>
