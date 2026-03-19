@@ -70,10 +70,21 @@ Anti-recursion enforcement prevents Socrates from infinite questioning. Tie-brea
 ./install.sh
 ```
 
+Optional flags:
+
+```bash
+# Install into a non-default Claude config directory
+./install.sh --claude-dir /path/to/.claude
+
+# Preview actions without modifying files
+./install.sh --dry-run
+```
+
 Or manually:
 
 ```bash
 # Copy agents
+mkdir -p ~/.claude/agents
 cp agents/council-*.md ~/.claude/agents/
 
 # Copy skill
