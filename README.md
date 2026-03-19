@@ -70,6 +70,21 @@ Profile-specific triads:
 - `system-design` → Ada + Feynman + Torvalds
 - `reframing` → Socrates + Lao Tzu + Ada
 
+## Execution-First Profile: `execution-lean`
+
+For fast decision-to-action loops, use this 5-member panel:
+
+- Torvalds (shipping pragmatism)
+- Feynman (mechanistic correctness)
+- Sun Tzu (competitive strategy)
+- Aurelius (risk and downside guardrails)
+- Ada (formal rigor where needed)
+
+Suggested execution triads:
+- `ship-now` → Torvalds + Feynman + Aurelius
+- `launch-strategy` → Sun Tzu + Torvalds + Machiavelli (optional substitute)
+- `stability` → Ada + Feynman + Aurelius
+
 ## Multi-provider / Multi-model exploration
 
 Use `--models` to provide seat-to-provider mapping and reduce model monoculture.
@@ -91,6 +106,7 @@ Starter template: `configs/provider-model-slots.example.yaml`
 /council --members socrates,feynman,ada Is our caching strategy correct?
 /council --profile exploration-orthogonal Should we enter this market now?
 /council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml Evaluate our roadmap assumptions
+/council --profile execution-lean --triad ship-now Should we ship this release candidate today?
 ```
 
 ## Deliberation Protocol
@@ -116,6 +132,9 @@ Optional flags:
 
 # Preview actions without modifying files
 ./install.sh --dry-run
+
+# Also install model routing templates into ~/.claude/skills/council/configs
+./install.sh --copy-configs
 ```
 
 Or manually:
@@ -131,6 +150,14 @@ cp SKILL.md ~/.claude/skills/council/SKILL.md
 ```
 
 Then restart Claude Code. The `/council` command will be available immediately.
+
+## Quick Simulation Checklist
+
+Run this before release or after profile edits:
+
+```bash
+./scripts/council-simulation-checklist.sh
+```
 
 ## Requirements
 

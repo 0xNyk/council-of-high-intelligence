@@ -12,6 +12,7 @@ Thanks for contributing to Council of High Intelligence.
 3. Make changes and validate:
    - `shellcheck install.sh` (for installer changes)
    - `./install.sh --dry-run`
+   - `./scripts/council-simulation-checklist.sh`
 4. Commit with a clear message and open a PR to `main`.
 
 ## Branch cleanup after merge
