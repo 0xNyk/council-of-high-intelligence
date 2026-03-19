@@ -47,6 +47,41 @@ The members are chosen as deliberate counterweights:
 | `product` | Torvalds + Machiavelli + Watts | Ship it + incentives + reframing |
 | `founder` | Musashi + Sun Tzu + Torvalds | Timing + terrain + engineering reality |
 
+## Exploration-First Profile: `exploration-orthogonal`
+
+For discovery and "you don't know what you don't know" exploration, start with this 8-member panel:
+
+- Socrates (assumption destruction)
+- Feynman (mechanistic first principles)
+- Sun Tzu (adversarial dynamics)
+- Machiavelli (incentives/power realism)
+- Ada (formalization and limits)
+- Lao Tzu (emergence/non-forcing)
+- Aurelius (ethics and downside containment)
+- Torvalds (execution and shipping constraints)
+
+Why this profile works:
+- High epistemic separation across normative, strategic, empirical, formal, emergent, and operational perspectives
+- Better unknown-unknown discovery than a purely aligned panel
+
+Profile-specific triads:
+- `unknowns` → Socrates + Lao Tzu + Feynman
+- `market-entry` → Sun Tzu + Machiavelli + Aurelius
+- `system-design` → Ada + Feynman + Torvalds
+- `reframing` → Socrates + Lao Tzu + Ada
+
+## Multi-provider / Multi-model exploration
+
+Use `--models` to provide seat-to-provider mapping and reduce model monoculture.
+
+Rules of thumb:
+- spread seats across providers first, then across model families
+- avoid putting obvious polarity pairs on the same provider when possible
+- run Round 1 blind-first (no peer outputs)
+- force a counterfactual round if early consensus exceeds ~70%
+
+Starter template: `configs/provider-model-slots.example.yaml`
+
 ## Usage
 
 ```
@@ -54,15 +89,18 @@ The members are chosen as deliberate counterweights:
 /council --triad architecture Should we use a monorepo or polyrepo?
 /council --full What is the right pricing strategy for our SaaS product?
 /council --members socrates,feynman,ada Is our caching strategy correct?
+/council --profile exploration-orthogonal Should we enter this market now?
+/council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml Evaluate our roadmap assumptions
 ```
 
 ## Deliberation Protocol
 
-1. **Round 1: Independent Analysis** — All selected members analyze the problem in parallel (400 words max each)
+0. **Round 0: Provider/Model Routing (optional)** — Load model slots from `--models` and maximize provider separation across seats.
+1. **Round 1: Independent Analysis (blind-first)** — All selected members analyze the problem in parallel (400 words max each)
 2. **Round 2: Cross-Examination** — Members challenge each other sequentially (300 words, must engage 2+ others)
 3. **Round 3: Synthesis** — Final 100-word position statements. Socrates gets one last question.
 
-Anti-recursion enforcement prevents Socrates from infinite questioning. Tie-breaking uses 2/3 majority with domain expert weighting.
+Anti-recursion enforcement prevents Socrates from infinite questioning. Anti-convergence enforcement requires dissent quota + counterfactual pass when agreement forms too early. Tie-breaking uses 2/3 majority with domain expert weighting.
 
 ## Installation
 

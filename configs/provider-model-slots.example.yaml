@@ -1,0 +1,47 @@
+# Example seat mapping for multi-provider / multi-model exploration.
+# Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml "..."
+
+profile: exploration-orthogonal
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  socrates:
+    provider: anthropic
+    model: claude-3-7-sonnet
+    reasoning_mode: analytical
+  feynman:
+    provider: openai
+    model: gpt-5
+    reasoning_mode: mechanistic
+  sun-tzu:
+    provider: google
+    model: gemini-2.5-pro
+    reasoning_mode: strategic
+  machiavelli:
+    provider: xai
+    model: grok-4
+    reasoning_mode: adversarial
+  ada:
+    provider: openai
+    model: o3
+    reasoning_mode: formal
+  lao-tzu:
+    provider: anthropic
+    model: claude-sonnet-4
+    reasoning_mode: emergent
+  aurelius:
+    provider: google
+    model: gemini-2.5-pro
+    reasoning_mode: normative
+  torvalds:
+    provider: openai
+    model: gpt-5-mini
+    reasoning_mode: pragmatic
+
+fallback:
+  provider: openai
+  model: gpt-5-mini
