@@ -4,7 +4,7 @@ A Claude Code skill that convenes historical thinkers for multi-perspective deli
 
 LLMs make you think they are smart, but when things get complex their reasoning can fall short. This council uses structured disagreement between diverse intellectual traditions to surface blind spots, challenge assumptions, and produce better decisions.
 
-## The 11 Council Members
+## The 13 Council Members
 
 | Agent | Figure | Domain | Model | Polarity |
 |-------|--------|--------|-------|----------|
@@ -19,6 +19,8 @@ LLMs make you think they are smart, but when things get complex their reasoning 
 | `council-torvalds` | Linus Torvalds | Pragmatic engineering | sonnet | Ship it or shut up |
 | `council-musashi` | Miyamoto Musashi | Strategic timing | sonnet | The decisive strike |
 | `council-watts` | Alan Watts | Perspective & reframing | opus | Dissolves false problems |
+| `council-karpathy` | Andrej Karpathy | Neural network intuition & empirical ML | sonnet | How models actually learn and fail |
+| `council-sutskever` | Ilya Sutskever | Scaling frontier & AI safety | opus | When capability becomes risk |
 
 ## Polarity Pairs
 
@@ -30,6 +32,35 @@ The members are chosen as deliberate counterweights:
 - **Ada vs Machiavelli** — Ada abstracts toward formal purity; Machiavelli anchors in messy human incentives
 - **Torvalds vs Watts** — Torvalds ships concrete solutions; Watts questions whether the problem exists
 - **Musashi vs Torvalds** — Musashi waits for the perfect moment; Torvalds says ship it now
+- **Karpathy vs Sutskever** — Build it, observe it, iterate; vs pause, research, ensure safety first
+- **Karpathy vs Ada** — Empirical ML intuition vs formal systems theory
+
+## Three Deliberation Modes
+
+### Full Mode (default)
+3-round structured deliberation: independent analysis → cross-examination → final positions.
+
+```
+/council Should we open-source our agent framework?
+/council --triad strategy What's our competitive moat?
+/council --full What is the right pricing model?
+```
+
+### Quick Mode (`--quick`)
+2-round rapid analysis for simpler decisions. No cross-examination.
+
+```
+/council --quick Should we add caching here?
+/council --quick --triad shipping Should we release today?
+```
+
+### Duo Mode (`--duo`)
+2-member dialectic using polarity pairs. Great for exploring tensions.
+
+```
+/council --duo Should we use microservices or monolith?
+/council --duo --members torvalds,ada Is this abstraction worth it?
+```
 
 ## Pre-defined Triads
 
@@ -46,75 +77,50 @@ The members are chosen as deliberate counterweights:
 | `shipping` | Torvalds + Musashi + Feynman | Pragmatism + timing + first-principles |
 | `product` | Torvalds + Machiavelli + Watts | Ship it + incentives + reframing |
 | `founder` | Musashi + Sun Tzu + Torvalds | Timing + terrain + engineering reality |
+| `ai` | Karpathy + Sutskever + Ada | Empirical ML + scaling frontier + formal limits |
+| `ai-product` | Karpathy + Torvalds + Machiavelli | ML capability + shipping pragmatism + incentives |
+| `ai-safety` | Sutskever + Aurelius + Socrates | Safety frontier + moral clarity + assumption destruction |
 
-## Exploration-First Profile: `exploration-orthogonal`
+## Council Profiles
 
-For discovery and "you don't know what you don't know" exploration, start with this 8-member panel:
+### `classic` (default)
+All 11 members with domain triads above. Best for broad deliberation.
 
-- Socrates (assumption destruction)
-- Feynman (mechanistic first principles)
-- Sun Tzu (adversarial dynamics)
-- Machiavelli (incentives/power realism)
-- Ada (formalization and limits)
-- Lao Tzu (emergence/non-forcing)
-- Aurelius (ethics and downside containment)
-- Torvalds (execution and shipping constraints)
+### `exploration-orthogonal`
+10-member panel for discovery and "unknown unknowns" reduction:
+- Socrates, Feynman, Sun Tzu, Machiavelli, Ada, Lao Tzu, Aurelius, Torvalds, Karpathy, Sutskever
+- Profile triads: `unknowns`, `market-entry`, `system-design`, `reframing`, `ai-frontier`
 
-Why this profile works:
-- High epistemic separation across normative, strategic, empirical, formal, emergent, and operational perspectives
-- Better unknown-unknown discovery than a purely aligned panel
+### `execution-lean`
+5-member panel for fast decision-to-action:
+- Torvalds, Feynman, Sun Tzu, Aurelius, Ada
+- Profile triads: `ship-now`, `launch-strategy`, `stability`
 
-Profile-specific triads:
-- `unknowns` → Socrates + Lao Tzu + Feynman
-- `market-entry` → Sun Tzu + Machiavelli + Aurelius
-- `system-design` → Ada + Feynman + Torvalds
-- `reframing` → Socrates + Lao Tzu + Ada
+## Multi-provider / Multi-model Exploration
 
-## Execution-First Profile: `execution-lean`
+Use `--models` to spread members across AI providers and reduce model monoculture.
 
-For fast decision-to-action loops, use this 5-member panel:
-
-- Torvalds (shipping pragmatism)
-- Feynman (mechanistic correctness)
-- Sun Tzu (competitive strategy)
-- Aurelius (risk and downside guardrails)
-- Ada (formal rigor where needed)
-
-Suggested execution triads:
-- `ship-now` → Torvalds + Feynman + Aurelius
-- `launch-strategy` → Sun Tzu + Torvalds + Machiavelli (optional substitute)
-- `stability` → Ada + Feynman + Aurelius
-
-## Multi-provider / Multi-model exploration
-
-Use `--models` to provide seat-to-provider mapping and reduce model monoculture.
-
-Rules of thumb:
-- spread seats across providers first, then across model families
-- avoid putting obvious polarity pairs on the same provider when possible
-- run Round 1 blind-first (no peer outputs)
-- force a counterfactual round if early consensus exceeds ~70%
+```
+/council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml Should we pivot?
+```
 
 Starter template: `configs/provider-model-slots.example.yaml`
 
-## Usage
-
-```
-/council [problem description]
-/council --triad architecture Should we use a monorepo or polyrepo?
-/council --full What is the right pricing strategy for our SaaS product?
-/council --members socrates,feynman,ada Is our caching strategy correct?
-/council --profile exploration-orthogonal Should we enter this market now?
-/council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml Evaluate our roadmap assumptions
-/council --profile execution-lean --triad ship-now Should we ship this release candidate today?
-```
-
 ## Deliberation Protocol
 
-0. **Round 0: Provider/Model Routing (optional)** — Load model slots from `--models` and maximize provider separation across seats.
-1. **Round 1: Independent Analysis (blind-first)** — All selected members analyze the problem in parallel (400 words max each)
-2. **Round 2: Cross-Examination** — Members challenge each other sequentially (300 words, must engage 2+ others)
-3. **Round 3: Synthesis** — Final 100-word position statements. Socrates gets one last question.
+### Full Mode
+1. **Round 1: Independent Analysis (blind-first)** — all members analyze in parallel (400 words max)
+2. **Round 2: Cross-Examination** — members challenge each other (300 words, must engage 2+ others)
+3. **Round 3: Synthesis** — final 100-word position statements
+
+### Quick Mode
+1. **Round 1: Rapid Analysis** — all members analyze in parallel (200 words max)
+2. **Round 2: Final Positions** — 75-word crystallization
+
+### Duo Mode
+1. **Round 1: Opening Positions** — both state positions (300 words)
+2. **Round 2: Direct Response** — engage opponent's claims (200 words)
+3. **Round 3: Final Statements** — 50-word positions
 
 Anti-recursion enforcement prevents Socrates from infinite questioning. Anti-convergence enforcement requires dissent quota + counterfactual pass when agreement forms too early. Tie-breaking uses 2/3 majority with domain expert weighting.
 
@@ -127,25 +133,16 @@ Anti-recursion enforcement prevents Socrates from infinite questioning. Anti-con
 Optional flags:
 
 ```bash
-# Install into a non-default Claude config directory
-./install.sh --claude-dir /path/to/.claude
-
-# Preview actions without modifying files
-./install.sh --dry-run
-
-# Also install model routing templates into ~/.claude/skills/council/configs
-./install.sh --copy-configs
+./install.sh --claude-dir /path/to/.claude   # Non-default config directory
+./install.sh --dry-run                        # Preview without writing
+./install.sh --copy-configs                   # Also install model routing templates
 ```
 
 Or manually:
 
 ```bash
-# Copy agents
-mkdir -p ~/.claude/agents
+mkdir -p ~/.claude/agents ~/.claude/skills/council
 cp agents/council-*.md ~/.claude/agents/
-
-# Copy skill
-mkdir -p ~/.claude/skills/council
 cp SKILL.md ~/.claude/skills/council/SKILL.md
 ```
 
@@ -161,9 +158,8 @@ Run this before release or after profile edits:
 
 ## Demo Session Pack
 
-Use the ready-to-run examples to test profile behavior:
+Use the ready-to-run examples to test all modes:
 - `demos/session-pack.md`
-- `demos/verdict-template.md`
 
 ## Requirements
 

@@ -1,39 +1,10 @@
-## Council Verdict
+# Council Verdict Templates
 
-### Problem
-{Original problem statement}
+The canonical verdict templates are defined in [SKILL.md](../SKILL.md) under the "Output Templates" section.
 
-### Council Composition
-{Members convened and why}
+Three templates are available:
+- **Council Verdict** — full 3-round deliberation output
+- **Quick Verdict** — rapid 2-round output (used with `--quick`)
+- **Duo Verdict** — dialectic output (used with `--duo`)
 
-### Model/Provider Routing
-{If used: member -> provider/model map and separation rationale}
-
-### Consensus Position
-{Final position or "No consensus reached"}
-
-### Key Insights by Member
-- **{Name}**: {1-2 sentence contribution}
-
-### Points of Agreement
-{Converged claims}
-
-### Points of Disagreement
-{Irreconcilable differences}
-
-### Minority Report
-{Best dissenting argument(s)}
-
-### Unresolved Questions
-{Missing information required}
-
-### Epistemic Diversity Scorecard
-- Perspective spread (1-5):
-- Provider spread (1-5):
-- Evidence mix (% empirical / mechanistic / strategic / ethical / heuristic):
-- Convergence risk (Low/Medium/High):
-
-### Recommended Next Steps
-1. {action}
-2. {action}
-3. {action}
+Refer to SKILL.md as the single source of truth for template structure.
