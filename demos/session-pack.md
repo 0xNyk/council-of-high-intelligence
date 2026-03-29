@@ -171,6 +171,54 @@ What good output looks like:
 - Core Tension: build-and-learn vs. pause-and-research
 - Neither position forced to converge
 
+## Demo J — Decision triad (Kahneman + Munger + Aurelius)
+
+Goal: test cognitive bias detection, inversion reasoning, and moral clarity.
+
+Prompt:
+
+```bash
+/council --triad decision Should we acquire this competitor or build the feature ourselves?
+```
+
+What good output looks like:
+- Kahneman identifies specific biases (sunk cost, overconfidence, anchoring on acquisition price)
+- Munger inverts ("what would guarantee this acquisition destroys value?") and checks circle of competence
+- Aurelius draws the control boundary and identifies the duty regardless of difficulty
+- Productive tension between Kahneman's bias skepticism and Munger's multi-model confidence
+
+## Demo K — Uncertainty duo (Taleb vs Karpathy)
+
+Goal: test the tail risk vs empirical scaling tension.
+
+Prompt:
+
+```bash
+/council --duo --members taleb,karpathy Should we deploy this ML model to production with 99.2% accuracy?
+```
+
+What good output looks like:
+- Taleb classifies the domain (Mediocristan vs Extremistan) and assesses fragility of the 99.2% claim
+- Karpathy assesses what the model actually learned, where the 0.8% errors cluster, and failure modes
+- Core tension: Taleb warns about catastrophic tail scenarios hidden in the 0.8%; Karpathy argues empirical observation reveals more than theoretical tail analysis
+- Duo Verdict presents both without forcing consensus
+
+## Demo L — Design triad (Rams + Torvalds + Watts)
+
+Goal: test user-centered design reasoning alongside engineering pragmatism and philosophical reframing.
+
+Prompt:
+
+```bash
+/council --triad design Our onboarding flow has 8 steps and 40% drop-off. Should we simplify or add more guidance?
+```
+
+What good output looks like:
+- Rams evaluates from the user's perspective — which steps fail the honesty/clarity test
+- Torvalds asks what's the boring, maintainable solution
+- Watts questions whether the framing ("simplify vs add guidance") is a false dichotomy
+- Concrete recommendation with user evidence
+
 ## Fast scoring rubric (0-2 each, 10 max)
 
 1. Perspective spread: distinct viewpoints, not paraphrases
