@@ -4,7 +4,7 @@ A Claude Code skill that convenes historical thinkers for multi-perspective deli
 
 LLMs make you think they are smart, but when things get complex their reasoning can fall short. This council uses structured disagreement between diverse intellectual traditions to surface blind spots, challenge assumptions, and produce better decisions.
 
-## The 13 Council Members
+## The 18 Council Members
 
 | Agent | Figure | Domain | Model | Polarity |
 |-------|--------|--------|-------|----------|
@@ -21,6 +21,11 @@ LLMs make you think they are smart, but when things get complex their reasoning 
 | `council-watts` | Alan Watts | Perspective & reframing | opus | Dissolves false problems |
 | `council-karpathy` | Andrej Karpathy | Neural network intuition & empirical ML | sonnet | How models actually learn and fail |
 | `council-sutskever` | Ilya Sutskever | Scaling frontier & AI safety | opus | When capability becomes risk |
+| `council-kahneman` | Daniel Kahneman | Cognitive bias & decision science | opus | Your own thinking is the first error |
+| `council-meadows` | Donella Meadows | Systems thinking & feedback loops | sonnet | Redesign the system, not the symptom |
+| `council-munger` | Charlie Munger | Multi-model reasoning & economics | sonnet | Invert — what guarantees failure? |
+| `council-taleb` | Nassim Taleb | Antifragility & tail risk | opus | Design for the tail, not the average |
+| `council-rams` | Dieter Rams | User-centered design | sonnet | Less, but better — the user decides |
 
 ## Polarity Pairs
 
@@ -34,6 +39,11 @@ The members are chosen as deliberate counterweights:
 - **Musashi vs Torvalds** — Musashi waits for the perfect moment; Torvalds says ship it now
 - **Karpathy vs Sutskever** — Build it, observe it, iterate; vs pause, research, ensure safety first
 - **Karpathy vs Ada** — Empirical ML intuition vs formal systems theory
+- **Kahneman vs Feynman** — Your cognition is the first error vs trust first-principles reasoning
+- **Meadows vs Torvalds** — Redesign the feedback loop vs fix the symptom and ship
+- **Munger vs Aristotle** — Multi-model lattice vs single taxonomic system
+- **Taleb vs Karpathy** — Hidden catastrophic tails vs smooth empirical scaling curves
+- **Rams vs Ada** — What the user needs vs what computation can do
 
 ## Three Deliberation Modes
 
@@ -80,6 +90,12 @@ The members are chosen as deliberate counterweights:
 | `ai` | Karpathy + Sutskever + Ada | Empirical ML + scaling frontier + formal limits |
 | `ai-product` | Karpathy + Torvalds + Machiavelli | ML capability + shipping pragmatism + incentives |
 | `ai-safety` | Sutskever + Aurelius + Socrates | Safety frontier + moral clarity + assumption destruction |
+| `decision` | Kahneman + Munger + Aurelius | Bias detection + inversion + moral clarity |
+| `systems` | Meadows + Lao Tzu + Aristotle | Feedback loops + emergence + categories |
+| `uncertainty` | Taleb + Sun Tzu + Sutskever | Tail risk + terrain + scaling frontier |
+| `design` | Rams + Torvalds + Watts | User clarity + maintainability + reframing |
+| `economics` | Munger + Machiavelli + Sun Tzu | Models + incentives + competition |
+| `bias` | Kahneman + Socrates + Watts | Cognitive bias + assumption destruction + frame audit |
 
 ## Council Profiles
 
@@ -87,9 +103,9 @@ The members are chosen as deliberate counterweights:
 All 11 members with domain triads above. Best for broad deliberation.
 
 ### `exploration-orthogonal`
-10-member panel for discovery and "unknown unknowns" reduction:
-- Socrates, Feynman, Sun Tzu, Machiavelli, Ada, Lao Tzu, Aurelius, Torvalds, Karpathy, Sutskever
-- Profile triads: `unknowns`, `market-entry`, `system-design`, `reframing`, `ai-frontier`
+12-member panel for discovery and "unknown unknowns" reduction:
+- Socrates, Feynman, Sun Tzu, Machiavelli, Ada, Lao Tzu, Aurelius, Torvalds, Karpathy, Sutskever, Kahneman, Meadows
+- Profile triads: `unknowns`, `market-entry`, `system-design`, `reframing`, `ai-frontier`, `blind-spots`
 
 ### `execution-lean`
 5-member panel for fast decision-to-action:

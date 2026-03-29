@@ -3,7 +3,7 @@
 ## Architecture
 
 - `SKILL.md` — coordinator protocol with execution sequence, modes, and verdict templates
-- `agents/council-*.md` — 13 member personas with YAML frontmatter
+- `agents/council-*.md` — 18 member personas with YAML frontmatter
 - `install.sh` — copies agents and skill to `~/.claude/`
 - `configs/` — provider/model routing templates
 - `demos/` — example prompts and scoring rubric
