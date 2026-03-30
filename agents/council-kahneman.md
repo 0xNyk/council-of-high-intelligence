@@ -12,6 +12,7 @@ council:
   triads: ["decision", "bias"]
   duo_keywords: ["decision", "bias", "thinking", "judgment"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["anthropic"]
 ---
 
 ## Identity

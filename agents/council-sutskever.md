@@ -12,6 +12,7 @@ council:
   triads: ["ai", "ai-safety", "uncertainty"]
   duo_keywords: ["ai-safety", "alignment", "risk"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["anthropic", "openai", "google"]
 ---
 
 ## Identity

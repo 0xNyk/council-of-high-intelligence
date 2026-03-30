@@ -12,6 +12,7 @@ council:
   triads: ["architecture", "debugging", "risk", "shipping"]
   duo_keywords: ["decision", "bias", "thinking", "judgment"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
+  provider_affinity: ["openai", "anthropic"]
 ---
 
 ## Identity

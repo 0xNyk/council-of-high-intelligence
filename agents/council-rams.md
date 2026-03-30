@@ -12,6 +12,7 @@ council:
   triads: ["design"]
   duo_keywords: ["design", "user", "usability", "ux"]
   profiles: ["classic"]
+  provider_affinity: ["openai", "anthropic"]
 ---
 
 ## Identity

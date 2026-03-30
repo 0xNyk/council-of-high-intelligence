@@ -12,6 +12,7 @@ council:
   triads: ["shipping", "founder"]
   duo_keywords: ["shipping", "execution", "release"]
   profiles: ["classic"]
+  provider_affinity: ["anthropic", "openai", "google"]
 ---
 
 ## Identity

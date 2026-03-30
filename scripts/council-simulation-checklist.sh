@@ -114,6 +114,43 @@ if grep -q "^{" demos/verdict-template.md 2>/dev/null; then
 fi
 pass "Verdict template dedup check done"
 
+# --- Auto-routing checks ---
+
+[[ -f "scripts/detect-providers.sh" ]] || fail "scripts/detect-providers.sh is missing"
+[[ -x "scripts/detect-providers.sh" ]] || fail "scripts/detect-providers.sh is not executable"
+pass "detect-providers.sh exists and is executable"
+
+if detect_output="$(bash scripts/detect-providers.sh 2>/dev/null)"; then
+  if echo "$detect_output" | grep -q '"provider_count"'; then
+    pass "detect-providers.sh produces valid JSON"
+  else
+    fail "detect-providers.sh output missing provider_count field"
+  fi
+else
+  fail "detect-providers.sh exited with error"
+fi
+
+[[ -f "configs/auto-route-defaults.yaml" ]] || fail "configs/auto-route-defaults.yaml is missing"
+pass "Auto-route defaults config exists"
+
+grep -q -- "--no-auto-route" SKILL.md || fail "--no-auto-route flag missing in SKILL.md"
+pass "--no-auto-route flag documented in SKILL.md"
+
+grep -q -- "--dry-route" SKILL.md || fail "--dry-route flag missing in SKILL.md"
+pass "--dry-route flag documented in SKILL.md"
+
+affinity_count=0
+for agent_file in agents/council-*.md; do
+  if grep -q "provider_affinity" "$agent_file" 2>/dev/null; then
+    ((affinity_count+=1))
+  fi
+done
+if [[ "$affinity_count" -eq "$agent_count" ]]; then
+  pass "All agents have provider_affinity in frontmatter"
+else
+  warn "Only ${affinity_count}/${agent_count} agents have provider_affinity"
+fi
+
 # --- Install script checks ---
 
 if command -v shellcheck >/dev/null 2>&1; then

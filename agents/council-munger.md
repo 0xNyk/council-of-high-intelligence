@@ -12,6 +12,7 @@ council:
   triads: ["decision", "economics"]
   duo_keywords: ["economics", "investment", "models", "moat"]
   profiles: ["classic"]
+  provider_affinity: ["anthropic", "google"]
 ---
 
 ## Identity

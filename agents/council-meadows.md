@@ -12,6 +12,7 @@ council:
   triads: ["systems"]
   duo_keywords: ["systems", "feedback", "complexity", "loops"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["anthropic", "google"]
 ---
 
 ## Identity
