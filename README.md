@@ -1,8 +1,37 @@
 # Council of High Intelligence
 
-A Claude Code skill that convenes historical thinkers for multi-perspective deliberation on complex problems.
+18 AI personas deliberate your hardest decisions across multiple LLM providers. One command: `/council`
 
-LLMs make you think they are smart, but when things get complex their reasoning can fall short. This council uses structured disagreement between diverse intellectual traditions to surface blind spots, challenge assumptions, and produce better decisions.
+[![GitHub release](https://img.shields.io/github/v/release/0xNyk/council-of-high-intelligence)](https://github.com/0xNyk/council-of-high-intelligence/releases)
+[![License: CC0](https://img.shields.io/badge/license-CC0-blue)](https://creativecommons.org/publicdomain/zero/1.0/)
+
+LLMs make you think they are smart, but when things get complex their reasoning can fall short. This council uses structured disagreement between diverse intellectual traditions — spread across Claude, OpenAI, Gemini, and Ollama — to surface blind spots, challenge assumptions, and produce better decisions.
+
+## Quickstart
+
+```bash
+git clone https://github.com/0xNyk/council-of-high-intelligence.git
+cd council-of-high-intelligence
+./install.sh
+```
+
+Then in Claude Code:
+
+```
+/council Should we open-source our agent framework?
+/council --quick Should we add caching here?
+/council --duo Should we use microservices or monolith?
+```
+
+## Why This Works
+
+A single LLM gives you one reasoning path dressed up as confidence. The council gives you structured disagreement:
+
+- **Polarity pairs** force genuine tension (Socrates destroys assumptions; Feynman rebuilds from first principles)
+- **Multi-provider routing** spreads members across Claude, OpenAI, Gemini, and Ollama — different models produce measurably different reasoning styles
+- **Enforcement mechanisms** prevent premature convergence (dissent quotas, novelty gates, counterfactual prompts)
+- **Problem Restate Gate** catches wrong-question failures before burning rounds on them
+- **Verdicts lead with unknowns** — what the council can't answer matters more than where it agrees
 
 ## The 18 Council Members
 
@@ -100,7 +129,7 @@ The members are chosen as deliberate counterweights:
 ## Council Profiles
 
 ### `classic` (default)
-All 11 members with domain triads above. Best for broad deliberation.
+All 18 members with domain triads above. Best for broad deliberation.
 
 ### `exploration-orthogonal`
 12-member panel for discovery and "unknown unknowns" reduction:
@@ -112,57 +141,67 @@ All 11 members with domain triads above. Best for broad deliberation.
 - Torvalds, Feynman, Sun Tzu, Aurelius, Ada
 - Profile triads: `ship-now`, `launch-strategy`, `stability`
 
-## Multi-provider / Multi-model Exploration
+## Multi-Provider Auto-Routing
 
-Use `--models` to spread members across AI providers and reduce model monoculture.
+The council automatically detects installed LLM providers and distributes members across them for genuine model diversity — zero config required.
 
 ```
-/council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml Should we pivot?
+/council --triad decision Should we accept this acquisition offer?
 ```
 
-Starter template: `configs/provider-model-slots.example.yaml`
+**Supported providers** (auto-detected):
+| Provider | CLI | Exec Method |
+|----------|-----|-------------|
+| Anthropic (Claude) | native | subagent (always available) |
+| OpenAI | `codex` | `codex exec` |
+| Google | `gemini` | `gemini -p` |
+| Ollama (local) | `ollama` | `ollama run` |
+
+**How routing works:**
+1. Polarity pairs are separated across providers (hard constraint)
+2. Members spread evenly across available providers
+3. Per-member `provider_affinity` in frontmatter used as tiebreaker
+4. If any provider fails, automatic fallback to Claude
+
+**Flags:**
+- `--no-auto-route` — disable auto-routing, use Claude-only defaults
+- `--dry-route` — print the routing table without running the council
+- `--models [path]` — manual override with YAML config (see `configs/provider-model-slots.example.yaml`)
 
 ## Deliberation Protocol
 
-### Full Mode
-1. **Round 1: Independent Analysis (blind-first)** — all members analyze in parallel (400 words max)
-2. **Round 2: Cross-Examination** — members challenge each other (300 words, must engage 2+ others)
-3. **Round 3: Synthesis** — final 100-word position statements
+### Full Mode (7 steps)
+1. **Provider Detection & Routing** — auto-detect providers, assign members
+2. **Problem Restate Gate** — each member restates the problem + provides an alternative framing before analysis begins
+3. **Round 1: Independent Analysis (blind-first)** — all members analyze in parallel (400 words max)
+4. **Round 2: Cross-Examination** — members challenge each other (300 words, must engage 2+ others)
+5. **Post-Round Enforcement** — dissent quota, novelty gate, agreement check, anti-recursion (single pass)
+6. **Round 3: Final Crystallization** — 100-word position statements
+7. **Verdict Synthesis** — leads with Unresolved Questions and Recommended Next Steps
 
 ### Quick Mode
-1. **Round 1: Rapid Analysis** — all members analyze in parallel (200 words max)
-2. **Round 2: Final Positions** — 75-word crystallization
+1. **Problem Restate + Rapid Analysis** — reframe + analyze in parallel (200 words max)
+2. **Final Positions** — 75-word crystallization
 
 ### Duo Mode
-1. **Round 1: Opening Positions** — both state positions (300 words)
-2. **Round 2: Direct Response** — engage opponent's claims (200 words)
-3. **Round 3: Final Statements** — 50-word positions
+1. **Problem Restate + Opening Positions** — reframe + state positions (300 words)
+2. **Direct Response** — engage opponent's claims (200 words)
+3. **Final Statements** — 50-word positions
 
-Anti-recursion enforcement prevents Socrates from infinite questioning. Anti-convergence enforcement requires dissent quota + counterfactual pass when agreement forms too early. Tie-breaking uses 2/3 majority with domain expert weighting.
+**Enforcement mechanisms:** Anti-recursion prevents Socrates from infinite questioning. Dissent quota + novelty gate + counterfactual pass prevent premature convergence. Tie-breaking uses 2/3 majority with domain expert weighting. All verdicts include a Follow-Up section for outcome tracking.
 
 ## Installation
 
-```bash
-./install.sh
-```
-
-Optional flags:
+Installs 18 agent definitions, the skill protocol, and the provider detection script to `~/.claude/`.
 
 ```bash
+./install.sh                                 # Standard install
 ./install.sh --claude-dir /path/to/.claude   # Non-default config directory
 ./install.sh --dry-run                        # Preview without writing
 ./install.sh --copy-configs                   # Also install model routing templates
 ```
 
-Or manually:
-
-```bash
-mkdir -p ~/.claude/agents ~/.claude/skills/council
-cp agents/council-*.md ~/.claude/agents/
-cp SKILL.md ~/.claude/skills/council/SKILL.md
-```
-
-Then restart Claude Code. The `/council` command will be available immediately.
+Restart Claude Code after installing. The `/council` command is available immediately.
 
 ## Quick Simulation Checklist
 
@@ -179,8 +218,13 @@ Use the ready-to-run examples to test all modes:
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/claude-code) CLI
+- [Claude Code](https://claude.ai/claude-code) CLI (required)
 - Agent subagent support (enabled by default)
+
+**Optional providers** (auto-detected for multi-provider routing):
+- [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — `npm i -g @anthropic-ai/gemini-cli` or see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
+- [Ollama](https://ollama.com) (local models) — install from ollama.com
 
 ## Contributing
 
