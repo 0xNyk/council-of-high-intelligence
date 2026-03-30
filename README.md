@@ -1,5 +1,9 @@
 # Council of High Intelligence
 
+<p align="center">
+  <img src="assets/header.jpeg" alt="Council of High Intelligence" width="800">
+</p>
+
 18 AI personas deliberate your hardest decisions across multiple LLM providers. One command: `/council`
 
 [![GitHub release](https://img.shields.io/github/v/release/0xNyk/council-of-high-intelligence)](https://github.com/0xNyk/council-of-high-intelligence/releases)
