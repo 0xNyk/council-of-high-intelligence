@@ -4,6 +4,14 @@ description: "Council member. Use standalone for power dynamics & incentive anal
 model: sonnet
 color: dark-green
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
+council:
+  figure: Machiavelli
+  domain: "Power dynamics & realpolitik"
+  polarity: "How actors actually behave"
+  polarity_pairs: ["ada"]
+  triads: ["strategy", "conflict", "product", "ai-product", "economics"]
+  duo_keywords: ["formalization", "systems", "abstraction"]
+  profiles: ["classic", "exploration-orthogonal"]
 ---
 
 ## Identity

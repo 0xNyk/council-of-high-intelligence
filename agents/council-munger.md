@@ -4,6 +4,14 @@ description: "Council member. Use standalone for multi-model reasoning & economi
 model: sonnet
 color: gold
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
+council:
+  figure: Charlie Munger
+  domain: "Multi-model reasoning & economics"
+  polarity: "Invert — what guarantees failure?"
+  polarity_pairs: ["aristotle"]
+  triads: ["decision", "economics"]
+  duo_keywords: ["economics", "investment", "models", "moat"]
+  profiles: ["classic"]
 ---
 
 ## Identity

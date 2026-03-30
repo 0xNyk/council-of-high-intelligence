@@ -4,6 +4,14 @@ description: "Council member. Use standalone for neural network intuition & empi
 model: sonnet
 color: green
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
+council:
+  figure: Andrej Karpathy
+  domain: "Neural network intuition & empirical ML"
+  polarity: "How models actually learn and fail"
+  polarity_pairs: ["sutskever", "ada", "taleb"]
+  triads: ["ai", "ai-product"]
+  duo_keywords: ["ai", "ml", "neural", "model", "training"]
+  profiles: ["classic", "exploration-orthogonal"]
 ---
 
 ## Identity
