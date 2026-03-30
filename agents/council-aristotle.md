@@ -12,6 +12,7 @@ council:
   triads: ["architecture", "innovation", "complexity", "systems"]
   duo_keywords: ["architecture", "structure", "categories"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["anthropic", "openai", "google"]
 ---
 
 ## Identity

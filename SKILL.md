@@ -32,9 +32,11 @@ You are the Council Coordinator. Your job is to convene the right council member
 | `--profile [name]` | Panel profile: `classic`, `exploration-orthogonal`, `execution-lean` |
 | `--quick` | Fast 2-round mode (200-word analysis → 75-word position, no cross-examination) |
 | `--duo` | 2-member dialectic using polarity pairs |
-| `--models [path]` | Provider/model slot mapping for multi-provider execution |
+| `--models [path]` | Manual provider/model slot mapping (overrides auto-routing) |
+| `--no-auto-route` | Disable auto-routing; use agent frontmatter defaults (Claude-only) |
+| `--dry-route` | Print the routing table without running the council |
 
-Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` is additive.
+Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route` and `--dry-route` are additive.
 
 ---
 
@@ -171,20 +173,33 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 
 `[CHECKPOINT]` State the selected members and mode before proceeding.
 
-### STEP 1: Model/Provider Routing (OPTIONAL)
+### STEP 1: Provider Detection and Model Routing
 
-If `--models [path]` is provided:
+**Path A — Manual routing** (`--models [path]` provided):
 1. Load the YAML mapping
-2. Assign each member to their specified provider/model
+2. Assign each member to their specified provider/model per the mapping
 3. Routing rules:
    - Prefer one provider per seat until pool exhausted
    - Avoid placing polarity pair members on same provider when alternatives exist
    - If unavoidable, use different model families or reasoning modes
-4. Log routing metadata: member → provider → model → reasoning_mode
+4. Log routing metadata: member → provider → model
 
-If no `--models` flag → use default configured models from agent frontmatter.
+**Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
+1. Run the detection script via Bash: `bash ~/.claude/skills/council/scripts/detect-providers.sh`
+2. Parse the JSON output. If `provider_count == 1` (only anthropic): skip routing entirely, use agent frontmatter defaults. Proceed to Step 1.5.
+3. If `provider_count >= 2`: apply the routing algorithm below.
+4. If `--dry-route`: print the routing table and stop (do not convene the council).
 
-`[CHECKPOINT]` If routing used, confirm member → provider mapping.
+**Auto-routing algorithm** (apply in order):
+1. **Polarity pair separation** (hard constraint): For any polarity pair where both members are on the panel, assign them to different providers. Check the `council.polarity_pairs` field in each member's frontmatter.
+2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members.
+3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array.
+4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml`. Members with `model: sonnet` get mid-tier models.
+
+**Path C — No routing** (`--no-auto-route`):
+Use agent frontmatter `model` defaults (Claude-only). Skip detection entirely.
+
+`[CHECKPOINT]` State the routing table: member → provider → model → exec_method. If `--dry-route`, output the table and stop here.
 
 ### STEP 1.5: Problem Restate Gate
 
@@ -211,15 +226,46 @@ Do NOT begin your analysis yet. Just the restatement and alternative framing. 50
 Emit to user:
 > **Council convened**: {member names}. Beginning Round 1 — independent analysis.
 
-Spawn each selected council member as a subagent:
-- `subagent_type: "general-purpose"` (agents are in ~/.claude/agents/)
-- Run all members **IN PARALLEL**
-- Each member sees ONLY the problem statement (blind-first, no peer outputs)
+Run all members **IN PARALLEL**. Each member sees ONLY the problem statement (blind-first, no peer outputs).
 
-Prompt template for each member:
+**Dispatch by exec_method** (from routing table):
+
+**For `subagent` (Anthropic)** — spawn as Claude Code subagent:
+- Use `subagent_type` matching the council member's agent name (agents are in ~/.claude/agents/)
+- Use the `model` parameter from the routing table (opus/sonnet/haiku) to override the agent's default if needed
+
+**For `codex_exec` (OpenAI)** — run via Bash tool:
+1. Read the member's agent file at `~/.claude/agents/council-{name}.md`
+2. Extract the **Identity**, **Grounding Protocol**, and relevant **Output Format** sections (trimmed — skip Analytical Method, What You See/Miss, When Deliberating)
+3. Build the full prompt with identity inlined, then run:
+```bash
+codex exec -c model="{model}" -c auto_approve=true "{full prompt}" 2>/dev/null
+```
+4. Capture stdout as the member's output. Timeout: 60 seconds.
+
+**For `gemini_cli` (Google)** — run via Bash tool:
+1. Read and extract identity sections (same as codex_exec above)
+2. Run:
+```bash
+gemini -m {model} -p "{full prompt}" 2>/dev/null
+```
+3. Capture stdout. Timeout: 60 seconds.
+
+**For `ollama_run` (Ollama)** — run via Bash tool:
+1. Read and extract identity sections (same as above)
+2. Run:
+```bash
+ollama run {model} "{full prompt}" 2>/dev/null
+```
+3. Capture stdout. Timeout: 120 seconds (local models are slower).
+
+**Fallback**: If any external provider call fails or times out, log `[FALLBACK] {member} failed on {provider}/{model}. Falling back to anthropic/{frontmatter_model}.` and re-run as a Claude subagent. Skip the failed provider for remaining rounds.
+
+**Prompt template** (used for ALL providers — for external providers, inline the identity preamble):
 ```
 You are operating as a council member in a structured deliberation.
-Read your agent definition at ~/.claude/agents/council-{name}.md and follow it precisely.
+{For subagent: "Read your agent definition at ~/.claude/agents/council-{name}.md and follow it precisely."}
+{For external providers: paste the extracted Identity + Grounding Protocol + Output Format sections here}
 
 The problem under deliberation:
 {problem}
@@ -231,6 +277,8 @@ Produce your independent analysis using your Output Format (Standalone).
 Do NOT try to anticipate what other members will say.
 Limit: 400 words maximum.
 ```
+
+**Note**: The same dispatch logic applies to all subsequent rounds (Steps 3 and 5). Use the routing table from Step 1 consistently. If a provider failed and fell back in an earlier round, use the fallback provider for all remaining rounds.
 
 `[CHECKPOINT]` Confirm all Round 1 outputs collected. Verify each is ≤400 words and follows the member's Output Format.
 
@@ -446,7 +494,10 @@ Use the Duo Verdict template below.
 
 ### Council Composition
 {Members convened, mode used, and selection rationale}
-{If model routing used: member → provider/model map. Otherwise omit.}
+
+### Provider Routing
+{Routing table: member → provider → model. Note any fallbacks triggered. If single-provider (Claude-only): "Default models (single provider)."}
+
 
 ### Unresolved Questions
 {Questions the council could not answer — inputs needed from user. Lead with what the council does NOT know.}
@@ -469,6 +520,7 @@ Use the Duo Verdict template below.
 
 ### Epistemic Diversity Scorecard
 - Perspective spread (1-5): {how orthogonal the viewpoints were}
+- Provider spread (1-5): {how distributed across model families — 1 if single provider}
 - Evidence mix: {% empirical / mechanistic / strategic / ethical / heuristic}
 - Convergence risk: {Low/Medium/High with reason}
 

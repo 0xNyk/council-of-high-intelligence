@@ -12,6 +12,7 @@ council:
   triads: ["shipping", "product", "founder", "ai-product", "design"]
   duo_keywords: ["shipping", "execution", "release", "engineering", "theory", "pragmatism"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
+  provider_affinity: ["openai", "anthropic"]
 ---
 
 ## Identity

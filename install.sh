@@ -100,6 +100,18 @@ done
 echo "Installing council skill..."
 run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${SKILL_DEST}"
 
+echo "Installing council scripts..."
+SCRIPTS_DEST_DIR="${SKILL_DEST_DIR}/scripts"
+run_cmd mkdir -p "${SCRIPTS_DEST_DIR}"
+scripts_installed=0
+shopt -s nullglob
+script_files=("${SCRIPT_DIR}"/scripts/detect-*.sh)
+shopt -u nullglob
+for script_file in "${script_files[@]}"; do
+  run_cmd install -m 0755 "${script_file}" "${SCRIPTS_DEST_DIR}/"
+  ((scripts_installed+=1))
+done
+
 configs_installed=0
 if [[ "$COPY_CONFIGS" == true ]]; then
   if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
@@ -122,6 +134,7 @@ echo
 echo "Done."
 echo "  Installed ${installed_count} council agents to ${AGENTS_DEST}"
 echo "  Installed skill to ${SKILL_DEST}"
+echo "  Installed ${scripts_installed} scripts to ${SCRIPTS_DEST_DIR}"
 if [[ "$COPY_CONFIGS" == true ]]; then
   echo "  Installed ${configs_installed} config files to ${CONFIGS_DEST_DIR}"
 fi

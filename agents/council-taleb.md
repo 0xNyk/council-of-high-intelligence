@@ -12,6 +12,7 @@ council:
   triads: ["uncertainty"]
   duo_keywords: ["risk", "uncertainty", "fragility", "tail"]
   profiles: ["classic"]
+  provider_affinity: ["anthropic", "openai", "google"]
 ---
 
 ## Identity
