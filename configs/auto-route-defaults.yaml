@@ -8,8 +8,8 @@ provider_models:
     high: opus
     mid: sonnet
   openai:
-    high: o3
-    mid: o4-mini
+    high: gpt-5.4
+    mid: gpt-5.4
   google:
     high: gemini-2.5-pro
     mid: gemini-2.5-pro

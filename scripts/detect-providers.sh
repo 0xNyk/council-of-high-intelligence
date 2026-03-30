@@ -48,7 +48,7 @@ providers+=("$(json_provider "anthropic" "true" "subagent" "native" '"opus","son
 # OpenAI via Codex CLI
 codex_bin="$(check_command codex)"
 if [[ -n "$codex_bin" ]] && run_with_timeout codex --version >/dev/null 2>&1; then
-  providers+=("$(json_provider "openai" "true" "codex_exec" "$codex_bin" '"o3","o4-mini"')")
+  providers+=("$(json_provider "openai" "true" "codex_exec" "$codex_bin" '"gpt-5.4"')")
 else
   providers+=("$(json_provider "openai" "false" "codex_exec" "${codex_bin:-not_found}" '')")
 fi
