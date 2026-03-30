@@ -12,6 +12,7 @@ council:
   triads: ["ethics", "debugging", "conflict", "ai-safety", "bias"]
   duo_keywords: ["framing", "purpose", "meaning"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["anthropic"]
 ---
 
 ## Identity

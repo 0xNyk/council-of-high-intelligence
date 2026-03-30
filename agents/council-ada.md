@@ -12,6 +12,7 @@ council:
   triads: ["architecture", "debugging", "innovation", "complexity", "ai"]
   duo_keywords: ["formalization", "systems", "abstraction"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
+  provider_affinity: ["openai", "anthropic"]
 ---
 
 ## Identity

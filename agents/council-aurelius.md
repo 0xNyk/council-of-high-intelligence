@@ -12,6 +12,7 @@ council:
   triads: ["strategy", "ethics", "conflict", "risk", "decision"]
   duo_keywords: ["strategy", "competition", "market"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
+  provider_affinity: ["anthropic"]
 ---
 
 ## Identity

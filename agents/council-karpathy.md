@@ -12,6 +12,7 @@ council:
   triads: ["ai", "ai-product"]
   duo_keywords: ["ai", "ml", "neural", "model", "training"]
   profiles: ["classic", "exploration-orthogonal"]
+  provider_affinity: ["openai", "anthropic"]
 ---
 
 ## Identity

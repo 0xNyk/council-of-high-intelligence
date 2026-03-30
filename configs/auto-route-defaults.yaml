@@ -1,0 +1,18 @@
+# Default model tier mapping per provider.
+# Used by the coordinator when auto-routing members to providers.
+# "high" = members with model: opus in frontmatter (heavyweight analysis)
+# "mid"  = members with model: sonnet in frontmatter (faster/practical)
+
+provider_models:
+  anthropic:
+    high: opus
+    mid: sonnet
+  openai:
+    high: o3
+    mid: o4-mini
+  google:
+    high: gemini-2.5-pro
+    mid: gemini-2.5-pro
+  ollama:
+    high: null  # uses first available model from detect-providers.sh
+    mid: null

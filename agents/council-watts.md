@@ -12,6 +12,7 @@ council:
   triads: ["product", "design", "bias"]
   duo_keywords: ["framing", "purpose", "meaning", "engineering", "theory", "pragmatism"]
   profiles: ["classic"]
+  provider_affinity: ["anthropic"]
 ---
 
 ## Identity
