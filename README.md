@@ -4,14 +4,37 @@
   <img src="assets/header.jpeg" alt="Council of High Intelligence" width="800">
 </p>
 
-18 AI personas deliberate your hardest decisions across multiple LLM providers. One command: `/council`
+<p align="center">
+  18 AI personas deliberate your hardest decisions across multiple LLM providers. One command.
+</p>
 
-[![GitHub release](https://img.shields.io/github/v/release/0xNyk/council-of-high-intelligence)](https://github.com/0xNyk/council-of-high-intelligence/releases)
-[![License: CC0](https://img.shields.io/badge/license-CC0-blue)](https://creativecommons.org/publicdomain/zero/1.0/)
+<p align="center">
+  <a href="https://github.com/0xNyk/council-of-high-intelligence/releases"><img src="https://img.shields.io/github/v/release/0xNyk/council-of-high-intelligence" alt="Release"></a>
+  <a href="https://github.com/0xNyk/council-of-high-intelligence/stargazers"><img src="https://img.shields.io/github/stars/0xNyk/council-of-high-intelligence" alt="Stars"></a>
+  <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/badge/license-CC0-blue" alt="License"></a>
+  <img src="https://img.shields.io/badge/Claude_Code-skill-blueviolet" alt="Claude Code Skill">
+  <img src="https://img.shields.io/badge/members-18-orange" alt="18 Members">
+</p>
 
-LLMs make you think they are smart, but when things get complex their reasoning can fall short. This council uses structured disagreement between diverse intellectual traditions — spread across Claude, OpenAI, Gemini, and Ollama — to surface blind spots, challenge assumptions, and produce better decisions.
+<details>
+<summary><strong>Table of Contents</strong></summary>
+
+- [Quickstart](#quickstart)
+- [Why This Works](#why-this-works)
+- [The 18 Council Members](#the-18-council-members)
+- [Three Deliberation Modes](#three-deliberation-modes)
+- [Multi-Provider Auto-Routing](#multi-provider-auto-routing)
+- [Deliberation Protocol](#deliberation-protocol)
+- [Installation](#installation)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [Support the Project](#support-the-project)
+
+</details>
 
 ## Quickstart
+
+> Requires [Claude Code](https://claude.ai/claude-code) CLI
 
 ```bash
 git clone https://github.com/0xNyk/council-of-high-intelligence.git
@@ -29,17 +52,18 @@ Then in Claude Code:
 
 ## Why This Works
 
-A single LLM gives you one reasoning path dressed up as confidence. The council gives you structured disagreement:
+A single LLM gives you one reasoning path dressed up as confidence. Ask it a hard question and you get a fluent, structured, wrong answer. The council gives you structured disagreement instead:
 
-- **Polarity pairs** force genuine tension (Socrates destroys assumptions; Feynman rebuilds from first principles)
-- **Multi-provider routing** spreads members across Claude, OpenAI, Gemini, and Ollama — different models produce measurably different reasoning styles
-- **Enforcement mechanisms** prevent premature convergence (dissent quotas, novelty gates, counterfactual prompts)
-- **Problem Restate Gate** catches wrong-question failures before burning rounds on them
-- **Verdicts lead with unknowns** — what the council can't answer matters more than where it agrees
+- **Get genuinely different perspectives** — polarity pairs force real tension (Socrates destroys assumptions; Feynman rebuilds from first principles). Multi-provider routing spreads members across Claude, OpenAI, Gemini, and Ollama so you get actually different reasoning, not costume changes on one model
+- **Catch wrong questions early** — the Problem Restate Gate makes every member reframe the question before analysis begins. If 3 members restate your question differently, the question was the problem
+- **Know what the council can't answer** — verdicts lead with Unresolved Questions and Recommended Next Steps, not with confident-sounding consensus. What the council doesn't know matters more than where it agrees
+- **Prevent groupthink** — dissent quotas, novelty gates, and counterfactual prompts enforce genuine disagreement. If >70% agree too early, two members are forced to steelman the opposing view
+
+> **Why not just ask Claude directly?** A single prompt gives you one model's confident best guess. The council gives you 3-18 independent analyses from different intellectual traditions, forces them to challenge each other's claims, and synthesizes a verdict that surfaces disagreement rather than hiding it. It's the difference between asking one advisor and convening a board.
 
 ## The 18 Council Members
 
-| Agent | Figure | Domain | Model | Polarity |
+| Agent | Figure | Domain | Default Model | Polarity |
 |-------|--------|--------|-------|----------|
 | `council-aristotle` | Aristotle | Categorization & structure | opus | Classifies everything |
 | `council-socrates` | Socrates | Assumption destruction | opus | Questions everything |
@@ -52,7 +76,7 @@ A single LLM gives you one reasoning path dressed up as confidence. The council 
 | `council-torvalds` | Linus Torvalds | Pragmatic engineering | sonnet | Ship it or shut up |
 | `council-musashi` | Miyamoto Musashi | Strategic timing | sonnet | The decisive strike |
 | `council-watts` | Alan Watts | Perspective & reframing | opus | Dissolves false problems |
-| `council-karpathy` | Andrej Karpathy | Neural network intuition & empirical ML | sonnet | How models actually learn and fail |
+| `council-karpathy` | Andrej Karpathy | Neural network intuition | sonnet | How models actually learn and fail |
 | `council-sutskever` | Ilya Sutskever | Scaling frontier & AI safety | opus | When capability becomes risk |
 | `council-kahneman` | Daniel Kahneman | Cognitive bias & decision science | opus | Your own thinking is the first error |
 | `council-meadows` | Donella Meadows | Systems thinking & feedback loops | sonnet | Redesign the system, not the symptom |
@@ -60,23 +84,24 @@ A single LLM gives you one reasoning path dressed up as confidence. The council 
 | `council-taleb` | Nassim Taleb | Antifragility & tail risk | opus | Design for the tail, not the average |
 | `council-rams` | Dieter Rams | User-centered design | sonnet | Less, but better — the user decides |
 
-## Polarity Pairs
+<details>
+<summary><strong>Polarity Pairs</strong> — members are chosen as deliberate counterweights</summary>
 
-The members are chosen as deliberate counterweights:
-
-- **Socrates vs Feynman** — Both question, but Socrates destroys top-down; Feynman rebuilds bottom-up
-- **Aristotle vs Lao Tzu** — Aristotle classifies everything; Lao Tzu says structure IS the problem
-- **Sun Tzu vs Aurelius** — Sun Tzu wins external games; Aurelius governs the internal one
-- **Ada vs Machiavelli** — Ada abstracts toward formal purity; Machiavelli anchors in messy human incentives
-- **Torvalds vs Watts** — Torvalds ships concrete solutions; Watts questions whether the problem exists
-- **Musashi vs Torvalds** — Musashi waits for the perfect moment; Torvalds says ship it now
-- **Karpathy vs Sutskever** — Build it, observe it, iterate; vs pause, research, ensure safety first
+- **Socrates vs Feynman** — Destroys top-down vs rebuilds bottom-up
+- **Aristotle vs Lao Tzu** — Classifies everything vs structure IS the problem
+- **Sun Tzu vs Aurelius** — Wins external games vs governs the internal one
+- **Ada vs Machiavelli** — Formal purity vs messy human incentives
+- **Torvalds vs Watts** — Ships concrete solutions vs questions whether the problem exists
+- **Musashi vs Torvalds** — Waits for the perfect moment vs ships it now
+- **Karpathy vs Sutskever** — Build it, observe it, iterate vs pause, research, ensure safety first
 - **Karpathy vs Ada** — Empirical ML intuition vs formal systems theory
 - **Kahneman vs Feynman** — Your cognition is the first error vs trust first-principles reasoning
 - **Meadows vs Torvalds** — Redesign the feedback loop vs fix the symptom and ship
 - **Munger vs Aristotle** — Multi-model lattice vs single taxonomic system
 - **Taleb vs Karpathy** — Hidden catastrophic tails vs smooth empirical scaling curves
 - **Rams vs Ada** — What the user needs vs what computation can do
+
+</details>
 
 ## Three Deliberation Modes
 
@@ -105,7 +130,8 @@ The members are chosen as deliberate counterweights:
 /council --duo --members torvalds,ada Is this abstraction worth it?
 ```
 
-## Pre-defined Triads
+<details>
+<summary><strong>Pre-defined Triads</strong> — 20 domain-specific 3-member combinations</summary>
 
 | Domain | Triad | Rationale |
 |--------|-------|-----------|
@@ -130,7 +156,10 @@ The members are chosen as deliberate counterweights:
 | `economics` | Munger + Machiavelli + Sun Tzu | Models + incentives + competition |
 | `bias` | Kahneman + Socrates + Watts | Cognitive bias + assumption destruction + frame audit |
 
-## Council Profiles
+</details>
+
+<details>
+<summary><strong>Council Profiles</strong> — pre-built panels for different needs</summary>
 
 ### `classic` (default)
 All 18 members with domain triads above. Best for broad deliberation.
@@ -144,6 +173,8 @@ All 18 members with domain triads above. Best for broad deliberation.
 5-member panel for fast decision-to-action:
 - Torvalds, Feynman, Sun Tzu, Aurelius, Ada
 - Profile triads: `ship-now`, `launch-strategy`, `stability`
+
+</details>
 
 ## Multi-Provider Auto-Routing
 
@@ -174,6 +205,11 @@ The council automatically detects installed LLM providers and distributes member
 
 ## Deliberation Protocol
 
+Full mode runs 7 steps: provider routing → problem restate gate → independent analysis → cross-examination → enforcement scan → final positions → verdict synthesis. Verdicts lead with what the council doesn't know.
+
+<details>
+<summary><strong>Full protocol details</strong></summary>
+
 ### Full Mode (7 steps)
 1. **Provider Detection & Routing** — auto-detect providers, assign members
 2. **Problem Restate Gate** — each member restates the problem + provides an alternative framing before analysis begins
@@ -192,7 +228,13 @@ The council automatically detects installed LLM providers and distributes member
 2. **Direct Response** — engage opponent's claims (200 words)
 3. **Final Statements** — 50-word positions
 
-**Enforcement mechanisms:** Anti-recursion prevents Socrates from infinite questioning. Dissent quota + novelty gate + counterfactual pass prevent premature convergence. Tie-breaking uses 2/3 majority with domain expert weighting. All verdicts include a Follow-Up section for outcome tracking.
+### Enforcement Mechanisms
+- Anti-recursion prevents Socrates from infinite questioning
+- Dissent quota + novelty gate + counterfactual pass prevent premature convergence
+- Tie-breaking uses 2/3 majority with domain expert weighting
+- All verdicts include a Follow-Up section for outcome tracking
+
+</details>
 
 ## Installation
 
@@ -205,20 +247,7 @@ Installs 18 agent definitions, the skill protocol, and the provider detection sc
 ./install.sh --copy-configs                   # Also install model routing templates
 ```
 
-Restart Claude Code after installing. The `/council` command is available immediately.
-
-## Quick Simulation Checklist
-
-Run this before release or after profile edits:
-
-```bash
-./scripts/council-simulation-checklist.sh
-```
-
-## Demo Session Pack
-
-Use the ready-to-run examples to test all modes:
-- `demos/session-pack.md`
+Restart Claude Code after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
 
 ## Requirements
 
@@ -227,14 +256,14 @@ Use the ready-to-run examples to test all modes:
 
 **Optional providers** (auto-detected for multi-provider routing):
 - [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — `npm i -g @anthropic-ai/gemini-cli` or see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
 - [Ollama](https://ollama.com) (local models) — install from ollama.com
 
 ## Contributing
 
 Contributions welcome. Read the [contribution guidelines](CONTRIBUTING.md) first.
 
-## ❤️ Support the Project
+## Support the Project
 
 If you find this project useful, consider supporting my open-source work.
 
