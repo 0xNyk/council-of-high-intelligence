@@ -186,6 +186,26 @@ If no `--models` flag → use default configured models from agent frontmatter.
 
 `[CHECKPOINT]` If routing used, confirm member → provider mapping.
 
+### STEP 1.5: Problem Restate Gate
+
+Before any analysis begins, each member must restate the problem. This catches wrong-question failures before burning rounds on them.
+
+Spawn each member in parallel with:
+```
+Read your agent definition at ~/.claude/agents/council-{name}.md.
+
+The problem under deliberation:
+{problem}
+
+Before you begin analysis, restate this problem in TWO parts:
+1. **Your restatement**: One sentence capturing the core question through your analytical lens.
+2. **Alternative framing**: One sentence reframing the problem in a way the original statement may have missed.
+
+Do NOT begin your analysis yet. Just the restatement and alternative framing. 50 words maximum total.
+```
+
+`[CHECKPOINT]` Review all restatements. If any member's restatement diverges significantly from the original problem, flag this to the user — it may reveal a framing issue worth addressing before deliberation. Include the restatements in the Round 1 prompt so members see each other's framings.
+
 ### STEP 2: Round 1 — Independent Analysis (PARALLEL, BLIND-FIRST)
 
 Emit to user:
@@ -204,6 +224,9 @@ Read your agent definition at ~/.claude/agents/council-{name}.md and follow it p
 The problem under deliberation:
 {problem}
 
+Here is how each member reframed the problem:
+{all restatements from Step 1.5}
+
 Produce your independent analysis using your Output Format (Standalone).
 Do NOT try to anticipate what other members will say.
 Limit: 400 words maximum.
@@ -211,24 +234,14 @@ Limit: 400 words maximum.
 
 `[CHECKPOINT]` Confirm all Round 1 outputs collected. Verify each is ≤400 words and follows the member's Output Format.
 
-### STEP 3: Round 1 Enforcement Scan
-
-For each Round 1 output, verify:
-- [ ] Used their Output Format (Standalone) sections
-- [ ] Stayed within ~400 words
-- [ ] Includes an Essential Question
-- [ ] Includes a Verdict
-
-If any output is malformed or missing sections, note it but proceed (do not re-run).
-
-### STEP 4: Round 2 — Cross-Examination
+### STEP 3: Round 2 — Cross-Examination
 
 Emit to user:
 > **Round 1 complete** ({N} analyses collected). Beginning Round 2 — cross-examination.
 
 **Execution strategy:**
 - If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses)
-- If panel size ≥ 5: **Batch A** = first ceil(N/2) members run in PARALLEL (they see only Round 1 outputs). Then **Batch B** = remaining members run SEQUENTIALLY (they see Round 1 + Batch A Round 2 outputs).
+- If panel size ≥ 5: run all members in **PARALLEL** (each sees all Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs) if cross-contamination would meaningfully improve quality.
 
 Prompt template for each member:
 ```
@@ -252,38 +265,32 @@ Limit: 300 words maximum. You MUST engage at least 2 other members by name.
 
 `[CHECKPOINT]` Confirm all Round 2 outputs collected.
 
-### STEP 5: Round 2 Enforcement
+### STEP 4: Post-Round Enforcement Scan
 
-Run these checks on the collected Round 2 outputs:
+Run all enforcement checks on Round 2 outputs in a single pass:
 
-**`[VERIFY]` Dissent quota**: Count distinct objections across all Round 2 outputs. At least 2 members must articulate a non-overlapping objection. If fewer than 2 → send one or more members the dissent prompt:
+**`[VERIFY]` Dissent quota**: At least 2 members must articulate a non-overlapping objection. If fewer than 2 → send the dissent prompt:
 ```
 Your Round 2 response agreed with the emerging consensus. The council requires dissent for quality.
 State your strongest objection to the majority position in 150 words. What are they getting wrong?
 ```
 
-**`[VERIFY]` Novelty gate**: Each Round 2 response must contain at least 1 new claim, test, risk, or reframing not present in that member's Round 1 output. If missing → send back:
+**`[VERIFY]` Novelty gate**: Each response must contain at least 1 new claim, test, risk, or reframing not in that member's Round 1 output. If missing → send back:
 ```
 Your Round 2 response restated your Round 1 position without engaging the challenges raised.
 Address {specific member}'s challenge to your position directly. What changes?
 ```
 
-**`[VERIFY]` Agreement check**: If >70% of members agree on the core position by end of Round 2 → trigger counterfactual prompt to 2 members most likely to dissent:
+**`[VERIFY]` Agreement check**: If >70% agree on core position → trigger counterfactual prompt to 2 most likely dissenters:
 ```
 Assume the current consensus is wrong. What is the strongest alternative and what evidence would flip the decision?
 ```
 
-**`[VERIFY]` Evidence labels**: Confirm key claims are tagged as `empirical`, `mechanistic`, `strategic`, `ethical`, or `heuristic`. Note any reasoning monoculture (>80% same type).
+**`[VERIFY]` Evidence labels**: Confirm claims are tagged (`empirical | mechanistic | strategic | ethical | heuristic`). Note reasoning monoculture (>80% same type).
 
-### STEP 6: Anti-Recursion Enforcement
+**`[VERIFY]` Anti-recursion**: Socrates re-asks an answered question → hemlock rule, force 50-word position. Any member restates Round 1 without engaging challenges → send back. Exchange exceeds 2 messages between any pair → cut off.
 
-Check for these patterns and intervene:
-
-- **Socrates re-asks** a question that another member has directly addressed with evidence → remind of hemlock rule, force 50-word position statement
-- **Any member restates** Round 1 position without engaging Round 2 challenges → send back with the specific challenge they must address
-- **Exchange exceeds 2 messages** between any member pair → cut off and move to Round 3
-
-### STEP 7: Round 3 — Final Crystallization (PARALLEL)
+### STEP 5: Round 3 — Final Crystallization (PARALLEL)
 
 Emit to user:
 > **Cross-examination complete**. Round 3 — final positions.
@@ -297,13 +304,13 @@ No new arguments — only crystallization of your stance.
 
 `[CHECKPOINT]` Confirm all Round 3 outputs collected.
 
-### STEP 8: Tie-Breaking
+### STEP 6: Tie-Breaking
 
 - **2/3 majority** → consensus. Record dissenting position in Minority Report.
 - **No majority** → present the dilemma to the user with each position clearly stated. Do NOT force consensus.
 - **Domain expert weight**: The member whose domain most directly matches the problem gets 1.5x weight. (e.g., Ada for formal systems, Sun Tzu for competitive strategy)
 
-### STEP 9: Synthesize Verdict
+### STEP 7: Synthesize Verdict
 
 Produce the Council Verdict using the template below. This is the final deliverable.
 
@@ -319,6 +326,10 @@ Same panel selection as full mode Step 0. If no panel specified, default to best
 
 `[CHECKPOINT]` State selected members.
 
+### QUICK STEP 0.5: Problem Restate Gate
+
+Each member restates the problem before analysis. In quick mode, this is embedded in the Round 1 prompt (not a separate step) to save time.
+
 ### QUICK STEP 1: Round 1 — Rapid Analysis (PARALLEL)
 
 Emit to user:
@@ -332,7 +343,7 @@ Read your agent definition at ~/.claude/agents/council-{name}.md and follow it p
 The problem under deliberation:
 {problem}
 
-Produce a condensed analysis using your Output Format (Standalone) but limit to:
+First, in ONE sentence, restate this problem through your analytical lens. Then produce a condensed analysis:
 - Essential Question (1-2 sentences)
 - Your core analysis (key insight only)
 - Verdict (direct recommendation)
@@ -374,6 +385,10 @@ Two-member dialectic for rapid opposing perspectives.
 
 `[CHECKPOINT]` State selected pair and tension.
 
+### DUO STEP 0.5: Problem Restate Gate
+
+Each member restates the problem before analysis. In duo mode, this is embedded in the Round 1 prompt.
+
 ### DUO STEP 1: Round 1 — Opening Positions (PARALLEL)
 
 Emit to user:
@@ -387,7 +402,7 @@ Read your agent definition at ~/.claude/agents/council-{name}.md and follow it p
 The problem under deliberation:
 {problem}
 
-State your position using your Output Format (Standalone).
+First, in ONE sentence, restate this problem through your analytical lens. Then state your position using your Output Format (Standalone).
 Limit: 300 words maximum.
 ```
 
@@ -431,19 +446,20 @@ Use the Duo Verdict template below.
 
 ### Council Composition
 {Members convened, mode used, and selection rationale}
+{If model routing used: member → provider/model map. Otherwise omit.}
 
-### Model/Provider Routing
-{If used: member → provider/model map and separation rationale. If not used: "Default models."}
+### Unresolved Questions
+{Questions the council could not answer — inputs needed from user. Lead with what the council does NOT know.}
 
-### Consensus Position
-{The position that survived deliberation — or "No consensus reached" with explanation}
+### Recommended Next Steps
+{Concrete actions, ordered by priority}
+
+### Consensus & Agreement
+{The position that survived deliberation and what members converged on — or "No consensus reached" with explanation}
 
 ### Key Insights by Member
 - **{Name}**: {Their most valuable contribution in 1-2 sentences}
 - ...
-
-### Points of Agreement
-{What all/most members converged on}
 
 ### Points of Disagreement
 {Where positions remained irreconcilable}
@@ -451,17 +467,13 @@ Use the Duo Verdict template below.
 ### Minority Report
 {Dissenting positions and their strongest arguments}
 
-### Unresolved Questions
-{Questions the council could not answer — inputs needed from user}
-
 ### Epistemic Diversity Scorecard
 - Perspective spread (1-5): {how orthogonal the viewpoints were}
-- Provider spread (1-5): {how distributed across model families — N/A if default models}
 - Evidence mix: {% empirical / mechanistic / strategic / ethical / heuristic}
 - Convergence risk: {Low/Medium/High with reason}
 
-### Recommended Next Steps
-{Concrete actions, ordered by priority}
+### Follow-Up
+After acting on this verdict, revisit: Was this verdict useful? Was the recommended action taken? What happened? {This section is a prompt for the user, not filled by the council.}
 ```
 
 ### Quick Verdict
@@ -475,6 +487,9 @@ Use the Duo Verdict template below.
 ### Panel
 {Members and selection rationale}
 
+### Recommended Action
+{Single concrete recommendation}
+
 ### Positions
 - **{Name}**: {Core position in 1-2 sentences}
 - ...
@@ -485,8 +500,8 @@ Use the Duo Verdict template below.
 ### Key Disagreement
 {The most important point of divergence}
 
-### Recommended Action
-{Single concrete recommendation}
+### Follow-Up
+After acting on this verdict, revisit: Was this useful? What happened?
 ```
 
 ### Duo Verdict
@@ -500,6 +515,9 @@ Use the Duo Verdict template below.
 ### The Dialectic
 **{Member A}** ({their lens}) vs **{Member B}** ({their lens})
 
+### What This Means for Your Decision
+{How to use these opposing perspectives — the user decides}
+
 ### {Member A}'s Position
 {Core argument in 2-3 sentences}
 
@@ -512,8 +530,8 @@ Use the Duo Verdict template below.
 ### The Core Tension
 {The irreducible disagreement and what drives it}
 
-### What This Means for Your Decision
-{How to use these opposing perspectives — the user decides}
+### Follow-Up
+After deciding, revisit: Which perspective proved more useful? What happened?
 ```
 
 ---

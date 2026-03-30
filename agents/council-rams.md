@@ -4,6 +4,14 @@ description: "Council member. Use standalone for user-centered design & simplici
 model: sonnet
 color: white-smoke
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
+council:
+  figure: Dieter Rams
+  domain: "User-centered design"
+  polarity: "Less, but better — the user decides"
+  polarity_pairs: ["ada"]
+  triads: ["design"]
+  duo_keywords: ["design", "user", "usability", "ux"]
+  profiles: ["classic"]
 ---
 
 ## Identity
