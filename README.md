@@ -13,6 +13,7 @@
   <a href="https://github.com/0xNyk/council-of-high-intelligence/stargazers"><img src="https://img.shields.io/github/stars/0xNyk/council-of-high-intelligence" alt="Stars"></a>
   <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/badge/license-CC0-blue" alt="License"></a>
   <img src="https://img.shields.io/badge/Claude_Code-skill-blueviolet" alt="Claude Code Skill">
+  <img src="https://img.shields.io/badge/Codex-skill-black" alt="Codex Skill">
   <img src="https://img.shields.io/badge/members-18-orange" alt="18 Members">
 </p>
 
@@ -34,7 +35,7 @@
 
 ## Quickstart
 
-> Requires [Claude Code](https://claude.ai/claude-code) CLI
+### Claude Code
 
 ```bash
 git clone https://github.com/0xNyk/council-of-high-intelligence.git
@@ -43,6 +44,22 @@ cd council-of-high-intelligence
 ```
 
 Then in Claude Code:
+
+```
+/council Should we open-source our agent framework?
+/council --quick Should we add caching here?
+/council --duo Should we use microservices or monolith?
+```
+
+### Codex
+
+```bash
+git clone https://github.com/0xNyk/council-of-high-intelligence.git
+cd council-of-high-intelligence
+./install.sh --codex
+```
+
+Then in Codex:
 
 ```
 /council Should we open-source our agent framework?
@@ -238,21 +255,25 @@ Full mode runs 7 steps: provider routing → problem restate gate → independen
 
 ## Installation
 
-Installs 18 agent definitions, the skill protocol, and the provider detection script to `~/.claude/`.
+Installs 18 council agents plus skill files for Claude and/or Codex.
 
 ```bash
-./install.sh                                 # Standard install
-./install.sh --claude-dir /path/to/.claude   # Non-default config directory
-./install.sh --dry-run                        # Preview without writing
-./install.sh --copy-configs                   # Also install model routing templates
+./install.sh                                   # Claude install (default)
+./install.sh --codex                           # Claude + Codex skill install
+./install.sh --codex-only                      # Codex-only install
+./install.sh --claude-dir /path/to/.claude     # Non-default Claude config directory
+./install.sh --codex-dir /path/to/.codex       # Non-default Codex config directory
+./install.sh --dry-run                          # Preview without writing
+./install.sh --copy-configs                     # Also install model routing templates
 ```
 
-Restart Claude Code after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
+Restart your target client(s) after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/claude-code) CLI (required)
-- Agent subagent support (enabled by default)
+- [Claude Code](https://claude.ai/claude-code) CLI (required for Claude usage)
+- [Codex](https://github.com/openai/codex) (required for Codex skill usage)
+- Agent/subagent support in your client (enabled by default)
 
 **Optional providers** (auto-detected for multi-provider routing):
 - [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
