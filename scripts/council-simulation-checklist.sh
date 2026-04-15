@@ -15,6 +15,8 @@ warn() { echo "[WARN] $1"; }
 
 [[ -f "SKILL.md" ]] || fail "SKILL.md is missing"
 pass "SKILL.md exists"
+[[ -f "SKILL.codex.md" ]] || fail "SKILL.codex.md is missing"
+pass "SKILL.codex.md exists"
 
 if compgen -G "agents/council-*.md" >/dev/null; then
   agent_count=$(python3 -c "import glob; print(len(glob.glob('agents/council-*.md')))" 2>/dev/null || echo "unknown")
@@ -171,6 +173,12 @@ pass "install.sh --dry-run --copy-configs completed"
 
 grep -q "Installed .* config files" /tmp/council-install-dry-run-configs.log || fail "copy-configs dry-run output missing config install summary"
 pass "config summary output present"
+
+./install.sh --dry-run --codex >/tmp/council-install-dry-run-codex.log
+pass "install.sh --dry-run --codex completed"
+
+grep -q "Installed Codex skill to" /tmp/council-install-dry-run-codex.log || fail "codex dry-run output missing Codex skill summary"
+pass "Codex install summary output present"
 
 echo
 echo "Checklist complete."
