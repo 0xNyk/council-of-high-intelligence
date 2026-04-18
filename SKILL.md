@@ -287,20 +287,57 @@ Limit: 400 words maximum.
 Emit to user:
 > **Round 1 complete** ({N} analyses collected). Beginning Round 2 — cross-examination.
 
+**CRITICAL: Build context strings before spawning agents**
+
+Before spawning any Round 2 agents, construct the full context that will be embedded in prompts:
+
+1. **Concatenate all Round 1 outputs** into a single string formatted as:
+   ```
+   **{Member 1 name}:** {their Round 1 output}
+
+   **{Member 2 name}:** {their Round 1 output}
+
+   ... (all members)
+   ```
+
+2. Store this as `round1_context_string` — this will be directly embedded in Round 2 prompts (NOT passed as a variable placeholder).
+
 **Execution strategy:**
 - If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses)
 - If panel size ≥ 5: run all members in **PARALLEL** (each sees all Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs) if cross-contamination would meaningfully improve quality.
 
-Prompt template for each member:
+For **Batch A** members, construct each prompt by directly embedding the `round1_context_string`:
+
 ```
 You are council-{name} in Round 2 of a structured deliberation.
 Read your agent definition at ~/.claude/agents/council-{name}.md.
 
 Here are the Round 1 analyses from all council members:
 
-{all Round 1 outputs}
+{INSERT round1_context_string HERE — the actual concatenated text, not a variable reference}
 
-{If Batch B: "Here are Round 2 responses from earlier members:\n{Batch A Round 2 outputs}"}
+Now respond using your Output Format (Council Round 2):
+1. Which member's position do you most disagree with, and why? Engage their specific claims.
+2. Which member's insight strengthens your position? How?
+3. Restate your position in light of this exchange, noting any changes.
+4. Label your key claims: empirical | mechanistic | strategic | ethical | heuristic
+
+Limit: 300 words maximum. You MUST engage at least 2 other members by name.
+```
+
+After Batch A completes, construct `batchA_context_string` the same way (concatenated outputs from Batch A members). Then for **Batch B** members, embed BOTH context strings:
+
+```
+You are council-{name} in Round 2 of a structured deliberation.
+Read your agent definition at ~/.claude/agents/council-{name}.md.
+
+Here are the Round 1 analyses from all council members:
+
+{INSERT round1_context_string HERE}
+
+Here are Round 2 responses from earlier members:
+
+{INSERT batchA_context_string HERE}
 
 Now respond using your Output Format (Council Round 2):
 1. Which member's position do you most disagree with, and why? Engage their specific claims.
@@ -407,10 +444,13 @@ Limit: 200 words maximum. Be decisive.
 Emit to user:
 > **Round 1 complete**. Final positions.
 
-Send each member:
+**Before spawning agents:** Concatenate all Round 1 outputs into `round1_context_string` (same format as full mode).
+
+Send each member with the context string directly embedded:
 ```
 Here are the other members' rapid analyses:
-{all Round 1 outputs}
+
+{INSERT round1_context_string HERE — the actual concatenated text, not a variable reference}
 
 State your final position in 75 words or less. Note any key disagreement. Be direct.
 ```
@@ -456,11 +496,13 @@ Limit: 300 words maximum.
 
 ### DUO STEP 2: Round 2 — Direct Response (PARALLEL)
 
-Send each member the other's Round 1 output:
+**Before spawning agents:** Store each member's Round 1 output for direct embedding.
+
+Send each member the other's Round 1 output directly embedded (NOT as a variable placeholder):
 ```
 Your opponent ({other member name}) argued:
 
-{other member's Round 1 output}
+{INSERT the opponent's actual Round 1 output text HERE}
 
 Respond directly:
 1. Where are they wrong? Engage their specific claims.
