@@ -7,7 +7,7 @@ This repository is best deployed in Coolify as a small static site, not as an ap
 - Resource type: `Docker Compose`
 - Compose file: `docker-compose.coolify.yml`
 - Public service: `app`
-- Public port inside the container: `8080`
+- Public port inside the container: `80`
 
 Coolify should expose the `app` service through its normal HTTP/HTTPS proxy. No host `ports:` mapping is needed in the compose file.
 
