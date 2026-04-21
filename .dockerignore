@@ -1,0 +1,10 @@
+.git
+.gitignore
+CLAUDE.md
+SKILL.md
+SKILL.codex.md
+agents/
+configs/
+demos/
+scripts/
+*.log

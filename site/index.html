@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Council of High Intelligence</title>
+    <meta
+      name="description"
+      content="Deployable landing page for the Council of High Intelligence project with install commands and repository links."
+    >
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f1e8;
+        --panel: rgba(255, 252, 246, 0.88);
+        --text: #1e1a16;
+        --muted: #5c5347;
+        --accent: #b3552d;
+        --accent-dark: #7d3718;
+        --line: rgba(30, 26, 22, 0.14);
+        --shadow: 0 24px 60px rgba(43, 27, 16, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(179, 85, 45, 0.18), transparent 32%),
+          linear-gradient(180deg, #efe7d7 0%, var(--bg) 42%, #fbf8f2 100%);
+      }
+
+      a {
+        color: var(--accent-dark);
+      }
+
+      .page {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        overflow: hidden;
+      }
+
+      .hero img {
+        display: block;
+        width: 100%;
+        max-height: 360px;
+        object-fit: cover;
+      }
+
+      .hero-copy {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 0.82rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        line-height: 1.05;
+      }
+
+      h1 {
+        font-size: clamp(2.4rem, 6vw, 4.8rem);
+      }
+
+      h2 {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        margin-bottom: 16px;
+      }
+
+      p {
+        line-height: 1.65;
+        font-size: 1.02rem;
+      }
+
+      .lead {
+        max-width: 48rem;
+        color: var(--muted);
+        margin: 16px 0 0;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        color: #fff9f1;
+      }
+
+      .button.secondary {
+        border-color: var(--line);
+        color: var(--text);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 22px;
+      }
+
+      .panel {
+        padding: 24px;
+      }
+
+      .code {
+        margin: 14px 0 0;
+        padding: 16px;
+        border-radius: 18px;
+        background: #1d1a16;
+        color: #f8f2e6;
+        overflow-x: auto;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.94rem;
+      }
+
+      ul {
+        margin: 14px 0 0;
+        padding-left: 18px;
+      }
+
+      li + li {
+        margin-top: 10px;
+      }
+
+      .footer {
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          width: min(100% - 20px, 1120px);
+          padding-top: 20px;
+        }
+
+        .hero-copy,
+        .panel {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <img src="./assets/header.jpeg" alt="Council of High Intelligence banner">
+        <div class="hero-copy">
+          <p class="eyebrow">Council of High Intelligence</p>
+          <h1>18 AI personas. One difficult decision.</h1>
+          <p class="lead">
+            This Coolify deployment packages the repository as a lightweight public landing page for
+            installation, documentation, and source access. The project itself remains an installer-driven
+            Claude/Codex skill, not a long-running backend application.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/0xNyk/council-of-high-intelligence">View on GitHub</a>
+            <a class="button secondary" href="./README.md">Open README</a>
+            <a class="button secondary" href="./install.sh">Download install.sh</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Install</h2>
+          <p>Use the repository locally, then install into Claude Code or Codex.</p>
+          <div class="code">git clone https://github.com/0xNyk/council-of-high-intelligence.git
+cd council-of-high-intelligence
+./install.sh --codex</div>
+        </article>
+
+        <article class="panel">
+          <h2>What This Deploys</h2>
+          <ul>
+            <li>A static project landing page served by Nginx.</li>
+            <li>Direct access to <a href="./README.md">README.md</a>, <a href="./LICENSE">LICENSE</a>, and <a href="./install.sh">install.sh</a>.</li>
+            <li>No runtime secrets, database, or persistent volume required.</li>
+          </ul>
+        </article>
+
+        <article class="panel">
+          <h2>Requirements For Actual Use</h2>
+          <ul>
+            <li>Claude Code CLI for Claude usage.</li>
+            <li>Codex for Codex skill usage.</li>
+            <li>Optional provider CLIs like Codex CLI, Gemini CLI, or Ollama for multi-provider routing.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel" style="margin-top: 20px;">
+        <h2>Why This Shape</h2>
+        <p>
+          The repository does not contain a web app or API service to run continuously in Coolify. Packaging it
+          as a static site keeps the deployment honest: it gives you a clean public project page without inventing
+          infrastructure the repo does not need.
+        </p>
+        <p class="footer">
+          For interactive use, users still clone the repo and run the installer locally inside Claude Code or Codex.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
