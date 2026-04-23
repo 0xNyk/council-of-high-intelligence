@@ -1,0 +1,83 @@
+# NVIDIA NIM provider example for Council of High Intelligence.
+# Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.nim.example.yaml "..."
+#
+# NVIDIA NIM (build.nvidia.com) exposes ~130 open-weight models via an
+# OpenAI-compatible endpoint at https://integrate.api.nvidia.com/v1.
+# Free tier: 1,000 inference credits on signup, 40 RPM rate limit.
+#
+# Setup:
+#   1. Get key at https://build.nvidia.com (key prefix: nvapi-)
+#   2. export NVIDIA_API_KEY=nvapi-...
+#   3. Verify live model IDs: curl -H "Authorization: Bearer $NVIDIA_API_KEY" \
+#         https://integrate.api.nvidia.com/v1/models | jq '.data[].id'
+#
+# Why mix providers: spreading seats across model families reduces shared
+# training-data bias and amplifies dissent. NIM gives access to non-Anthropic,
+# non-OpenAI, non-Google open-weight models (DeepSeek, Kimi, MiniMax, GLM, Qwen)
+# without separate provider accounts.
+
+profile: exploration-orthogonal
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  # Anthropic seats kept for high-stakes reasoning roles
+  socrates:
+    provider: anthropic
+    model: claude-sonnet-4
+    reasoning_mode: analytical
+  aurelius:
+    provider: anthropic
+    model: claude-opus-4
+    reasoning_mode: normative
+
+  # NIM seats — open-weight models via OpenAI-compatible API
+  feynman:
+    provider: nvidia_nim
+    model: deepseek-ai/deepseek-v3.2
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    reasoning_mode: mechanistic
+
+  sun-tzu:
+    provider: nvidia_nim
+    model: moonshotai/kimi-k2.5
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    reasoning_mode: strategic
+
+  ada:
+    provider: nvidia_nim
+    model: qwen/qwen3.5-397b-a17b
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    reasoning_mode: formal
+
+  machiavelli:
+    provider: nvidia_nim
+    model: z-ai/glm-5.1
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    reasoning_mode: adversarial
+
+  lao-tzu:
+    provider: nvidia_nim
+    model: minimaxai/minimax-m2.7
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    reasoning_mode: emergent
+
+  # Google for breadth on a third axis
+  torvalds:
+    provider: google
+    model: gemini-2.5-pro
+    reasoning_mode: pragmatic
+
+fallback:
+  provider: nvidia_nim
+  model: deepseek-ai/deepseek-v3.2
+  base_url: https://integrate.api.nvidia.com/v1
+  api_key_env: NVIDIA_API_KEY

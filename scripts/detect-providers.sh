@@ -76,6 +76,31 @@ if [[ -n "$ollama_bin" ]]; then
 fi
 providers+=("$(json_provider "ollama" "$ollama_available" "ollama_run" "${ollama_bin:-not_found}" "$ollama_models")")
 
+# NVIDIA NIM (OpenAI-compatible hosted endpoint at build.nvidia.com)
+# Detection: NVIDIA_API_KEY env var + optional reachability check.
+nim_available=false
+nim_models=""
+nim_endpoint="https://integrate.api.nvidia.com/v1"
+if [[ -n "${NVIDIA_API_KEY:-}" ]]; then
+  # Verify the key is not a placeholder (real keys start with nvapi-)
+  if [[ "${NVIDIA_API_KEY}" =~ ^nvapi- ]]; then
+    # Optional: confirm catalog reachability. Skip if curl missing or offline.
+    if command -v curl >/dev/null 2>&1; then
+      if run_with_timeout curl -sf -o /dev/null \
+          -H "Authorization: Bearer ${NVIDIA_API_KEY}" \
+          "${nim_endpoint}/models" 2>/dev/null; then
+        nim_available=true
+      fi
+    else
+      # Curl unavailable; trust env var presence + key prefix as availability signal.
+      nim_available=true
+    fi
+    # Default model suggestions (verify live IDs at build.nvidia.com/models).
+    nim_models='"deepseek-ai/deepseek-v3.2","moonshotai/kimi-k2.5","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
+  fi
+fi
+providers+=("$(json_provider "nvidia_nim" "$nim_available" "openai_compatible_api" "$nim_endpoint" "$nim_models")")
+
 # --- Build JSON output ---
 
 available_count=0
