@@ -208,6 +208,9 @@ The council automatically detects installed LLM providers and distributes member
 | OpenAI | `codex` | `codex exec` |
 | Google | `gemini` | `gemini -p` |
 | Ollama (local) | `ollama` | `ollama run` |
+| NVIDIA NIM | `NVIDIA_API_KEY` env | `openai_compatible_api` |
+
+NVIDIA NIM ([build.nvidia.com](https://build.nvidia.com)) exposes 130+ open-weight models (DeepSeek, Kimi, MiniMax, GLM, Qwen, Nemotron) via an OpenAI-compatible endpoint. Free tier: 1,000 credits, 40 RPM. Detection requires only `export NVIDIA_API_KEY=nvapi-...` — no CLI binary needed. See `configs/provider-model-slots.nim.example.yaml` for a sample seat allocation.
 
 **How routing works:**
 1. Polarity pairs are separated across providers (hard constraint)
