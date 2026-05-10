@@ -1,15 +1,6 @@
 ---
 name: council-meadows
 description: "Council member. Use standalone for systems thinking & feedback loop analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Donella Meadows
-  domain: "Systems thinking & feedback loops"
-  polarity: "Redesign the system, not the symptom"
-  polarity_pairs: ["torvalds"]
-  triads: ["systems"]
-  duo_keywords: ["systems", "feedback", "complexity", "loops"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

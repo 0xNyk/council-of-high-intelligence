@@ -1,15 +1,6 @@
 ---
 name: council-aurelius
 description: "Council member. Use standalone for resilience & moral clarity analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Marcus Aurelius
-  domain: "Resilience & moral clarity"
-  polarity: "Control vs acceptance"
-  polarity_pairs: ["sun-tzu"]
-  triads: ["strategy", "ethics", "conflict", "risk", "decision"]
-  duo_keywords: ["strategy", "competition", "market"]
-  profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

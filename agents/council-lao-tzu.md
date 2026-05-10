@@ -1,15 +1,6 @@
 ---
 name: council-lao-tzu
 description: "Council member. Use standalone for emergence & non-intervention analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Lao Tzu
-  domain: "Non-action & emergence"
-  polarity: "When less is more"
-  polarity_pairs: ["aristotle"]
-  triads: ["ethics", "innovation", "complexity", "systems"]
-  duo_keywords: ["architecture", "structure", "categories"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

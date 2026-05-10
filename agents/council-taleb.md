@@ -1,15 +1,6 @@
 ---
 name: council-taleb
 description: "Council member. Use standalone for antifragility & tail risk analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Nassim Taleb
-  domain: "Antifragility & tail risk"
-  polarity: "Design for the tail, not the average"
-  polarity_pairs: ["karpathy"]
-  triads: ["uncertainty"]
-  duo_keywords: ["risk", "uncertainty", "fragility", "tail"]
-  profiles: ["classic"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

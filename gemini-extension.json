@@ -25,13 +25,6 @@
       "envVar": "COUNCIL_ROUTING_PROFILE",
       "default": "auto",
       "sensitive": false
-    },
-    {
-      "name": "MCP_SLOTS_PATH",
-      "description": "Path to a custom MCP provider slots YAML file. Defaults to the bundled configs/mcp-provider-slots.yaml.",
-      "envVar": "COUNCIL_MCP_SLOTS_PATH",
-      "default": "",
-      "sensitive": false
     }
   ]
 }

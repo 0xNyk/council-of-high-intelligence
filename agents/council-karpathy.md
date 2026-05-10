@@ -1,15 +1,6 @@
 ---
 name: council-karpathy
 description: "Council member. Use standalone for neural network intuition & empirical ML analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Andrej Karpathy
-  domain: "Neural network intuition & empirical ML"
-  polarity: "How models actually learn and fail"
-  polarity_pairs: ["sutskever", "ada", "taleb"]
-  triads: ["ai", "ai-product"]
-  duo_keywords: ["ai", "ml", "neural", "model", "training"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

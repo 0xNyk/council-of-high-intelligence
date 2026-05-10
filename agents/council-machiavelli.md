@@ -1,15 +1,6 @@
 ---
 name: council-machiavelli
 description: "Council member. Use standalone for power dynamics & incentive analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Machiavelli
-  domain: "Power dynamics & realpolitik"
-  polarity: "How actors actually behave"
-  polarity_pairs: ["ada"]
-  triads: ["strategy", "conflict", "product", "ai-product", "economics"]
-  duo_keywords: ["formalization", "systems", "abstraction"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

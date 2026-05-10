@@ -1,15 +1,6 @@
 ---
 name: council-aristotle
 description: "Council member. Use standalone for categorization & structural analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Aristotle
-  domain: "Categorization & structure"
-  polarity: "Classifies everything"
-  polarity_pairs: ["lao-tzu", "munger"]
-  triads: ["architecture", "innovation", "complexity", "systems"]
-  duo_keywords: ["architecture", "structure", "categories"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity
