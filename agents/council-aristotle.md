@@ -1,9 +1,6 @@
 ---
 name: council-aristotle
 description: "Council member. Use standalone for categorization & structural analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: amber
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Aristotle
   domain: "Categorization & structure"
@@ -12,7 +9,7 @@ council:
   triads: ["architecture", "innovation", "complexity", "systems"]
   duo_keywords: ["architecture", "structure", "categories"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic", "openai", "google"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

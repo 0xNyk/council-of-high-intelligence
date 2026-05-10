@@ -1,9 +1,6 @@
 ---
 name: council-lao-tzu
 description: "Council member. Use standalone for emergence & non-intervention analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: indigo
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Lao Tzu
   domain: "Non-action & emergence"
@@ -12,7 +9,7 @@ council:
   triads: ["ethics", "innovation", "complexity", "systems"]
   duo_keywords: ["architecture", "structure", "categories"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

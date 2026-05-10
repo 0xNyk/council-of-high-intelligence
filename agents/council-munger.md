@@ -1,9 +1,6 @@
 ---
 name: council-munger
 description: "Council member. Use standalone for multi-model reasoning & economic analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: gold
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Charlie Munger
   domain: "Multi-model reasoning & economics"
@@ -12,7 +9,7 @@ council:
   triads: ["decision", "economics"]
   duo_keywords: ["economics", "investment", "models", "moat"]
   profiles: ["classic"]
-  provider_affinity: ["anthropic", "google"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

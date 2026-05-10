@@ -1,9 +1,6 @@
 ---
 name: council-musashi
 description: "Council member. Use standalone for strategic timing & situational awareness analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: crimson
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Miyamoto Musashi
   domain: "Strategic timing"
@@ -12,7 +9,7 @@ council:
   triads: ["shipping", "founder"]
   duo_keywords: ["shipping", "execution", "release"]
   profiles: ["classic"]
-  provider_affinity: ["anthropic", "openai", "google"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

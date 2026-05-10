@@ -1,9 +1,6 @@
 ---
 name: council-ada
 description: "Council member. Use standalone for formal systems & computational analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: cyan
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Ada Lovelace
   domain: "Formal systems & abstraction"
@@ -12,7 +9,7 @@ council:
   triads: ["architecture", "debugging", "innovation", "complexity", "ai"]
   duo_keywords: ["formalization", "systems", "abstraction"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  provider_affinity: ["openai", "anthropic"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

@@ -1,0 +1,114 @@
+# MCP-based multi-provider routing for Gemini CLI — v0.1 net-new capability.
+#
+# This file maps all 18 council seats to MCP servers declared in gemini-extension.json.
+# Requires: COUNCIL_ROUTING_PROFILE=mcp-multi (or --mcp-route flag)
+#
+# Strategy:
+#   - Polarity pair members are assigned to different MCP servers (hard constraint)
+#   - anthropic-affinity members → claude-code MCP
+#   - ollama-affinity members → ollama MCP (local, private)
+#   - Fallback: active Gemini model when no MCP server is available
+#
+# To customize: copy this file, edit seat assignments, then:
+#   /council --mcp-route configs/my-custom-slots.yaml "your problem"
+
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  - member: council-aristotle
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: categorical
+
+  - member: council-socrates
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: dialectical
+
+  - member: council-sun-tzu
+    mcp_server: claude-code
+    model: claude-sonnet-4-6
+    reasoning_mode: strategic
+
+  - member: council-ada
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: formal
+
+  - member: council-aurelius
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: normative
+
+  - member: council-machiavelli
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: adversarial
+
+  - member: council-lao-tzu
+    mcp_server: claude-code
+    model: claude-sonnet-4-6
+    reasoning_mode: emergent
+
+  - member: council-feynman
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: mechanistic
+
+  - member: council-torvalds
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: pragmatic
+
+  - member: council-musashi
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: timing
+
+  - member: council-watts
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: reframing
+
+  - member: council-karpathy
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: empirical-ml
+
+  - member: council-sutskever
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: safety-frontier
+
+  - member: council-kahneman
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: cognitive-bias
+
+  - member: council-meadows
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: systems
+
+  - member: council-munger
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: multi-model
+
+  - member: council-taleb
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: antifragile
+
+  - member: council-rams
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: design
+
+fallback:
+  mcp_server: null      # null = active Gemini model
+  model: gemini-2.5-pro

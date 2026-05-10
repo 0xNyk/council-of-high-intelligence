@@ -1,9 +1,6 @@
 ---
 name: council-watts
 description: "Council member. Use standalone for perspective dissolution & reframing analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: purple
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Alan Watts
   domain: "Perspective & reframing"
@@ -12,7 +9,7 @@ council:
   triads: ["product", "design", "bias"]
   duo_keywords: ["framing", "purpose", "meaning", "engineering", "theory", "pragmatism"]
   profiles: ["classic"]
-  provider_affinity: ["anthropic"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

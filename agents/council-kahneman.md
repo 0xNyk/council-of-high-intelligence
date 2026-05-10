@@ -1,9 +1,6 @@
 ---
 name: council-kahneman
 description: "Council member. Use standalone for cognitive bias detection & decision science analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: coral
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Daniel Kahneman
   domain: "Cognitive bias & decision science"
@@ -12,7 +9,7 @@ council:
   triads: ["decision", "bias"]
   duo_keywords: ["decision", "bias", "thinking", "judgment"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

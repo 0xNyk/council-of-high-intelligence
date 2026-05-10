@@ -1,9 +1,6 @@
 ---
 name: council-socrates
 description: "Council member. Use standalone for assumption destruction & dialectical analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: white
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Socrates
   domain: "Assumption destruction"
@@ -12,7 +9,7 @@ council:
   triads: ["ethics", "debugging", "conflict", "ai-safety", "bias"]
   duo_keywords: ["framing", "purpose", "meaning"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

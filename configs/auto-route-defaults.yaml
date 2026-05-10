@@ -1,18 +1,18 @@
 # Default model tier mapping per provider.
-# Used by the coordinator when auto-routing members to providers.
-# "high" = members with model: opus in frontmatter (heavyweight analysis)
-# "mid"  = members with model: sonnet in frontmatter (faster/practical)
+# Used by the coordinator when routing members to MCP servers.
+# "high" = members with mcp_affinity: anthropic (heavyweight analysis)
+# "mid"  = members with mcp_affinity: ollama (local/fast)
 
 provider_models:
   anthropic:
-    high: opus
-    mid: sonnet
+    high: claude-opus-4-7
+    mid: claude-sonnet-4-6
   openai:
-    high: gpt-5.4
-    mid: gpt-5.4
+    high: gpt-5
+    mid: gpt-5-mini
   google:
     high: gemini-2.5-pro
     mid: gemini-2.5-pro
   ollama:
-    high: null  # uses first available model from detect-providers.sh
-    mid: null
+    high: llama3.3      # override in mcp-provider-slots.yaml per seat
+    mid: llama3.3

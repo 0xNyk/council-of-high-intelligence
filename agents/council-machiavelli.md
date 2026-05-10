@@ -1,9 +1,6 @@
 ---
 name: council-machiavelli
 description: "Council member. Use standalone for power dynamics & incentive analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: dark-green
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Machiavelli
   domain: "Power dynamics & realpolitik"
@@ -12,7 +9,7 @@ council:
   triads: ["strategy", "conflict", "product", "ai-product", "economics"]
   duo_keywords: ["formalization", "systems", "abstraction"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic", "google"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity
