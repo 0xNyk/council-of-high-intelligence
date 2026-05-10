@@ -1,9 +1,6 @@
 ---
 name: council-sutskever
 description: "Council member. Use standalone for scaling frontier & AI safety analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: ice-blue
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Ilya Sutskever
   domain: "Scaling frontier & AI safety"
@@ -12,7 +9,7 @@ council:
   triads: ["ai", "ai-safety", "uncertainty"]
   duo_keywords: ["ai-safety", "alignment", "risk"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic", "openai", "google"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

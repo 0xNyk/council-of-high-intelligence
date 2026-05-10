@@ -1,0 +1,19 @@
+# Local extension installs
+~/.gemini/extensions/council-of-high-intelligence/
+
+# User-specific slot overrides
+configs/my-slots.yaml
+configs/local-*.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

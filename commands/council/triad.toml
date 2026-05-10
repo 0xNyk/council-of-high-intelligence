@@ -1,0 +1,16 @@
+description = "Convene a predefined 3-member triad by domain keyword. Usage: /council:triad <domain> <problem>"
+
+prompt = """
+Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md.
+Also read the triad reference at ${extensionPath}/skills/council/references/triads.md.
+
+Input: {{args}}
+
+Parse the first word of the input as the domain keyword (e.g., architecture, strategy, ai, shipping).
+The remainder of the input is the problem statement.
+
+Look up the domain keyword in the triads table to select the 3-member panel.
+If the keyword does not match any triad, state the available keywords and ask the user to pick one.
+
+Run FULL MODE (STEP 0 through STEP 7) with the selected triad as the panel.
+"""

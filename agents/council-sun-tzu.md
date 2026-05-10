@@ -1,9 +1,6 @@
 ---
 name: council-sun-tzu
 description: "Council member. Use standalone for adversarial strategy & competitive analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: red
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Sun Tzu
   domain: "Adversarial strategy"
@@ -12,7 +9,7 @@ council:
   triads: ["strategy", "risk", "founder", "uncertainty", "economics"]
   duo_keywords: ["strategy", "competition", "market"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  provider_affinity: ["anthropic", "google"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

@@ -1,9 +1,6 @@
 ---
 name: council-karpathy
 description: "Council member. Use standalone for neural network intuition & empirical ML analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: green
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Andrej Karpathy
   domain: "Neural network intuition & empirical ML"
@@ -12,7 +9,7 @@ council:
   triads: ["ai", "ai-product"]
   duo_keywords: ["ai", "ml", "neural", "model", "training"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["openai", "anthropic"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

@@ -1,9 +1,6 @@
 ---
 name: council-feynman
 description: "Council member. Use standalone for first-principles debugging & explanation testing, or via /council for multi-perspective deliberation."
-model: sonnet
-color: orange
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Feynman
   domain: "First-principles debugging"
@@ -12,7 +9,7 @@ council:
   triads: ["architecture", "debugging", "risk", "shipping"]
   duo_keywords: ["decision", "bias", "thinking", "judgment"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  provider_affinity: ["openai", "anthropic"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

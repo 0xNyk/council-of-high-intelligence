@@ -1,9 +1,6 @@
 ---
 name: council-taleb
 description: "Council member. Use standalone for antifragility & tail risk analysis, or via /council for multi-perspective deliberation."
-model: opus
-color: black
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Nassim Taleb
   domain: "Antifragility & tail risk"
@@ -12,7 +9,7 @@ council:
   triads: ["uncertainty"]
   duo_keywords: ["risk", "uncertainty", "fragility", "tail"]
   profiles: ["classic"]
-  provider_affinity: ["anthropic", "openai", "google"]
+  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

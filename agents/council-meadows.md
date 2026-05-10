@@ -1,9 +1,6 @@
 ---
 name: council-meadows
 description: "Council member. Use standalone for systems thinking & feedback loop analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: teal
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Donella Meadows
   domain: "Systems thinking & feedback loops"
@@ -12,7 +9,7 @@ council:
   triads: ["systems"]
   duo_keywords: ["systems", "feedback", "complexity", "loops"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic", "google"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

@@ -1,0 +1,14 @@
+description = "Convene a council of historical thinkers for structured deliberation on a problem."
+
+prompt = """
+Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and follow its execution sequence precisely.
+
+The problem under deliberation:
+{{args}}
+
+Parse any flags in the problem text (--full, --quick, --duo, --triad, --members, --profile, --mcp-route).
+If no mode flag is present, use full mode with auto-triad selection.
+If no problem text is provided after flags, ask the user to state the problem before proceeding.
+
+Follow all STEPs and [CHECKPOINT] markers from the skill. Do not skip rounds or merge steps.
+"""

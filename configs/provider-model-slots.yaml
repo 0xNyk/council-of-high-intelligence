@@ -1,0 +1,51 @@
+# Seat mapping for multi-provider exploration via MCP servers.
+# Use with: /council --mcp-route configs/provider-model-slots.yaml "..."
+#
+# MCP servers must be configured in gemini-extension.json under "mcpServers".
+# Available servers (default config): claude-code, ollama
+# Add openai or other servers to gemini-extension.json to use them here.
+
+profile: exploration-orthogonal
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true          # polarity pairs go to different MCP servers
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  socrates:
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: analytical
+  feynman:
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: mechanistic
+  sun-tzu:
+    mcp_server: claude-code
+    model: claude-sonnet-4-6
+    reasoning_mode: strategic
+  machiavelli:
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: adversarial
+  ada:
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: formal
+  lao-tzu:
+    mcp_server: claude-code
+    model: claude-sonnet-4-6
+    reasoning_mode: emergent
+  aurelius:
+    mcp_server: claude-code
+    model: claude-opus-4-7
+    reasoning_mode: normative
+  torvalds:
+    mcp_server: ollama
+    model: llama3.3
+    reasoning_mode: pragmatic
+
+fallback:
+  mcp_server: null    # null = use active Gemini model
+  model: gemini-2.5-pro

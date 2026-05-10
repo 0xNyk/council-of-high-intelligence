@@ -1,0 +1,35 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y jq shellcheck
+          pip install tomli 2>/dev/null || true
+          npm install -g markdownlint-cli
+
+      - name: Validate extension (JSON, TOML, frontmatter, required files)
+        run: bash scripts/validate.sh
+
+      - name: Shellcheck
+        run: shellcheck scripts/install.sh scripts/validate.sh
+
+      - name: Markdownlint
+        run: |
+          markdownlint \
+            --disable MD013 MD033 MD041 \
+            README.md CONTRIBUTING.md CHANGELOG.md NOTICE \
+            "skills/**/*.md" \
+            "docs/**/*.md" \
+            "agents/**/*.md"

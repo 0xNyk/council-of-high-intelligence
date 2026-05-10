@@ -1,33 +1,55 @@
 # Contributing
 
-Thanks for contributing to Council of High Intelligence.
+## Development Setup
 
-## Development flow
+```bash
+git clone https://github.com/Alpsource/council-of-high-intelligence-gemini
+cd council-of-high-intelligence-gemini
 
-1. Sync main:
-   - `git checkout main`
-   - `git pull origin main`
-2. Create a feature branch:
-   - `git checkout -b feat/your-change`
-3. Make changes and validate:
-   - `shellcheck install.sh` (for installer changes)
-   - `./install.sh --dry-run`
-   - `./scripts/council-simulation-checklist.sh`
-4. Commit with a clear message and open a PR to `main`.
+# Link as a live Gemini extension (changes visible without reinstall)
+gemini extensions link $(pwd)
+```
 
-## Branch cleanup after merge
+## Branching
 
-If a merged branch still appears in your local remote-tracking list, prune stale refs:
+```
+main       — tagged releases only
+develop    — integration branch
+feat/*     — new capabilities
+fix/*      — bug fixes
+docs/*     — documentation only
+```
 
-- `git fetch origin --prune`
+## Validation (run before every commit)
 
-To remove a merged local branch:
+```bash
+# Smoke test: JSON validity, TOML validity, frontmatter checks, required files
+./scripts/validate.sh
 
-- `git branch -d feat/your-change`
+# Shell script linting
+shellcheck scripts/*.sh
 
-## Style notes
+# Dry-run installer
+./scripts/install.sh --dry-run
+./scripts/install.sh --dry-run --gemini
+```
 
-- Keep docs and installer behavior in sync.
-- Prefer explicit error handling and clear user-facing output in scripts.
-- Avoid hardcoded counts when files can be discovered dynamically.
-- Keep `demos/session-pack.md` aligned with active profiles and triads.
+## Adding or Modifying Agents
+
+Agent files live in `agents/council-<name>.md`. Required frontmatter fields:
+- `name` — must match filename (`council-<name>`)
+- `description` — one-line summary used for skill discovery
+
+Preserve section order per the upstream convention:
+Identity → Grounding Protocol → Analytical Method → What You See → What You Miss → When Deliberating → Output Format (Council Round 2) → Output Format (Standalone)
+
+## Modifying the Skill
+
+After changes to `skills/council/SKILL.md`, run at least one deliberation in each mode (full, quick, duo) to verify the protocol still works end-to-end.
+
+## Pull Requests
+
+- Keep PRs focused (one concern per PR)
+- Update `CHANGELOG.md` under `[Unreleased]`
+- Run `./scripts/validate.sh` and confirm all checks pass
+- Tag the upstream original in the PR description if you're back-porting a persona fix

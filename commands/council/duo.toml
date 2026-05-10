@@ -1,0 +1,12 @@
+description = "Two-member dialectic using a polarity pair. Fast opposing perspectives on a decision."
+
+prompt = """
+Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and run DUO MODE.
+
+The problem under deliberation:
+{{args}}
+
+If --members name1,name2 is present, use those two members.
+Otherwise, match the problem against the Duo Polarity Pairs table in the skill and select the best-fitting pair.
+Run the Duo Mode Sequence (DUO STEP 0 through DUO STEP 4) only.
+"""

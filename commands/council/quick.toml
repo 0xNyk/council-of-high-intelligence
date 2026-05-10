@@ -1,0 +1,12 @@
+description = "Rapid 2-round council deliberation. Skips cross-examination for fast decisions."
+
+prompt = """
+Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and run QUICK MODE.
+
+The problem under deliberation:
+{{args}}
+
+Parse any panel flags (--members, --triad, --profile) from the problem text.
+If none, use auto-triad selection.
+Run the Quick Mode Sequence (QUICK STEP 0 through QUICK STEP 3) only. Do not run the full 3-round protocol.
+"""

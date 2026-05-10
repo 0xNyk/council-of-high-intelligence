@@ -1,0 +1,21 @@
+Council of High Intelligence — Gemini CLI Port
+===============================================
+
+This project is a Gemini CLI port of the Council of High Intelligence
+by @0xNyk (https://github.com/0xNyk/council-of-high-intelligence).
+
+The persona definitions, deliberation protocol, triad taxonomy, polarity
+pairs, enforcement rules, and verdict templates are derived from the
+original work and used under the MIT License.
+
+Original repository: https://github.com/0xNyk/council-of-high-intelligence
+Original author:     @0xNyk
+License:             MIT (see LICENSE)
+
+Modifications in this port:
+- Translated from Claude Code extension format to Gemini CLI extension format
+- Replaced Claude subagent spawning with Gemini sub-agent persona embodiment
+- Replaced detect-providers.sh auto-routing with native MCP server routing
+- Added configs/mcp-provider-slots.yaml for MCP-based multi-provider deliberation
+- Extended install.sh with --gemini / --gemini-only / --all targets
+- Extracted triad taxonomy and verdict templates to progressive reference files

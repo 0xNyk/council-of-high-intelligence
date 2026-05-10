@@ -1,9 +1,6 @@
 ---
 name: council-torvalds
 description: "Council member. Use standalone for pragmatic engineering & shipping analysis, or via /council for multi-perspective deliberation."
-model: sonnet
-color: yellow
-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Linus Torvalds
   domain: "Pragmatic engineering"
@@ -12,7 +9,7 @@ council:
   triads: ["shipping", "product", "founder", "ai-product", "design"]
   duo_keywords: ["shipping", "execution", "release", "engineering", "theory", "pragmatism"]
   profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  provider_affinity: ["openai", "anthropic"]
+  mcp_affinity: ["ollama"]
 ---
 
 ## Identity
