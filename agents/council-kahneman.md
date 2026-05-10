@@ -1,15 +1,6 @@
 ---
 name: council-kahneman
 description: "Council member. Use standalone for cognitive bias detection & decision science analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Daniel Kahneman
-  domain: "Cognitive bias & decision science"
-  polarity: "Your own thinking is the first error"
-  polarity_pairs: ["feynman"]
-  triads: ["decision", "bias"]
-  duo_keywords: ["decision", "bias", "thinking", "judgment"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

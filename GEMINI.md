@@ -27,20 +27,15 @@ Meadows, Munger, Taleb, Dieter Rams.
 Each persona file is in `agents/council-<name>.md` with its analytical lens, grounding
 protocol, deliberation output format, and standalone output format.
 
-## MCP Multi-Provider Routing (v0.1 net-new capability)
+## MCP Multi-Provider Routing (opt-in)
 
-To run a deliberation with members distributed across Claude, Ollama, and Gemini:
+By default all 18 members run on the active Gemini model. To distribute members across
+Claude, Ollama, and Gemini:
 
-1. Ensure the `claude-code` and/or `ollama` MCP servers declared in `gemini-extension.json`
-   are available on your machine.
-2. Set the routing profile:
-   ```
-   export COUNCIL_ROUTING_PROFILE=mcp-multi
-   ```
+1. Add `claude-code` and/or `ollama` to your `~/.gemini/settings.json` mcpServers block.
+2. Set `export COUNCIL_ROUTING_PROFILE=mcp-multi`.
 3. Optionally customize seat assignments in `configs/mcp-provider-slots.yaml`.
-4. Invoke `/council` — the coordinator will route each member to its assigned MCP server.
-
-Without MCP servers configured, all members run on the active Gemini model (default behavior).
+4. Invoke `/council` — the coordinator routes each member to its assigned MCP server.
 
 ## Reference Files
 

@@ -1,15 +1,6 @@
 ---
 name: council-sun-tzu
 description: "Council member. Use standalone for adversarial strategy & competitive analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Sun Tzu
-  domain: "Adversarial strategy"
-  polarity: "Reads terrain & competition"
-  polarity_pairs: ["aurelius"]
-  triads: ["strategy", "risk", "founder", "uncertainty", "economics"]
-  duo_keywords: ["strategy", "competition", "market"]
-  profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

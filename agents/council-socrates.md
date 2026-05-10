@@ -1,15 +1,6 @@
 ---
 name: council-socrates
 description: "Council member. Use standalone for assumption destruction & dialectical analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Socrates
-  domain: "Assumption destruction"
-  polarity: "Questions everything"
-  polarity_pairs: ["feynman", "watts"]
-  triads: ["ethics", "debugging", "conflict", "ai-safety", "bias"]
-  duo_keywords: ["framing", "purpose", "meaning"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

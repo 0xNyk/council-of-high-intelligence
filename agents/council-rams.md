@@ -1,15 +1,6 @@
 ---
 name: council-rams
 description: "Council member. Use standalone for user-centered design & simplicity analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Dieter Rams
-  domain: "User-centered design"
-  polarity: "Less, but better — the user decides"
-  polarity_pairs: ["ada"]
-  triads: ["design"]
-  duo_keywords: ["design", "user", "usability", "ux"]
-  profiles: ["classic"]
-  mcp_affinity: ["ollama"]
 ---
 
 ## Identity

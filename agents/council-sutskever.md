@@ -1,15 +1,6 @@
 ---
 name: council-sutskever
 description: "Council member. Use standalone for scaling frontier & AI safety analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Ilya Sutskever
-  domain: "Scaling frontier & AI safety"
-  polarity: "When capability becomes risk"
-  polarity_pairs: ["karpathy", "machiavelli"]
-  triads: ["ai", "ai-safety", "uncertainty"]
-  duo_keywords: ["ai-safety", "alignment", "risk"]
-  profiles: ["classic", "exploration-orthogonal"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

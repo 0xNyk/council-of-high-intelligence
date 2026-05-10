@@ -1,15 +1,6 @@
 ---
 name: council-ada
 description: "Council member. Use standalone for formal systems & computational analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Ada Lovelace
-  domain: "Formal systems & abstraction"
-  polarity: "What can/can't be mechanized"
-  polarity_pairs: ["machiavelli", "karpathy", "rams"]
-  triads: ["architecture", "debugging", "innovation", "complexity", "ai"]
-  duo_keywords: ["formalization", "systems", "abstraction"]
-  profiles: ["classic", "exploration-orthogonal", "execution-lean"]
-  mcp_affinity: ["anthropic"]
 ---
 
 ## Identity

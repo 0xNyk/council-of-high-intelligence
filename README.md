@@ -116,13 +116,27 @@ This port is honest about what changed and what's the same.
 
 ## MCP Multi-Provider Routing
 
-The key new capability in v0.1. Route different council members to different model providers — Claude for depth, Ollama for privacy, Gemini as the coordinator — all inside a single deliberation session.
+Route different council members to different model providers — Claude for depth, Ollama for privacy, Gemini as the coordinator — all inside a single deliberation session.
+
+By default the extension runs all 18 members on your active Gemini model with no extra setup. MCP routing is opt-in.
 
 ### Setup
 
-1. Ensure the MCP servers you want are available:
-   - **Claude**: `npm install -g @anthropic-ai/claude-code` (requires Anthropic API key)
-   - **Ollama**: [Install Ollama](https://ollama.ai) and pull a model (`ollama pull llama3.3`)
+1. Register the MCP servers you want in your Gemini CLI settings (`~/.gemini/settings.json`):
+   ```json
+   {
+     "mcpServers": {
+       "claude-code": {
+         "command": "npx",
+         "args": ["-y", "@anthropic-ai/claude-code", "--mcp"]
+       },
+       "ollama": {
+         "command": "ollama",
+         "args": ["serve"]
+       }
+     }
+   }
+   ```
 
 2. Set the routing profile:
    ```bash
@@ -134,16 +148,7 @@ The key new capability in v0.1. Route different council members to different mod
    /council --mcp-route configs/mcp-provider-slots.yaml --triad ai What are the limits of current foundation models?
    ```
 
-The coordinator reads `configs/mcp-provider-slots.yaml`, assigns each panel member to their MCP server, and routes Round 1, 2, and 3 accordingly.
-
-### Customize Routing
-
-Copy `configs/mcp-provider-slots.yaml`, edit seat assignments, then point at your file:
-```
-/council --mcp-route configs/my-slots.yaml "Should we open-source?"
-```
-
-The default `mcp-provider-slots.yaml` assigns `anthropic`-affinity members (Socrates, Ada, Aurelius, Sutskever, etc.) to `claude-code` and pragmatic/empirical members (Feynman, Torvalds, Karpathy, Meadows, etc.) to `ollama`.
+The coordinator reads `configs/mcp-provider-slots.yaml`, assigns each panel member to their MCP server, and routes accordingly. The default slots file assigns `anthropic`-affinity members (Socrates, Ada, Sutskever, etc.) to `claude-code` and pragmatic/empirical members (Feynman, Torvalds, Karpathy, etc.) to `ollama`.
 
 ### Polarity Pair Separation
 

@@ -1,15 +1,6 @@
 ---
 name: council-musashi
 description: "Council member. Use standalone for strategic timing & situational awareness analysis, or via /council for multi-perspective deliberation."
-council:
-  figure: Miyamoto Musashi
-  domain: "Strategic timing"
-  polarity: "The decisive strike"
-  polarity_pairs: ["torvalds"]
-  triads: ["shipping", "founder"]
-  duo_keywords: ["shipping", "execution", "release"]
-  profiles: ["classic"]
-  mcp_affinity: ["ollama"]
 ---
 
 ## Identity
