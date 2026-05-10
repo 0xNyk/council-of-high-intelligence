@@ -3,21 +3,6 @@
   "version": "0.1.0",
   "description": "Multi-persona deliberation framework: 18 historical-thinker council members for structured analysis of complex decisions, with native MCP multi-provider routing.",
   "contextFileName": "GEMINI.md",
-  "mcpServers": {
-    "claude-code": {
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/claude-code", "--mcp"],
-      "description": "Claude (Anthropic) as a council provider via MCP. Enables Anthropic-affinity members to run on Claude models during multi-provider deliberation."
-    },
-    "ollama": {
-      "command": "ollama",
-      "args": ["serve"],
-      "env": {
-        "OLLAMA_HOST": "http://localhost:11434"
-      },
-      "description": "Local Ollama as a council provider via MCP. Enables privacy-preserving or offline deliberation for selected council seats."
-    }
-  },
   "settings": [
     {
       "name": "ROUTING_PROFILE",
