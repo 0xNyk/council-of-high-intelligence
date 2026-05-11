@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate extension before release
+        run: bash scripts/validate.sh
+
+      - name: Build extension tarball
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          ARCHIVE="council-of-high-intelligence-gemini-${VERSION}.tar.gz"
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='scripts' \
+              --exclude='docs' \
+              -czf "${ARCHIVE}" .
+          echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          printf 'notes<<EOF\n%s\nEOF\n' "${NOTES}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.notes }}
+          files: ${{ env.ARCHIVE }}
+          fail_on_unmatched_files: true
