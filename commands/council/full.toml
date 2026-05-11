@@ -1,7 +1,9 @@
 description = "Full 3-round council deliberation with all 18 members. Maximum epistemic coverage."
 
 prompt = """
+Extension path: ${extensionPath}
 Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and run FULL MODE with all 18 members.
+When the skill refers to ${extensionPath}, use the path above.
 
 The problem under deliberation:
 {{args}}
