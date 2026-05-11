@@ -1,7 +1,9 @@
 description = "Two-member dialectic using a polarity pair. Fast opposing perspectives on a decision."
 
 prompt = """
+Extension path: ${extensionPath}
 Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and run DUO MODE.
+When the skill refers to ${extensionPath}, use the path above.
 
 The problem under deliberation:
 {{args}}

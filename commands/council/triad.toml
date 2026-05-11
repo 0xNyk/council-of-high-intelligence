@@ -1,8 +1,10 @@
 description = "Convene a predefined 3-member triad by domain keyword. Usage: /council:triad <domain> <problem>"
 
 prompt = """
+Extension path: ${extensionPath}
 Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md.
 Also read the triad reference at ${extensionPath}/skills/council/references/triads.md.
+When the skill refers to ${extensionPath}, use the path above.
 
 Input: {{args}}
 

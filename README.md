@@ -1,5 +1,9 @@
 # Council of High Intelligence — Gemini CLI
 
+<p align="center">
+  <img src="assets/landing.png" alt="Council of High Intelligence" width="100%">
+</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](CHANGELOG.md)
 [![Gemini Extension](https://img.shields.io/badge/Gemini-Extension-blue.svg)](gemini-extension.json)
@@ -34,6 +38,10 @@ gemini extensions install https://github.com/Alpsource/council-of-high-intellige
 ```
 
 That's it. The coordinator auto-selects the best 3-member triad for your problem and runs the full 3-round deliberation.
+
+<p align="center">
+  <img src="assets/demo.gif" alt="Council deliberation demo">
+</p>
 
 ---
 

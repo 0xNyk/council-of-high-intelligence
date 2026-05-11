@@ -1,7 +1,9 @@
 description = "Rapid 2-round council deliberation. Skips cross-examination for fast decisions."
 
 prompt = """
+Extension path: ${extensionPath}
 Read the Council Coordinator skill at ${extensionPath}/skills/council/SKILL.md and run QUICK MODE.
+When the skill refers to ${extensionPath}, use the path above.
 
 The problem under deliberation:
 {{args}}
