@@ -96,7 +96,7 @@ if [[ -n "${NVIDIA_API_KEY:-}" ]]; then
       nim_available=true
     fi
     # Default model suggestions (verify live IDs at build.nvidia.com/models).
-    nim_models='"deepseek-ai/deepseek-v3.2","moonshotai/kimi-k2.5","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
+    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
   fi
 fi
 providers+=("$(json_provider "nvidia_nim" "$nim_available" "openai_compatible_api" "$nim_endpoint" "$nim_models")")
