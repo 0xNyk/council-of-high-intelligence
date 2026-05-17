@@ -83,6 +83,17 @@ pass "Chairman role wired in SKILL.codex.md"
 grep -q "chairman_defaults" configs/auto-route-defaults.yaml || fail "chairman_defaults block missing in auto-route-defaults.yaml (issue #18)"
 pass "Chairman defaults configured in auto-route-defaults.yaml"
 
+# Verdict actionability sections (issue #21)
+grep -q "Acceptable Compromises" SKILL.md || fail "Acceptable Compromises section missing in SKILL.md (issue #21)"
+grep -q "Kill Criteria" SKILL.md || fail "Kill Criteria section missing in SKILL.md (issue #21)"
+grep -q "Concrete Next Step" SKILL.md || fail "Concrete Next Step section missing in SKILL.md (issue #21)"
+pass "Verdict actionability sections present in SKILL.md (Acceptable Compromises / Kill Criteria / Concrete Next Step)"
+
+grep -q "Acceptable Compromises" SKILL.codex.md || fail "Acceptable Compromises missing in SKILL.codex.md (issue #21)"
+grep -q "Kill Criteria" SKILL.codex.md || fail "Kill Criteria missing in SKILL.codex.md (issue #21)"
+grep -q "Concrete Next Step" SKILL.codex.md || fail "Concrete Next Step missing in SKILL.codex.md (issue #21)"
+pass "Verdict actionability sections present in SKILL.codex.md"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")

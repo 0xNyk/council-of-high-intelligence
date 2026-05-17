@@ -188,15 +188,18 @@ Return a verdict with this order, produced by the Chairman:
 
 1. `Selected Panel` (members + mode)
 2. `Chairman` (name, provider, model, selection rationale)
-3. `Unresolved Questions`
-4. `Key Agreements`
-5. `Key Disagreements`
-6. `Decision Options` (2-4 options with tradeoffs)
-7. `Recommended Next Steps` (actionable, sequenced)
-8. `Confidence` (high/medium/low + why)
-9. `Execution Reliability` (live/degraded/offline seat counts and any timeout caveats)
+3. `Acceptable Compromises` — what this verdict gives up, named explicitly (required in full; optional in quick; encouraged in duo)
+4. `Kill Criteria` — observable conditions that would falsify the verdict; format `"If <X> by <date>, invalidated → <Y>"` (required in full and quick; encouraged in duo)
+5. `Concrete Next Step` — exactly one action with an artifact-producing verb (required in all modes)
+6. `Unresolved Questions`
+7. `Key Agreements`
+8. `Key Disagreements`
+9. `Decision Options` (2-4 options with tradeoffs)
+10. `Recommended Next Steps` (additional actions beyond Concrete Next Step; ordered)
+11. `Confidence` (high/medium/low + why)
+12. `Execution Reliability` (live/degraded/offline seat counts and any timeout caveats)
 
-Always preserve dissent. Never flatten disagreements into fake consensus.
+Always preserve dissent. Never flatten disagreements into fake consensus. Sections 3-5 are non-negotiable in full mode — they make the verdict operational (observable, falsifiable, actionable) instead of advisory prose.
 
 **Chairman fallback**: if the Chairman call fails or times out, the coordinator synthesizes the verdict directly and annotates `Chairman: <name> (FAILED — synthesized by coordinator fallback)`.
 

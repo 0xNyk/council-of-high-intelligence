@@ -605,12 +605,20 @@ Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairm
 ### Provider Routing
 {Routing table: member → provider → model. Note any fallbacks triggered. If single-provider (Claude-only): "Default models (single provider)."}
 
+### Acceptable Compromises
+{What this verdict gives up, named explicitly. One bullet per compromise; ≤2 sentences each. If "nothing is being given up," say so and explain why — most non-trivial decisions trade something.}
+
+### Kill Criteria
+{The specific observable conditions that would falsify this verdict. Each criterion must be (a) observable without re-convening the council, (b) tied to a measurable threshold or event, and (c) achievable within a stated time window. Format: "If <X> observed by <date>, the verdict is invalidated and we should <Y>."}
+
+### Concrete Next Step
+{Exactly one action. Named, doable, owned. Format: "<verb> <object> by <date>." Not "consider," not "explore" — verbs that produce an artifact (write, push, merge, run, file, measure).}
 
 ### Unresolved Questions
 {Questions the council could not answer — inputs needed from user. Lead with what the council does NOT know.}
 
 ### Recommended Next Steps
-{Concrete actions, ordered by priority}
+{Additional concrete actions beyond the single Concrete Next Step above, ordered by priority. If the Concrete Next Step is sufficient, write "N/A — see Concrete Next Step."}
 
 ### Consensus & Agreement
 {The position that survived deliberation and what members converged on — or "No consensus reached" with explanation}
@@ -651,6 +659,15 @@ After acting on this verdict, revisit: Was this verdict useful? Was the recommen
 
 ### Recommended Action
 {Single concrete recommendation}
+
+### Kill Criteria
+{Observable conditions that would falsify this verdict. Required. Format: "If <X> observed by <date>, the verdict is invalidated and we should <Y>."}
+
+### Concrete Next Step
+{Exactly one action. Required. Format: "<verb> <object> by <date>." Artifact-producing verbs only — no "consider" or "explore".}
+
+### Acceptable Compromises (optional)
+{What this verdict gives up, named explicitly. Optional in quick mode — skip if genuinely trivial.}
 
 ### Positions
 - **{Name}**: {Core position in 1-2 sentences}
@@ -694,6 +711,12 @@ After acting on this verdict, revisit: Was this useful? What happened?
 
 ### The Core Tension
 {The irreducible disagreement and what drives it}
+
+### Concrete Next Step
+{Exactly one action — the decision a reader can take after weighing both sides. Required even in duo mode. Format: "<verb> <object> by <date>."}
+
+### Kill Criteria (encouraged)
+{Observable conditions that would tip the balance toward the other side after acting on the Concrete Next Step. Encouraged but not required in duo mode — duo is dialectic, not decision-issuing.}
 
 ### Follow-Up
 After deciding, revisit: Which perspective proved more useful? What happened?
