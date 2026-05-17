@@ -297,7 +297,7 @@ Emit to user:
 - If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses, still with anonymized labels)
 - If panel size ≥ 5: run all members in **PARALLEL** (each sees all anonymized Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs with the same labels) if cross-contamination would meaningfully improve quality.
 
-Prompt template for each member:
+Prompt template for each member (the **Anti-conformity directive** below is evidence-based — see Choi et al., arXiv:2510.07517; Cui et al., Free-MAD arXiv:2509.11035; controlled-study arXiv:2511.07784):
 ```
 You are council-{name} in Round 2 of a structured deliberation.
 Read your agent definition at ~/.claude/agents/council-{name}.md.
@@ -313,6 +313,13 @@ Here are the (anonymized) Round 1 analyses from all council members:
 {anonymized Round 1 outputs, headed by Member A/B/C/…}
 
 {If Batch B: "Here are Round 2 responses from earlier members (same labels):\n{Batch A Round 2 outputs}"}
+
+**Anti-conformity directive.** If your Round 1 position was correct, defend it.
+Do not update merely because peers disagree, because consensus is forming, or
+because a position is repeated by multiple members. Update only when presented
+with sound, validity-aligned reasoning that exposes a specific flaw in your
+earlier argument. Naming that flaw is required when you update; if you cannot
+name it, you should not update.
 
 Now respond using your Output Format (Council Round 2):
 1. Which member's position do you most disagree with, and why? Engage their specific claims. Refer to them as "Member X".
@@ -429,6 +436,11 @@ Here are the (anonymized) Round 1 analyses from the other members:
 **Identity is masked.** Evaluate by argument quality, not by source. Refer to
 peers as "Member X" — do not use real council member names in this round.
 
+**Anti-conformity directive.** If your Round 1 position was correct, defend it.
+Do not update merely because peers disagree or because consensus is forming.
+Update only when presented with sound reasoning that exposes a specific flaw
+in your earlier argument; if you cannot name the flaw, do not update.
+
 State your final position in 75 words or less. Note any key disagreement
 (call out the specific Member whose position you push back on). Be direct.
 ```
@@ -481,6 +493,11 @@ Send each member the other's Round 1 output:
 Your opponent ({other member name}) argued:
 
 {other member's Round 1 output}
+
+**Anti-conformity directive.** If your Round 1 position was correct, defend it.
+Concede only what is specifically and validly disproved — not what merely sounds
+forceful. Name the flaw in your earlier argument when conceding; if you cannot
+name it, the concession is not warranted.
 
 Respond directly:
 1. Where are they wrong? Engage their specific claims.

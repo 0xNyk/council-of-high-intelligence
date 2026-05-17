@@ -61,6 +61,16 @@ pass "Round 2 anonymization wired in SKILL.md"
 grep -q "anonymiz" SKILL.codex.md || fail "Round 2 anonymization missing in SKILL.codex.md (issue #17)"
 pass "Round 2 anonymization wired in SKILL.codex.md"
 
+# Anti-conformity directive (issue #19) — must be in every Round 2 prompt
+ac_count_skill=$(grep -c "Anti-conformity directive" SKILL.md || true)
+if [[ "$ac_count_skill" -lt 3 ]]; then
+  fail "Anti-conformity directive missing from one or more Round 2 prompts in SKILL.md (issue #19; expected ≥3 occurrences, found ${ac_count_skill})"
+fi
+pass "Anti-conformity directive present in all 3 Round 2 prompts in SKILL.md"
+
+grep -q "Anti-conformity directive" SKILL.codex.md || fail "Anti-conformity directive missing in SKILL.codex.md (issue #19)"
+pass "Anti-conformity directive present in SKILL.codex.md"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")
