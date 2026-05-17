@@ -103,6 +103,14 @@ pass "openai_compatible_api archetype wired in SKILL.md (dispatch + base_url + a
 grep -q "openai_compatible_api\|openai-compatible\|OpenAI-Compatible" SKILL.codex.md || fail "openai_compatible_api archetype missing in SKILL.codex.md (issue #16)"
 pass "openai_compatible_api archetype wired in SKILL.codex.md"
 
+# Session Metadata schema (issue #7 Phase 1)
+grep -q "Session Metadata" SKILL.md || fail "Session Metadata block missing in SKILL.md (issue #7)"
+grep -q "schema_version: 1" SKILL.md || fail "schema_version: 1 marker missing in SKILL.md Session Metadata (issue #7)"
+pass "Session Metadata schema wired in SKILL.md"
+
+grep -q "Session Metadata\|session metadata\|session_metadata" SKILL.codex.md || fail "Session Metadata missing in SKILL.codex.md (issue #7)"
+pass "Session Metadata referenced in SKILL.codex.md"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")

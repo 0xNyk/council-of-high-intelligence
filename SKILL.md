@@ -471,6 +471,25 @@ Pass the rendered prompt to the Chairman's `exec_method` from STEP 1.7. Capture 
 
 **Fallback**: If the Chairman call fails or times out (using the same 60s/120s budget as Round 1), fall back to the coordinator producing the verdict directly. Annotate the verdict metadata: `Chairman: <name> (FAILED — synthesized by coordinator fallback)`.
 
+### STEP 8: Append Session Metadata (issue #7, Phase 1)
+
+After the verdict is rendered, the coordinator appends a `Session Metadata` block at the end. Best-effort — fill every field that's knowable from coordinator state; write `~unknown` for any field the host runtime doesn't expose. The block uses a fixed `schema_version: 1` so future log aggregation can rely on the shape.
+
+Required fields:
+- `schema_version: 1`
+- `mode`: full | quick | duo | triad
+- `panel_size`: integer
+- `rounds_run`: integer (actual, not target — count any rounds that were truncated)
+- `tools_used`: yes if any subagent invoked Read/Grep/Glob/Bash/WebSearch/WebFetch; no otherwise
+- `provider_count`: from the detection JSON
+- `fallbacks_triggered`: list of `member→provider/model` lines, or `none`
+
+Best-effort fields (write `~unknown` if not available):
+- `input_tokens_estimate`, `output_tokens_estimate` (host-runtime dependent)
+- `duration_seconds`
+
+This block is intentionally not a sub-section of the verdict — it's session telemetry appended below a separator. Reasoning: keeps it cheap to grep, future-easy to redirect to a log file, and avoids polluting the auditable decision artifact with infra noise. Phase 2 (benchmarking harness) and Phase 3 (cost/quality sweet spots) build on this same schema once 5–10 real sessions have been collected.
+
 ---
 
 ## Quick Mode Sequence (`--quick`)
@@ -664,6 +683,23 @@ Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairm
 
 ### Follow-Up
 After acting on this verdict, revisit: Was this verdict useful? Was the recommended action taken? What happened? {This section is a prompt for the user, not filled by the council.}
+
+---
+
+### Session Metadata
+```
+schema_version: 1
+mode: full | quick | duo | triad
+panel_size: <N>
+rounds_run: <N>
+chairman_failed_fallback: yes | no
+tools_used: yes | no   # did members read files, grep, fetch URLs, etc.
+input_tokens_estimate: ~<N>k    # best-effort if available from the host runtime
+output_tokens_estimate: ~<N>k   # best-effort
+duration_seconds: ~<N>
+provider_count: <N>             # from detect-providers.sh
+fallbacks_triggered: <list of "member→provider/model" entries, or "none">
+```
 ```
 
 ### Quick Verdict
@@ -704,6 +740,22 @@ After acting on this verdict, revisit: Was this verdict useful? Was the recommen
 
 ### Follow-Up
 After acting on this verdict, revisit: Was this useful? What happened?
+
+---
+
+### Session Metadata
+```
+schema_version: 1
+mode: quick
+panel_size: <N>
+rounds_run: 2
+tools_used: yes | no
+input_tokens_estimate: ~<N>k
+output_tokens_estimate: ~<N>k
+duration_seconds: ~<N>
+provider_count: <N>
+fallbacks_triggered: <list or "none">
+```
 ```
 
 ### Duo Verdict
@@ -743,6 +795,22 @@ After acting on this verdict, revisit: Was this useful? What happened?
 
 ### Follow-Up
 After deciding, revisit: Which perspective proved more useful? What happened?
+
+---
+
+### Session Metadata
+```
+schema_version: 1
+mode: duo
+panel_size: 2
+rounds_run: 3
+tools_used: yes | no
+input_tokens_estimate: ~<N>k
+output_tokens_estimate: ~<N>k
+duration_seconds: ~<N>
+provider_count: <N>
+fallbacks_triggered: <list or "none">
+```
 ```
 
 ---
