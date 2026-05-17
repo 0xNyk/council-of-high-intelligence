@@ -136,6 +136,17 @@ Wait with `spawn_timeout_ms`. If a seat fails or times out:
 
 If live seats drop below `hard_min_live_seats`, switch to fully simulated mode for all seats and state this explicitly.
 
+### Step 3.5: OpenAI-Compatible Seats (NIM and future)
+
+For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's `spawn_agent`:
+
+- Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
+- Resolve the API key from the env var at routing time. Never inline.
+- POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens: 1200`).
+- Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and apply the standard fallback (anthropic per the agent's `model` frontmatter).
+- Per-seat timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+- The Round 2 anonymization protocol (Step 4) and Chairman selection (Step 5) apply equally to NIM seats — no special-case logic.
+
 ### Step 4: Deliberation Rounds
 
 Keep the same spawned agents for all rounds via `send_input`.

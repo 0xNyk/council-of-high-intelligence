@@ -94,6 +94,15 @@ grep -q "Kill Criteria" SKILL.codex.md || fail "Kill Criteria missing in SKILL.c
 grep -q "Concrete Next Step" SKILL.codex.md || fail "Concrete Next Step missing in SKILL.codex.md (issue #21)"
 pass "Verdict actionability sections present in SKILL.codex.md"
 
+# OpenAI-compatible API archetype (issue #16) — must be wired in dispatch + routing
+grep -q "openai_compatible_api" SKILL.md || fail "openai_compatible_api archetype missing in SKILL.md (issue #16)"
+grep -q "base_url" SKILL.md || fail "base_url handling missing in SKILL.md (issue #16)"
+grep -q "api_key_env" SKILL.md || fail "api_key_env handling missing in SKILL.md (issue #16)"
+pass "openai_compatible_api archetype wired in SKILL.md (dispatch + base_url + api_key_env)"
+
+grep -q "openai_compatible_api\|openai-compatible\|OpenAI-Compatible" SKILL.codex.md || fail "openai_compatible_api archetype missing in SKILL.codex.md (issue #16)"
+pass "openai_compatible_api archetype wired in SKILL.codex.md"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")

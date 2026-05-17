@@ -183,7 +183,8 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
    - Prefer one provider per seat until pool exhausted
    - Avoid placing polarity pair members on same provider when alternatives exist
    - If unavoidable, use different model families or reasoning modes
-4. Log routing metadata: member → provider → model
+4. **OpenAI-compatible seats**: when a seat declares a provider whose archetype is `openai_compatible_api` (e.g. `provider: nvidia_nim`, future `together`, `fireworks`, `vllm`), the seat YAML MUST include `base_url` and `api_key_env`. The coordinator resolves the API key from the named env var at routing time — never inline the value. If the env var is unset, mark the seat as unavailable and trigger the per-seat fallback path (Path C anthropic default for that member only). Set `exec_method: openai_compatible_api` for the seat.
+5. Log routing metadata: member → provider → model → exec_method (e.g. `feynman → nvidia_nim → deepseek-ai/deepseek-v4-pro → openai_compatible_api`).
 
 **Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
 1. Run the detection script via Bash: `bash ~/.claude/skills/council/scripts/detect-providers.sh`
@@ -193,9 +194,10 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 
 **Auto-routing algorithm** (apply in order):
 1. **Polarity pair separation** (hard constraint): For any polarity pair where both members are on the panel, assign them to different providers. Check the `council.polarity_pairs` field in each member's frontmatter.
-2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members.
-3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array.
-4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml`. Members with `model: sonnet` get mid-tier models.
+2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. NIM (`nvidia_nim`) is treated as a single "provider" for spread purposes even though it serves multiple model families — the within-NIM diversity is captured by `models[]`.
+3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array. Members whose affinity does not list `nvidia_nim` should be assigned NIM only when no other provider has capacity.
+4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml` `provider_models.<provider>.high`. Members with `model: sonnet` get `.mid`. For NIM, `high` is the largest available reasoning model (default `deepseek-ai/deepseek-v4-pro`); `mid` is a smaller/faster variant.
+5. **OpenAI-compatible seat hydration**: For every seat assigned to a provider with `exec_method: openai_compatible_api`, the coordinator reads `base_url` and `api_key_env` from the detection JSON entry (NIM defaults to `https://integrate.api.nvidia.com/v1` and `NVIDIA_API_KEY`). The resolved API key is held in coordinator state only — never written to logs or transcripts.
 
 **Path C — No routing** (`--no-auto-route`):
 Use agent frontmatter `model` defaults (Claude-only). Skip detection entirely.
@@ -289,6 +291,27 @@ gemini -m {model} -p "{full prompt}" 2>/dev/null
 ollama run {model} "{full prompt}" 2>/dev/null
 ```
 3. Capture stdout. Timeout: 120 seconds (local models are slower).
+
+**For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
+1. Read and extract identity sections (same as codex_exec above).
+2. Resolve credentials at runtime: read `api_key_env` from the seat config and look up the value from the environment. If the env var is unset or empty, fall back to anthropic per the Fallback rule below — do NOT inline a placeholder.
+3. Read `base_url` from the seat config (e.g. `https://integrate.api.nvidia.com/v1` for NIM).
+4. Construct an OpenAI-compatible `/chat/completions` call:
+```bash
+curl -sS -X POST "{base_url}/chat/completions" \
+  -H "Authorization: Bearer ${!api_key_env}" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -nc \
+       --arg model "{model}" \
+       --arg prompt "{full prompt}" \
+       --arg system "You are operating as a council member in a structured deliberation." \
+       '{model: $model, messages: [{role:"system",content:$system},{role:"user",content:$prompt}], temperature: 0.7, max_tokens: 1200}')" \
+  2>/dev/null | jq -r '.choices[0].message.content // empty'
+```
+5. Capture stdout as the member's output. Timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
+
+For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
 
 **Fallback**: If any external provider call fails or times out, log `[FALLBACK] {member} failed on {provider}/{model}. Falling back to anthropic/{frontmatter_model}.` and re-run as a Claude subagent. Skip the failed provider for remaining rounds.
 
