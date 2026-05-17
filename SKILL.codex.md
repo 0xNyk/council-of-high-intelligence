@@ -140,21 +140,23 @@ If live seats drop below `hard_min_live_seats`, switch to fully simulated mode f
 
 Keep the same spawned agents for all rounds via `send_input`.
 
+**Round 2 anonymization (full and quick modes).** Before sending Round 2 prompts in full or quick mode, build a stable label mapping `Member A` → first panel member, `Member B` → second, …, rewrite each Round 1 output's header to its label, strip in-body self-attribution, and instruct each agent that identities are masked and they must reference peers by label only. Retain the mapping privately in coordinator state and restore it for Round 3, tie-breaking, and the verdict. Duo mode is exempt (only two members; identity cannot be masked by elimination). Rationale: Choi et al. (arXiv:2510.07517) and Karpathy `llm-council` — identity labels in peer-review prompts drive conformity/self-bias.
+
 Full mode:
 
 1. Round 1: Independent analysis, blind-first, max 300 words/member.
-2. Round 2: Cross-examination with peer outputs, max 220 words/member, each member engages at least 2 peers.
-3. Round 3: Final position, max 100 words/member.
+2. Round 2: Cross-examination with **anonymized** peer outputs, max 220 words/member, each member engages at least 2 peers by Member-X label.
+3. Round 3: Final position, max 100 words/member. Real names restored.
 
 Quick mode:
 
 1. Round 1: Restate + rapid analysis, max 200 words/member.
-2. Round 2: Final position, max 75 words/member.
+2. Round 2: Final position with **anonymized** peer outputs, max 75 words/member. Real names restored in the verdict.
 
 Duo mode:
 
 1. Round 1: Opening position, max 250 words/member.
-2. Round 2: Direct response to counterpart, max 180 words/member.
+2. Round 2: Direct response to counterpart, max 180 words/member. (No anonymization — see rationale above.)
 3. Round 3: Final statement, max 60 words/member.
 
 Round execution reliability policy:

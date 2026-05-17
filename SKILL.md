@@ -282,36 +282,48 @@ Limit: 400 words maximum.
 
 `[CHECKPOINT]` Confirm all Round 1 outputs collected. Verify each is ≤400 words and follows the member's Output Format.
 
-### STEP 3: Round 2 — Cross-Examination
+### STEP 3: Round 2 — Cross-Examination (ANONYMIZED)
 
 Emit to user:
-> **Round 1 complete** ({N} analyses collected). Beginning Round 2 — cross-examination.
+> **Round 1 complete** ({N} analyses collected). Beginning Round 2 — cross-examination (anonymized).
+
+**Identity anonymization** (evidence-based — see Choi et al., arXiv:2510.07517, ICLR 2026; Karpathy `llm-council`). Round 2 is conducted with member identities masked to prevent conformity bias from social signal. Before sending Round 2 prompts:
+
+1. Build a stable label mapping for this session: `Member A` → first member, `Member B` → second, …, in the order they appear in the panel. The labels are stable across the entire Round 2 (and any Batch B follow-ups) so members can reference each other consistently within the round.
+2. Rewrite each Round 1 output's header from `{name}` (or the member's self-attribution line) to its assigned label. Strip any in-body self-references that would re-disclose identity (e.g., "As Socrates, I…" → "As Member B, I…"). Keep all other content unchanged.
+3. Retain the mapping privately in the coordinator's working state. **Do NOT** expose it to deliberating members during Round 2. The mapping is restored for Round 3 (Final Crystallization), tie-breaking, and the verdict transcript.
 
 **Execution strategy:**
-- If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses)
-- If panel size ≥ 5: run all members in **PARALLEL** (each sees all Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs) if cross-contamination would meaningfully improve quality.
+- If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses, still with anonymized labels)
+- If panel size ≥ 5: run all members in **PARALLEL** (each sees all anonymized Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs with the same labels) if cross-contamination would meaningfully improve quality.
 
 Prompt template for each member:
 ```
 You are council-{name} in Round 2 of a structured deliberation.
 Read your agent definition at ~/.claude/agents/council-{name}.md.
 
-Here are the Round 1 analyses from all council members:
+**Identity is masked in this round.** The Round 1 analyses below are labeled
+Member A, Member B, … — you do not know which colleague produced which. One
+of them is your own Round 1 output (anonymized along with the rest). Evaluate
+by argument quality, not by source. Do not try to guess identities and do not
+reference any council member by their real name in this round; use the labels.
 
-{all Round 1 outputs}
+Here are the (anonymized) Round 1 analyses from all council members:
 
-{If Batch B: "Here are Round 2 responses from earlier members:\n{Batch A Round 2 outputs}"}
+{anonymized Round 1 outputs, headed by Member A/B/C/…}
+
+{If Batch B: "Here are Round 2 responses from earlier members (same labels):\n{Batch A Round 2 outputs}"}
 
 Now respond using your Output Format (Council Round 2):
-1. Which member's position do you most disagree with, and why? Engage their specific claims.
-2. Which member's insight strengthens your position? How?
+1. Which member's position do you most disagree with, and why? Engage their specific claims. Refer to them as "Member X".
+2. Which member's insight strengthens your position? How? Refer to them as "Member Y".
 3. Restate your position in light of this exchange, noting any changes.
 4. Label your key claims: empirical | mechanistic | strategic | ethical | heuristic
 
-Limit: 300 words maximum. You MUST engage at least 2 other members by name.
+Limit: 300 words maximum. You MUST engage at least 2 other members by label.
 ```
 
-`[CHECKPOINT]` Confirm all Round 2 outputs collected.
+`[CHECKPOINT]` Confirm all Round 2 outputs collected. Before proceeding to STEP 4, the coordinator restores the label → real-name mapping in its working state. The Round 2 transcript is kept in BOTH forms: anonymized (what members saw) and de-anonymized (for STEP 7 audit).
 
 ### STEP 4: Post-Round Enforcement Scan
 
@@ -402,17 +414,23 @@ Limit: 200 words maximum. Be decisive.
 
 `[CHECKPOINT]` Confirm all outputs collected.
 
-### QUICK STEP 2: Round 2 — Final Positions (PARALLEL)
+### QUICK STEP 2: Round 2 — Final Positions (PARALLEL, ANONYMIZED)
 
 Emit to user:
-> **Round 1 complete**. Final positions.
+> **Round 1 complete**. Final positions (anonymized).
+
+Anonymize peer Round 1 outputs the same way as STEP 3 of full mode: assign stable labels `Member A`, `Member B`, …, strip self-attribution, retain the mapping in coordinator state. Quick mode is more conformity-prone than full mode (only one cross-look), so anonymization here is non-optional.
 
 Send each member:
 ```
-Here are the other members' rapid analyses:
-{all Round 1 outputs}
+Here are the (anonymized) Round 1 analyses from the other members:
+{anonymized Round 1 outputs, headed by Member A/B/C/…}
 
-State your final position in 75 words or less. Note any key disagreement. Be direct.
+**Identity is masked.** Evaluate by argument quality, not by source. Refer to
+peers as "Member X" — do not use real council member names in this round.
+
+State your final position in 75 words or less. Note any key disagreement
+(call out the specific Member whose position you push back on). Be direct.
 ```
 
 ### QUICK STEP 3: Synthesize Quick Verdict
@@ -455,6 +473,8 @@ Limit: 300 words maximum.
 ```
 
 ### DUO STEP 2: Round 2 — Direct Response (PARALLEL)
+
+**Anonymization is not applied in duo mode.** With only two members and an explicitly named opponent, identity cannot be meaningfully masked (each side knows who the other is by elimination), and the dialectic depends on each member knowing their opponent's specific analytical lens. The conformity failure mode that motivates Round-2 anonymization in larger panels does not arise in a 2-member exchange.
 
 Send each member the other's Round 1 output:
 ```

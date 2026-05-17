@@ -53,6 +53,14 @@ pass "Execution checkpoints present in SKILL.md"
 grep -q "VERIFY" SKILL.md || fail "Verification steps missing in SKILL.md"
 pass "Verification steps present in SKILL.md"
 
+# Round 2 anonymization (issue #17) — protect against silent regression
+grep -q "ANONYMIZED" SKILL.md || fail "Round 2 anonymization missing in SKILL.md (issue #17)"
+grep -q "Member A" SKILL.md || fail "Member-label vocabulary missing in SKILL.md (issue #17)"
+pass "Round 2 anonymization wired in SKILL.md"
+
+grep -q "anonymiz" SKILL.codex.md || fail "Round 2 anonymization missing in SKILL.codex.md (issue #17)"
+pass "Round 2 anonymization wired in SKILL.codex.md"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")
