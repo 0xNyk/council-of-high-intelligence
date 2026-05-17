@@ -16,3 +16,23 @@ provider_models:
   ollama:
     high: null  # uses first available model from detect-providers.sh
     mid: null
+  nvidia_nim:
+    high: deepseek-ai/deepseek-v4-pro
+    mid: deepseek-ai/deepseek-v4-flash
+
+# Chairman defaults — used by SKILL.md STEP 1.7 selection algorithm.
+# Per-provider tier used when the auto-select algorithm picks that provider as Chairman.
+chairman_defaults:
+  anthropic: opus
+  openai: gpt-5.4
+  google: gemini-2.5-pro
+  ollama: null  # uses first available local model
+  nvidia_nim: deepseek-ai/deepseek-v4-pro
+
+# Explicit override for the Chairman across all sessions.
+# Leave null/commented to use the STEP 1.7 selection algorithm.
+# Example:
+#   chairman:
+#     provider: google
+#     model: gemini-2.5-pro
+chairman: null

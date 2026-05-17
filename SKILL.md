@@ -35,8 +35,9 @@ You are the Council Coordinator. Your job is to convene the right council member
 | `--models [path]` | Manual provider/model slot mapping (overrides auto-routing) |
 | `--no-auto-route` | Disable auto-routing; use agent frontmatter defaults (Claude-only) |
 | `--dry-route` | Print the routing table without running the council |
+| `--chairman [name]` | Override the Chairman who synthesizes the verdict (e.g. `gemini`, `opus`, `gpt-5.4`). Defaults to highest-tier non-panel provider — see STEP 1.6. |
 
-Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route` and `--dry-route` are additive.
+Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, and `--chairman` are additive.
 
 ---
 
@@ -221,6 +222,36 @@ Do NOT begin your analysis yet. Just the restatement and alternative framing. 50
 
 `[CHECKPOINT]` Review all restatements. If any member's restatement diverges significantly from the original problem, flag this to the user — it may reveal a framing issue worth addressing before deliberation. Include the restatements in the Round 1 prompt so members see each other's framings.
 
+### STEP 1.7: Chairman Selection
+
+The Chairman is the synthesizer — a named, audited role distinct from the deliberating members. The Chairman does NOT participate in Rounds 1–3. They emit the final verdict in STEP 7 only. Promoting synthesis to a named role makes the synthesis prompt explicit and auditable, and lets us pick a model distinct from any deliberating seat — matching Karpathy `llm-council` (Gemini 3 Pro chair over Claude/GPT/Grok panel) and Perplexity Model Council patterns.
+
+**Why now:** The Chairman is selected after panel + restate, before Round 1, because (a) the Chairman selection depends on the panel composition (must not overlap), and (b) selecting it up-front keeps the synthesis prompt fixed across the session.
+
+**Selection algorithm** (apply in order — first match wins):
+
+1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
+2. **Config override**: If `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
+3. **Auto-select** (default): Pick the highest-tier model among detected providers, **preferring a provider not already on the panel** when possible. Tie-breaker: provider listed first in the detected-providers JSON.
+4. **Single-provider fallback**: If only one provider is detected (Claude-only), use that provider's highest tier (`opus` by default). Note in the verdict that the Chairman shares a provider with one or more panel members.
+
+**Default tier mapping** (used in step 3 above; see `configs/auto-route-defaults.yaml` `chairman_defaults:`):
+
+| Provider | Default Chairman model |
+|---|---|
+| anthropic | `opus` |
+| openai | `gpt-5.4` |
+| google | `gemini-2.5-pro` |
+| ollama | first available local model |
+| nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
+
+**Constraints:**
+- Chairman is NOT a deliberating member in the same session (hard constraint — a panel member's prior outputs are exactly what the Chairman is auditing).
+- Best-effort: Chairman is from a provider family not represented on the panel. Not enforced (Claude-only setups remain valid).
+- Chairman model is recorded in the verdict metadata under `Chairman: <name> (<provider>)`.
+
+`[CHECKPOINT]` State the selected Chairman: name, provider, model, and rationale (overridden | config | auto-selected | single-provider fallback).
+
 ### STEP 2: Round 1 — Independent Analysis (PARALLEL, BLIND-FIRST)
 
 Emit to user:
@@ -377,9 +408,45 @@ No new arguments — only crystallization of your stance.
 - **No majority** → present the dilemma to the user with each position clearly stated. Do NOT force consensus.
 - **Domain expert weight**: The member whose domain most directly matches the problem gets 1.5x weight. (e.g., Ada for formal systems, Sun Tzu for competitive strategy)
 
-### STEP 7: Synthesize Verdict
+### STEP 7: Synthesize Verdict (CHAIRMAN)
 
-Produce the Council Verdict using the template below. This is the final deliverable.
+Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / ollama_run / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+
+**Chairman prompt template:**
+```
+You are the Chairman of the Council of High Intelligence. You did not
+deliberate in this session — you are the synthesizer.
+
+The original problem under deliberation:
+{problem}
+
+The full deliberation transcript follows. Member names are now visible
+(Round 2 was anonymized for the members but the audit transcript restores
+real names for synthesis).
+
+Round 1 — Independent Analysis:
+{Round 1 outputs, named}
+
+Round 2 — Cross-Examination:
+{Round 2 outputs, with names restored from the anonymization mapping}
+
+Round 3 — Final Crystallization:
+{Round 3 outputs, named}
+
+Your job:
+- Weigh arguments by validity, not by repetition or seniority.
+- Surface genuine disagreement; do not invent positions no member held.
+- Lead with what the council does NOT know (Unresolved Questions).
+- Produce the Council Verdict using the template that follows. Do not
+  add, remove, or rename sections. Fill each section faithfully or write
+  "N/A — {reason}" if the section is genuinely empty in this session.
+
+{Insert the "Council Verdict (Full Mode)" template from the Output Templates section}
+```
+
+Pass the rendered prompt to the Chairman's `exec_method` from STEP 1.7. Capture stdout as the verdict. The coordinator then surfaces the verdict to the user verbatim — no post-processing, no re-synthesis.
+
+**Fallback**: If the Chairman call fails or times out (using the same 60s/120s budget as Round 1), fall back to the coordinator producing the verdict directly. Annotate the verdict metadata: `Chairman: <name> (FAILED — synthesized by coordinator fallback)`.
 
 ---
 
@@ -445,9 +512,9 @@ State your final position in 75 words or less. Note any key disagreement
 (call out the specific Member whose position you push back on). Be direct.
 ```
 
-### QUICK STEP 3: Synthesize Quick Verdict
+### QUICK STEP 3: Synthesize Quick Verdict (CHAIRMAN)
 
-Use the Quick Verdict template below.
+Dispatch synthesis to the Chairman selected via STEP 1.7 (auto-selected per `--chairman` / config / detected-providers; if no Chairman selection was performed for `--quick`, perform the same algorithm now). Use the Quick Verdict template below. Same fallback rule as STEP 7.
 
 ---
 
@@ -513,9 +580,9 @@ Limit: 200 words maximum.
 Final statement. 50 words maximum. State your position. No new arguments.
 ```
 
-### DUO STEP 4: Synthesize Duo Verdict
+### DUO STEP 4: Synthesize Duo Verdict (CHAIRMAN)
 
-Use the Duo Verdict template below.
+Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairman must NOT be either of the two duo members (hard constraint — Chairman audits, not participates). Use the Duo Verdict template below. Same fallback rule as STEP 7.
 
 ---
 
@@ -531,6 +598,9 @@ Use the Duo Verdict template below.
 
 ### Council Composition
 {Members convened, mode used, and selection rationale}
+
+### Chairman
+{Chairman: <name> (<provider> · <model>). Selection rationale: overridden | config | auto-selected | single-provider fallback. If single-provider, note that Chairman shares provider with one or more panel members.}
 
 ### Provider Routing
 {Routing table: member → provider → model. Note any fallbacks triggered. If single-provider (Claude-only): "Default models (single provider)."}
@@ -576,6 +646,9 @@ After acting on this verdict, revisit: Was this verdict useful? Was the recommen
 ### Panel
 {Members and selection rationale}
 
+### Chairman
+{Chairman: <name> (<provider> · <model>). Selection rationale.}
+
 ### Recommended Action
 {Single concrete recommendation}
 
@@ -603,6 +676,9 @@ After acting on this verdict, revisit: Was this useful? What happened?
 
 ### The Dialectic
 **{Member A}** ({their lens}) vs **{Member B}** ({their lens})
+
+### Chairman
+{Chairman: <name> (<provider> · <model>). Must not be either duo member.}
 
 ### What This Means for Your Decision
 {How to use these opposing perspectives — the user decides}

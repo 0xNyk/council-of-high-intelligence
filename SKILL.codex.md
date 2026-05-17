@@ -174,20 +174,31 @@ Round execution reliability policy:
 5. Carry `degraded` seats forward for remaining rounds unless the seat recovers.
 6. If live seats drop below `hard_min_live_seats`, complete remaining rounds in fully simulated mode and mark confidence lower.
 
-### Step 5: Synthesis Output
+### Step 5: Synthesis Output (CHAIRMAN)
 
-Return a coordinator verdict with this order:
+Synthesis is performed by an explicit **Chairman** — a model that did NOT deliberate in Rounds 1–3. The Chairman is selected before Round 1 using this algorithm (first match wins):
+
+1. **Explicit override**: `--chairman <name>` was passed (provider tag or model alias).
+2. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
+3. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
+
+The Chairman is dispatched as a single call with the full audit transcript (Round 2 de-anonymized using the mapping retained in coordinator state — see Step 4 anonymization). Constraint: Chairman MUST NOT be a deliberating member in the same session.
+
+Return a verdict with this order, produced by the Chairman:
 
 1. `Selected Panel` (members + mode)
-2. `Unresolved Questions`
-3. `Key Agreements`
-4. `Key Disagreements`
-5. `Decision Options` (2-4 options with tradeoffs)
-6. `Recommended Next Steps` (actionable, sequenced)
-7. `Confidence` (high/medium/low + why)
-8. `Execution Reliability` (live/degraded/offline seat counts and any timeout caveats)
+2. `Chairman` (name, provider, model, selection rationale)
+3. `Unresolved Questions`
+4. `Key Agreements`
+5. `Key Disagreements`
+6. `Decision Options` (2-4 options with tradeoffs)
+7. `Recommended Next Steps` (actionable, sequenced)
+8. `Confidence` (high/medium/low + why)
+9. `Execution Reliability` (live/degraded/offline seat counts and any timeout caveats)
 
 Always preserve dissent. Never flatten disagreements into fake consensus.
+
+**Chairman fallback**: if the Chairman call fails or times out, the coordinator synthesizes the verdict directly and annotates `Chairman: <name> (FAILED — synthesized by coordinator fallback)`.
 
 ### Step 6: Fallback Behavior
 

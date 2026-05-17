@@ -71,6 +71,18 @@ pass "Anti-conformity directive present in all 3 Round 2 prompts in SKILL.md"
 grep -q "Anti-conformity directive" SKILL.codex.md || fail "Anti-conformity directive missing in SKILL.codex.md (issue #19)"
 pass "Anti-conformity directive present in SKILL.codex.md"
 
+# Chairman role (issue #18) — must be wired into STEP 1.7, STEP 7, flags, and Codex
+grep -q "STEP 1.7" SKILL.md || fail "Chairman selection step missing in SKILL.md (issue #18)"
+grep -q -- "--chairman" SKILL.md || fail "--chairman flag missing in SKILL.md (issue #18)"
+grep -q "CHAIRMAN" SKILL.md || fail "Chairman synthesis step missing in SKILL.md (issue #18)"
+pass "Chairman role wired in SKILL.md (STEP 1.7 + --chairman flag + synthesis step)"
+
+grep -q -i "chairman" SKILL.codex.md || fail "Chairman role missing in SKILL.codex.md (issue #18)"
+pass "Chairman role wired in SKILL.codex.md"
+
+grep -q "chairman_defaults" configs/auto-route-defaults.yaml || fail "chairman_defaults block missing in auto-route-defaults.yaml (issue #18)"
+pass "Chairman defaults configured in auto-route-defaults.yaml"
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")
