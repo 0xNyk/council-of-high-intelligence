@@ -1,0 +1,37 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y shellcheck
+          npm install -g markdownlint-cli
+
+      - name: Shellcheck
+        run: |
+          shellcheck install.sh
+          shellcheck scripts/detect-providers.sh
+          shellcheck scripts/council-simulation-checklist.sh
+
+      - name: Markdownlint
+        run: |
+          markdownlint \
+            --disable MD013 MD024 MD033 MD041 \
+            README.md CONTRIBUTING.md CHANGELOG.md \
+            SKILL.md SKILL.codex.md \
+            "agents/**/*.md" \
+            "demos/**/*.md"

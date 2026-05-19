@@ -1,0 +1,6 @@
+# Normalize line endings; shell scripts must stay LF
+* text=auto
+*.sh text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf

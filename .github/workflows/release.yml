@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release tarball
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          ARCHIVE="council-of-high-intelligence-${VERSION}.tar.gz"
+          tar --exclude='./.git' \
+              --exclude='./.github' \
+              --exclude='./demos' \
+              -czf "../${ARCHIVE}" .
+          echo "ARCHIVE=$(pwd)/../${ARCHIVE}" >> "$GITHUB_ENV"
+
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          printf 'notes<<EOF\n%s\nEOF\n' "${NOTES}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes "${{ steps.changelog.outputs.notes }}" \
+            "${{ env.ARCHIVE }}"
