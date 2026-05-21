@@ -6,6 +6,8 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-21
+
 ### Added
 - `SKILL.codex.md` — dedicated Codex council coordinator
 - Codex install support in `install.sh` (`--codex`, `--codex-only` flags) with reliability hardening
@@ -21,6 +23,9 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - README updated with header image, quickstart, and open-source best practices
 
+### Fixed
+- Dead code in `scripts/council-simulation-checklist.sh` that tripped ShellCheck SC2317 under CI
+
 ## [1.0.0] - 2026-03-30
 
 ### Added
@@ -35,5 +40,6 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - Default OpenAI model for Codex set to `gpt-5.4` (E2E test found o3/o4-mini unavailable on standard ChatGPT accounts)
 
-[Unreleased]: https://github.com/0xNyk/council-of-high-intelligence/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/0xNyk/council-of-high-intelligence/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/0xNyk/council-of-high-intelligence/releases/tag/v1.1.0
 [1.0.0]: https://github.com/0xNyk/council-of-high-intelligence/releases/tag/v1.0.0
