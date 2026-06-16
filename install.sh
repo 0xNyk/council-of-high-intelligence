@@ -247,7 +247,8 @@ fi
 
 if [[ "${INSTALL_GEMINI}" == true ]]; then
   echo
-  GEMINI_EXT_DEST_DIR="${GEMINI_DIR}/extensions/council-of-high-intelligence/skills/council"
+  GEMINI_EXT_ROOT="${GEMINI_DIR}/extensions/council-of-high-intelligence"
+  GEMINI_EXT_DEST_DIR="${GEMINI_EXT_ROOT}/skills/council"
   GEMINI_SKILL_DEST="${GEMINI_EXT_DEST_DIR}/SKILL.md"
   GEMINI_AGENTS_DEST_DIR="${GEMINI_EXT_DEST_DIR}/agents"
   GEMINI_SCRIPTS_DEST_DIR="${GEMINI_EXT_DEST_DIR}/scripts"
@@ -256,6 +257,19 @@ if [[ "${INSTALL_GEMINI}" == true ]]; then
   echo "Gemini target directory: ${GEMINI_DIR}"
   echo "Creating Gemini destination directories..."
   run_cmd mkdir -p "${GEMINI_EXT_DEST_DIR}" "${GEMINI_AGENTS_DEST_DIR}" "${GEMINI_SCRIPTS_DEST_DIR}"
+
+  echo "Writing gemini-extension.json manifest..."
+  if [[ "$DRY_RUN" == false ]]; then
+    cat <<EOF > "${GEMINI_EXT_ROOT}/gemini-extension.json"
+{
+  "name": "council-of-high-intelligence",
+  "version": "1.0.0",
+  "description": "Council of High Intelligence multiple persona deliberation system"
+}
+EOF
+  else
+    echo "[dry-run] Create ${GEMINI_EXT_ROOT}/gemini-extension.json"
+  fi
 
   echo "Installing Gemini council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.gemini.md" "${GEMINI_SKILL_DEST}"
