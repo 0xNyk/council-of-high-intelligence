@@ -172,7 +172,9 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 4. If `--profile [name]` → use that profile's panel, optionally with `--triad` from profile-specific triads
 5. If none of the above → **Auto-Triad Selection**: read the problem statement, match against triad domain keywords and rationales, select the best-fitting triad. State your selection and reasoning before proceeding.
 
-`[CHECKPOINT]` State the selected members and mode before proceeding.
+**Designate the domain-weight seat (do this NOW, before any analysis).** Identify the single member whose domain most directly matches the problem — this member receives a **1.5× weight** at tie-breaking (STEP 6). Lock it here, at panel selection, *before* any positions exist. Selecting the heavyweight after seeing votes would let the coordinator nudge the outcome; selecting it up front keeps tie-breaking honest. If two members are equally on-domain, pick neither — record "no domain-weight seat (ambiguous match)" and tie-break on equal weights.
+
+`[CHECKPOINT]` State the selected members, mode, and the designated domain-weight seat (member + 1.5× + one-line rationale, or "none — ambiguous match") before proceeding.
 
 ### STEP 1: Provider Detection and Model Routing
 
@@ -434,15 +436,36 @@ Send each member their final prompt (run in parallel):
 Final round. State your position declaratively in 100 words or less.
 Socrates: you get exactly ONE question. Make it count. Then state your position.
 No new arguments — only crystallization of your stance.
+
+Then, on the LAST line, emit your structured stance EXACTLY in this format
+so the council can tally it:
+STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no
+
+- STANCE must be a terse label for the option you back (e.g. "monorepo",
+  "ship now", "do not ship"). Use the SAME wording as peers where you agree —
+  matching labels are what make the tally countable. If you genuinely back no
+  option, write STANCE: abstain.
+- DEALBREAKER: yes means you consider the opposing option actively harmful, not
+  merely sub-optimal — surfaced in the Minority Report even if you're outvoted.
 ```
+
+`[CHECKPOINT]` Collect every member's `STANCE:` line. Normalize labels that mean the same thing to a single canonical option (e.g. "monorepo" / "single repo" → `monorepo`). If a member omitted the line or it's unparseable, re-prompt that one member for the stance line only — do not infer their stance from prose.
 
 `[CHECKPOINT]` Confirm all Round 3 outputs collected.
 
 ### STEP 6: Tie-Breaking
 
-- **2/3 majority** → consensus. Record dissenting position in Minority Report.
-- **No majority** → present the dilemma to the user with each position clearly stated. Do NOT force consensus.
-- **Domain expert weight**: The member whose domain most directly matches the problem gets 1.5x weight. (e.g., Ada for formal systems, Sun Tzu for competitive strategy)
+Tie-breaking operates on the **structured `STANCE:` lines** collected in STEP 5 — a counted tally, not a prose impression. Run the steps in order:
+
+1. **Tally weighted votes per canonical option.** Every member contributes weight **1.0**, except the domain-weight seat designated in STEP 0, which contributes **1.5**. `abstain` stances contribute to no option but still count toward total weight (they raise the consensus bar — abstention is not a free pass). Compute:
+   - `W_total` = sum of all members' weights (e.g. a 3-member triad with one 1.5× seat → `1.5 + 1.0 + 1.0 = 3.5`).
+   - `W_option` = summed weight of members backing each option.
+2. **Consensus test.** An option reaches consensus iff `W_option ≥ (2/3) × W_total`. (For the 3.5-weight triad: threshold = `2.333`, so the option needs the 1.5× seat **plus** one 1.0 seat, or all three 1.0-equivalent backers.) The highest-weight option that clears the bar is the verdict.
+   - On consensus → record the surviving option. Any `DEALBREAKER: yes` dissent goes in the **Minority Report** even when outvoted.
+3. **No option clears 2/3 → genuine split.** Do NOT force consensus, do NOT run another round (the round budget is spent — that bound is the forcing function). Present the dilemma to the user with each option, its weighted tally, and the strongest argument for each. The verdict's Consensus section reads "No consensus reached" and the split is handed to the user to decide.
+4. **Exact tie between two options** (equal weight, both below 2/3): report both as a live split — the domain-weight seat has already been applied, so there is no further mechanical breaker by design. Surfacing the unresolved tension honestly beats inventing a winner.
+
+**Always record the tally** (`option → weight`, and which seat carried 1.5×) in the verdict's Vote Tally field, so the decision is auditable without re-reading the transcript.
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
@@ -565,7 +588,14 @@ in your earlier argument; if you cannot name the flaw, do not update.
 
 State your final position in 75 words or less. Note any key disagreement
 (call out the specific Member whose position you push back on). Be direct.
+
+Then, on the LAST line, emit your structured stance EXACTLY in this format:
+STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no
+Use the SAME label as peers where you agree; write STANCE: abstain if you back
+no option.
 ```
+
+`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries 1.5× in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose.
 
 ### QUICK STEP 3: Synthesize Quick Verdict (CHAIRMAN)
 
@@ -678,6 +708,13 @@ Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairm
 ### Consensus & Agreement
 {The position that survived deliberation and what members converged on — or "No consensus reached" with explanation}
 
+### Vote Tally
+{The STEP 6 weighted tally. One line per option: `<option> — <weight> (<backers>)`. Mark the 1.5× domain-weight seat. State the threshold and whether it was cleared. Example:
+- `monorepo — 2.5 (Ada [1.5×, domain], Feynman)` ✅ cleared 2.333 threshold
+- `polyrepo — 1.0 (Torvalds)`
+- W_total 3.5 · threshold 2.333 · **monorepo carries**
+If no seat carried 1.5× (ambiguous match), say so. If split, show both options and "no option cleared threshold → escalated to user".}
+
 ### Key Insights by Member
 - **{Name}**: {Their most valuable contribution in 1-2 sentences}
 - ...
@@ -747,6 +784,9 @@ fallbacks_triggered: <list of "member→provider/model" entries, or "none">
 
 ### Consensus
 {Majority position or "Split" with explanation}
+
+### Vote Tally
+{Weighted STEP 6 tally: one line per option `<option> — <weight> (<backers>)`, mark the 1.5× domain-weight seat, state threshold and whether cleared. If split: "no option cleared 2/3 → escalated to user".}
 
 ### Key Disagreement
 {The most important point of divergence}

@@ -252,10 +252,10 @@ Full mode runs 7 steps: provider routing → problem restate gate → independen
 3. **Final Statements** — 50-word positions
 
 ### Enforcement Mechanisms
-- Anti-recursion prevents Socrates from infinite questioning
+- **Bounded protocol is the forcing function** — deliberation runs a fixed round budget (full 3 / quick 2 / duo 3), so it cannot loop. Anti-recursion guards (the "hemlock rule" caps Socrates' questioning; any pair exceeding 2 messages is cut off) enforce the bound mid-round.
 - Dissent quota + novelty gate + counterfactual pass prevent premature convergence
-- Tie-breaking uses 2/3 majority with domain expert weighting
-- All verdicts include a Follow-Up section for outcome tracking
+- **Tie-breaking is a counted tally, not a prose impression** — each member emits a structured `STANCE:` line in the final round; consensus requires a **domain-weighted 2/3 majority** (the on-domain seat carries 1.5×, designated *before* positions exist). A genuine split is escalated to the user with the full tally rather than forced into false consensus.
+- All verdicts include a Vote Tally and a Follow-Up section for outcome tracking
 
 </details>
 
