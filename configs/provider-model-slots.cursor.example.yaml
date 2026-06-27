@@ -1,0 +1,79 @@
+# Cursor CLI provider example for Council of High Intelligence.
+# Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.cursor.example.yaml "..."
+#
+# Cursor CLI (cursor.com/cli) is a model AGGREGATOR: one binary (`cursor-agent`)
+# serves GPT-5.x, Claude, Gemini, and Grok families through a single account.
+# This makes it the lowest-friction way to get a multi-family panel without
+# installing four separate CLIs — but it has one caveat (see below).
+#
+# Setup:
+#   1. Install: curl https://cursor.com/install -fsS | bash
+#   2. Authenticate: `cursor-agent login` (browser) OR `export CURSOR_API_KEY=...`
+#   3. List live model IDs: `cursor-agent --list-models`
+#
+# DIVERSITY CAVEAT: Because Cursor can serve `claude-*` models, a Cursor seat
+# pinned to a Claude model shares Anthropic's training bias with native
+# `anthropic` seats — defeating the point of provider spread. The seats below
+# deliberately route Cursor to NON-Anthropic families (gpt / gemini / grok) and
+# keep Claude reasoning on the native `anthropic` provider. Never place a
+# Cursor `claude-*` seat opposite a native `anthropic` seat in a polarity pair.
+#
+# All Cursor seats dispatch headless and read-only:
+#   cursor-agent -p --mode ask --model <id> --output-format text "<prompt>"
+
+profile: exploration-orthogonal
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  # Native Anthropic seats for high-stakes reasoning roles (keep Claude here,
+  # NOT on Cursor, so it counts as a distinct provider family for spread).
+  socrates:
+    provider: anthropic
+    model: claude-sonnet-4
+    reasoning_mode: analytical
+  aurelius:
+    provider: anthropic
+    model: claude-opus-4
+    reasoning_mode: normative
+
+  # Cursor seats — each routed to a DIFFERENT non-Anthropic family so one CLI
+  # delivers genuine cross-model diversity.
+  feynman:
+    provider: cursor_cli
+    model: gpt-5.4-high
+    exec_method: cursor_cli
+    reasoning_mode: mechanistic
+  sun-tzu:
+    provider: cursor_cli
+    model: gemini-2.5-pro
+    exec_method: cursor_cli
+    reasoning_mode: strategic
+  machiavelli:
+    provider: cursor_cli
+    model: grok-4
+    exec_method: cursor_cli
+    reasoning_mode: adversarial
+  ada:
+    provider: cursor_cli
+    model: gpt-5.4-high
+    exec_method: cursor_cli
+    reasoning_mode: formal
+
+  # A second native Anthropic seat for an emergent lens, kept off Cursor.
+  lao-tzu:
+    provider: anthropic
+    model: claude-sonnet-4
+    reasoning_mode: emergent
+  torvalds:
+    provider: cursor_cli
+    model: gemini-2.5-pro
+    exec_method: cursor_cli
+    reasoning_mode: pragmatic
+
+fallback:
+  provider: anthropic
+  model: claude-sonnet-4

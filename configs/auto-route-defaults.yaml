@@ -19,6 +19,11 @@ provider_models:
   nvidia_nim:
     high: deepseek-ai/deepseek-v4-pro
     mid: deepseek-ai/deepseek-v4-flash
+  cursor_cli:
+    # Aggregator — cross-family defaults so a Cursor seat adds diversity.
+    # Verify live IDs with `cursor-agent --list-models`.
+    high: gpt-5.4-high
+    mid: gemini-2.5-pro
 
 # Chairman defaults — used by SKILL.md STEP 1.7 selection algorithm.
 # Per-provider tier used when the auto-select algorithm picks that provider as Chairman.
@@ -28,6 +33,7 @@ chairman_defaults:
   google: gemini-2.5-pro
   ollama: null  # uses first available local model
   nvidia_nim: deepseek-ai/deepseek-v4-pro
+  cursor_cli: gpt-5.4-high
 
 # Explicit override for the Chairman across all sessions.
 # Leave null/commented to use the STEP 1.7 selection algorithm.

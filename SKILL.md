@@ -172,7 +172,9 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 4. If `--profile [name]` → use that profile's panel, optionally with `--triad` from profile-specific triads
 5. If none of the above → **Auto-Triad Selection**: read the problem statement, match against triad domain keywords and rationales, select the best-fitting triad. State your selection and reasoning before proceeding.
 
-`[CHECKPOINT]` State the selected members and mode before proceeding.
+**Designate the domain-weight seat (do this NOW, before any analysis).** Identify the single member whose domain most directly matches the problem — this member receives a **1.5× weight** at tie-breaking (STEP 6). Lock it here, at panel selection, *before* any positions exist. Selecting the heavyweight after seeing votes would let the coordinator nudge the outcome; selecting it up front keeps tie-breaking honest. If two members are equally on-domain, pick neither — record "no domain-weight seat (ambiguous match)" and tie-break on equal weights.
+
+`[CHECKPOINT]` State the selected members, mode, and the designated domain-weight seat (member + 1.5× + one-line rationale, or "none — ambiguous match") before proceeding.
 
 ### STEP 1: Provider Detection and Model Routing
 
@@ -194,7 +196,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 
 **Auto-routing algorithm** (apply in order):
 1. **Polarity pair separation** (hard constraint): For any polarity pair where both members are on the panel, assign them to different providers. Check the `council.polarity_pairs` field in each member's frontmatter.
-2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. NIM (`nvidia_nim`) is treated as a single "provider" for spread purposes even though it serves multiple model families — the within-NIM diversity is captured by `models[]`.
+2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. Aggregators — NIM (`nvidia_nim`) and Cursor (`cursor_cli`) — are each treated as a single "provider" for spread purposes even though they serve multiple model families; the within-aggregator diversity is captured by `models[]`. Because Cursor can serve `claude-*` models, do not place a Cursor seat using a `claude-*` model opposite a native `anthropic` seat in a polarity pair (rule 1) — pick a cross-family Cursor model (`gpt-*`, `gemini-*`, `grok-*`) for that seat instead.
 3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array. Members whose affinity does not list `nvidia_nim` should be assigned NIM only when no other provider has capacity.
 4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml` `provider_models.<provider>.high`. Members with `model: sonnet` get `.mid`. For NIM, `high` is the largest available reasoning model (default `deepseek-ai/deepseek-v4-pro`); `mid` is a smaller/faster variant.
 5. **OpenAI-compatible seat hydration**: For every seat assigned to a provider with `exec_method: openai_compatible_api`, the coordinator reads `base_url` and `api_key_env` from the detection JSON entry (NIM defaults to `https://integrate.api.nvidia.com/v1` and `NVIDIA_API_KEY`). The resolved API key is held in coordinator state only — never written to logs or transcripts.
@@ -232,7 +234,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 
 **Selection algorithm** (apply in order — first match wins):
 
-1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
+1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
 2. **Config override**: If `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
 3. **Auto-select** (default): Pick the highest-tier model among detected providers, **preferring a provider not already on the panel** when possible. Tie-breaker: provider listed first in the detected-providers JSON.
 4. **Single-provider fallback**: If only one provider is detected (Claude-only), use that provider's highest tier (`opus` by default). Note in the verdict that the Chairman shares a provider with one or more panel members.
@@ -246,6 +248,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 | google | `gemini-2.5-pro` |
 | ollama | first available local model |
 | nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
+| cursor_cli | `gpt-5.4-high` |
 
 **Constraints:**
 - Chairman is NOT a deliberating member in the same session (hard constraint — a panel member's prior outputs are exactly what the Chairman is auditing).
@@ -291,6 +294,18 @@ agy --model {model} -p "{full prompt}" 2>/dev/null
 ollama run {model} "{full prompt}" 2>/dev/null
 ```
 3. Capture stdout. Timeout: 120 seconds (local models are slower).
+
+**For `cursor_cli` (Cursor)** — run via Bash tool:
+1. Read and extract identity sections (same as codex_exec above).
+2. Authentication is resolved by the Cursor CLI itself (prior `cursor-agent login` or `CURSOR_API_KEY` env var) — never inline a key. If the call returns an auth error, apply the Fallback rule.
+3. Run in headless print mode, read-only (`--mode ask` keeps the member from touching the filesystem — council members only reason):
+```bash
+cursor-agent -p --mode ask --model {model} --output-format text "{full prompt}" 2>/dev/null
+```
+4. Capture stdout as the member's output. Timeout: 90 seconds.
+5. If stdout is empty or the command exits non-zero, treat as a failed call and apply the Fallback rule.
+
+Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer cross-family Cursor models (e.g. `gpt-5.4-high`, `gemini-2.5-pro`, `grok-4`) when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`.
 
 **For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above).
@@ -421,19 +436,41 @@ Send each member their final prompt (run in parallel):
 Final round. State your position declaratively in 100 words or less.
 Socrates: you get exactly ONE question. Make it count. Then state your position.
 No new arguments — only crystallization of your stance.
+
+Then, on the LAST line, emit your structured stance EXACTLY in this format
+so the council can tally it:
+STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no
+
+- STANCE must be a terse label for the option you back (e.g. "monorepo",
+  "ship now", "do not ship"). Use the SAME wording as peers where you agree —
+  matching labels are what make the tally countable. If you genuinely back no
+  option, write STANCE: abstain.
+- DEALBREAKER: yes means you consider the opposing option actively harmful, not
+  merely sub-optimal — surfaced in the Minority Report even if you're outvoted.
 ```
+
+`[CHECKPOINT]` Collect every member's `STANCE:` line. Normalize labels that mean the same thing to a single canonical option (e.g. "monorepo" / "single repo" → `monorepo`). If a member omitted the line or it's unparseable, re-prompt that one member for the stance line only — do not infer their stance from prose.
 
 `[CHECKPOINT]` Confirm all Round 3 outputs collected.
 
 ### STEP 6: Tie-Breaking
 
-- **2/3 majority** → consensus. Record dissenting position in Minority Report.
-- **No majority** → present the dilemma to the user with each position clearly stated. Do NOT force consensus.
-- **Domain expert weight**: The member whose domain most directly matches the problem gets 1.5x weight. (e.g., Ada for formal systems, Sun Tzu for competitive strategy)
+Tie-breaking operates on the **structured `STANCE:` lines** collected in STEP 5 — a counted tally, not a prose impression. Run the steps in order:
+
+1. **Tally weighted votes per canonical option.** Every member contributes weight **1.0**, except the domain-weight seat designated in STEP 0, which contributes **1.5**. `abstain` stances contribute to no option but still count toward total weight (they raise the consensus bar — abstention is not a free pass). Compute:
+   - `W_total` = sum of all members' weights (e.g. a 3-member triad with one 1.5× seat → `1.5 + 1.0 + 1.0 = 3.5`).
+   - `W_option` = summed weight of members backing each option.
+2. **Consensus test.** An option reaches consensus iff `W_option ≥ (2/3) × W_total`. (For the 3.5-weight triad: threshold = `2.333`, so the option needs the 1.5× seat **plus** one 1.0 seat, or all three 1.0-equivalent backers.) The highest-weight option that clears the bar is the verdict.
+   - On consensus → record the surviving option. Any `DEALBREAKER: yes` dissent goes in the **Minority Report** even when outvoted.
+3. **No option clears 2/3 → genuine split.** Do NOT force consensus, do NOT run another round (the round budget is spent — that bound is the forcing function). Present the dilemma to the user with each option, its weighted tally, and the strongest argument for each. The verdict's Consensus section reads "No consensus reached" and the split is handed to the user to decide.
+4. **Exact tie between two options** (equal weight, both below 2/3): report both as a live split — the domain-weight seat has already been applied, so there is no further mechanical breaker by design. Surfacing the unresolved tension honestly beats inventing a winner.
+
+**Always record the tally** (`option → weight`, and which seat carried 1.5×) in the verdict's Vote Tally field, so the decision is auditable without re-reading the transcript.
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
-Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / antigravity_cli / ollama_run / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / antigravity_cli / ollama_run / cursor_cli / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+
 
 **Chairman prompt template:**
 ```
@@ -552,7 +589,14 @@ in your earlier argument; if you cannot name the flaw, do not update.
 
 State your final position in 75 words or less. Note any key disagreement
 (call out the specific Member whose position you push back on). Be direct.
+
+Then, on the LAST line, emit your structured stance EXACTLY in this format:
+STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no
+Use the SAME label as peers where you agree; write STANCE: abstain if you back
+no option.
 ```
+
+`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries 1.5× in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose.
 
 ### QUICK STEP 3: Synthesize Quick Verdict (CHAIRMAN)
 
@@ -665,6 +709,13 @@ Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairm
 ### Consensus & Agreement
 {The position that survived deliberation and what members converged on — or "No consensus reached" with explanation}
 
+### Vote Tally
+{The STEP 6 weighted tally. One line per option: `<option> — <weight> (<backers>)`. Mark the 1.5× domain-weight seat. State the threshold and whether it was cleared. Example:
+- `monorepo — 2.5 (Ada [1.5×, domain], Feynman)` ✅ cleared 2.333 threshold
+- `polyrepo — 1.0 (Torvalds)`
+- W_total 3.5 · threshold 2.333 · **monorepo carries**
+If no seat carried 1.5× (ambiguous match), say so. If split, show both options and "no option cleared threshold → escalated to user".}
+
 ### Key Insights by Member
 - **{Name}**: {Their most valuable contribution in 1-2 sentences}
 - ...
@@ -734,6 +785,9 @@ fallbacks_triggered: <list of "member→provider/model" entries, or "none">
 
 ### Consensus
 {Majority position or "Split" with explanation}
+
+### Vote Tally
+{Weighted STEP 6 tally: one line per option `<option> — <weight> (<backers>)`, mark the 1.5× domain-weight seat, state threshold and whether cleared. If split: "no option cleared 2/3 → escalated to user".}
 
 ### Key Disagreement
 {The most important point of divergence}

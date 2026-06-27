@@ -77,6 +77,17 @@ if [[ -n "$ollama_bin" ]]; then
 fi
 providers+=("$(json_provider "ollama" "$ollama_available" "ollama_run" "${ollama_bin:-not_found}" "$ollama_models")")
 
+# Cursor via Cursor CLI (cursor-agent) — model aggregator: serves GPT-5.x,
+# Claude, Gemini, and Grok families through one binary + CURSOR_API_KEY.
+cursor_bin="$(check_command cursor-agent)"
+if [[ -n "$cursor_bin" ]] && run_with_timeout cursor-agent --version >/dev/null 2>&1; then
+  # Cross-family defaults so a Cursor seat adds real diversity, not a
+  # second Anthropic-biased model. Verify live IDs with `cursor-agent --list-models`.
+  providers+=("$(json_provider "cursor_cli" "true" "cursor_cli" "$cursor_bin" '"gpt-5.4-high","claude-opus-4-7-thinking-high","gemini-2.5-pro","grok-4"')")
+else
+  providers+=("$(json_provider "cursor_cli" "false" "cursor_cli" "${cursor_bin:-not_found}" '')")
+fi
+
 # NVIDIA NIM (OpenAI-compatible hosted endpoint at build.nvidia.com)
 # Detection: NVIDIA_API_KEY env var + optional reachability check.
 nim_available=false
