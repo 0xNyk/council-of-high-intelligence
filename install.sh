@@ -233,7 +233,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
       shopt -s nullglob
       codex_config_files=("${CONFIGS_SRC_DIR}"/*)
       shopt -u nullglob
-      for config_file in "${CONFIGS_SRC_DIR}"/*; do
+      for config_file in "${codex_config_files[@]}"; do
         if [[ -f "${config_file}" ]]; then
           run_cmd install -m 0644 "${config_file}" "${CODEX_CONFIGS_DEST_DIR}/"
           ((codex_configs_installed+=1))
