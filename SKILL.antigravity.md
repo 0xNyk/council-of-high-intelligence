@@ -1,9 +1,9 @@
 ---
 name: council
-description: "Convene the Council of High Intelligence in Gemini CLI when the user asks for /council, council deliberation, triads, duo debates, or multi-perspective decision analysis."
+description: "Convene the Council of High Intelligence in Antigravity CLI when the user asks for /council, council deliberation, triads, duo debates, or multi-perspective decision analysis."
 ---
 
-# /council for Gemini CLI
+# /council for Antigravity CLI
 
 You are the Council Coordinator. Run structured multi-persona deliberation using the council agent files.
 
@@ -72,10 +72,10 @@ If no panel flag is present, auto-select the best triad from problem context.
 
 Resolve council files in this order:
 
-1. `~/.gemini/extensions/council-of-high-intelligence/skills/council/agents/`
+1. `~/.gemini/antigravity-cli/plugins/council-of-high-intelligence/skills/council/agents/`
 2. `./agents/`
 
-If neither exists, stop and tell the user to run `./install.sh --gemini`.
+If neither exists, stop and tell the user to run `./install.sh --antigravity`.
 
 ### Step 2: Parse Request
 
@@ -112,7 +112,7 @@ Track seat state per member:
 
 ### Step 3: Run Restatement Gate (Parallel)
 
-Dispatch one sub-agent per selected member using the `invoke_agent` tool with `agent_name` set to `generalist`.
+Dispatch one subagent per selected member using the `invoke_subagent` tool with `TypeName` set to `self`.
 
 Prompt template:
 
@@ -138,7 +138,7 @@ If live seats drop below `hard_min_live_seats`, switch to fully simulated mode f
 
 ### Step 3.5: OpenAI-Compatible Seats (NIM and future)
 
-For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's `spawn_agent`:
+For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's tool:
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
@@ -149,7 +149,7 @@ For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today;
 
 ### Step 4: Deliberation Rounds
 
-For each round, dispatch a new `invoke_agent` call to `generalist`. Since `invoke_agent` starts a fresh context, you MUST include the full history of the deliberation for that member in your prompt (i.e. "Here is your persona, here is the problem, here is your Round 1 response, and here are the peer responses...").
+For each round, dispatch a new `invoke_subagent` call to `self`. Since `invoke_subagent` starts a fresh context, you MUST include the full history of the deliberation for that member in your prompt (i.e. "Here is your persona, here is the problem, here is your Round 1 response, and here are the peer responses...").
 
 **Round 2 anonymization (full and quick modes).** Before sending Round 2 prompts in full or quick mode, build a stable label mapping `Member A` → first panel member, `Member B` → second, …, rewrite each Round 1 output's header to its label, strip in-body self-attribution, and instruct each agent that identities are masked and they must reference peers by label only. Retain the mapping privately in coordinator state and restore it for Round 3, tie-breaking, and the verdict. Duo mode is exempt (only two members; identity cannot be masked by elimination). Rationale: Choi et al. (arXiv:2510.07517) and Karpathy `llm-council` — identity labels in peer-review prompts drive conformity/self-bias.
 
@@ -178,7 +178,7 @@ Duo mode:
 
 Round execution reliability policy:
 
-1. Send prompts to all `live` seats in parallel via `invoke_agent`.
+1. Send prompts to all `live` seats in parallel via `invoke_subagent`.
 2. For each missing response, retry up to `retry_attempts` with a stricter prompt: "Respond now in <= {word_limit} words."
 3. If still missing, move seat to `degraded` and generate `[Simulated]` output from persona instructions plus prior round context.
 4. Carry `degraded` seats forward for remaining rounds unless the seat recovers.
@@ -215,12 +215,12 @@ Always preserve dissent. Never flatten disagreements into fake consensus. Sectio
 
 ### Step 6: Fallback Behavior
 
-If `invoke_agent` is unavailable or too many seats fail, run a local simulated council:
+If `invoke_subagent` is unavailable or too many seats fail, run a local simulated council:
 
 - Read each selected persona file.
 - Produce clearly labeled `[Simulated]` outputs per member.
 - Keep the same round structure.
-- Explicitly state why fallback was used (`invoke_agent unavailable`, `timeouts`, or `seat failures`).
+- Explicitly state why fallback was used (`invoke_subagent unavailable`, `timeouts`, or `seat failures`).
 
 ### Step 7: Session Metadata (issue #7, Phase 1)
 

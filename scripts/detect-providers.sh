@@ -53,13 +53,14 @@ else
   providers+=("$(json_provider "openai" "false" "codex_exec" "${codex_bin:-not_found}" '')")
 fi
 
-# Google via Gemini CLI
-gemini_bin="$(check_command gemini)"
-if [[ -n "$gemini_bin" ]] && run_with_timeout gemini --version >/dev/null 2>&1; then
-  providers+=("$(json_provider "google" "true" "gemini_cli" "$gemini_bin" '"gemini-2.5-pro"')")
+# Google via Antigravity CLI
+agy_bin="$(check_command agy)"
+if [[ -n "$agy_bin" ]] && run_with_timeout agy --version >/dev/null 2>&1; then
+  providers+=("$(json_provider "google" "true" "antigravity_cli" "$agy_bin" '"gemini-2.5-pro"')")
 else
-  providers+=("$(json_provider "google" "false" "gemini_cli" "${gemini_bin:-not_found}" '')")
+  providers+=("$(json_provider "google" "false" "antigravity_cli" "${agy_bin:-not_found}" '')")
 fi
+
 
 # Ollama (local models)
 ollama_bin="$(check_command ollama)"

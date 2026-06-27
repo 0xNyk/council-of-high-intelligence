@@ -276,11 +276,11 @@ codex exec -c model="{model}" -c auto_approve=true "{full prompt}" 2>/dev/null
 ```
 4. Capture stdout as the member's output. Timeout: 60 seconds.
 
-**For `gemini_cli` (Google)** — run via Bash tool:
+**For `antigravity_cli` (Google)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above)
 2. Run:
 ```bash
-gemini -m {model} -p "{full prompt}" 2>/dev/null
+agy --model {model} -p "{full prompt}" 2>/dev/null
 ```
 3. Capture stdout. Timeout: 60 seconds.
 
@@ -433,7 +433,7 @@ No new arguments — only crystallization of your stance.
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
-Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / ollama_run / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / antigravity_cli / ollama_run / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
 
 **Chairman prompt template:**
 ```

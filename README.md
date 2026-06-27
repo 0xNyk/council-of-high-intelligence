@@ -264,8 +264,11 @@ Installs 18 council agents plus skill files for Claude and/or Codex.
 ./install.sh                                   # Claude install (default)
 ./install.sh --codex                           # Claude + Codex skill install
 ./install.sh --codex-only                      # Codex-only install
+./install.sh --antigravity                     # Claude + Antigravity CLI plugin install
+./install.sh --antigravity-only                # Antigravity-only install
 ./install.sh --claude-dir /path/to/.claude     # Non-default Claude config directory
 ./install.sh --codex-dir /path/to/.codex       # Non-default Codex config directory
+./install.sh --antigravity-dir /path/to/dir    # Non-default Antigravity config directory
 ./install.sh --dry-run                          # Preview without writing
 ./install.sh --copy-configs                     # Also install model routing templates
 ```
@@ -280,10 +283,12 @@ Restart your target client(s) after installing. Run `./scripts/council-simulatio
 
 **Optional providers** (auto-detected for multi-provider routing):
 - [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
-- [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
+- [Antigravity CLI](https://antigravity.google/docs) (Google) — see [Antigravity CLI docs](https://antigravity.google/docs)
 - [Ollama](https://ollama.com) (local models) — install from ollama.com
 
+
 ## Contributing
+
 
 Contributions welcome. Read the [contribution guidelines](CONTRIBUTING.md) first.
 
