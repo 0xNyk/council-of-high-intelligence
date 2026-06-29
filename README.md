@@ -4,6 +4,8 @@
   <img src="assets/header.jpeg" alt="Council of High Intelligence" width="800">
 </p>
 
+> Русская инструкция: [README.ru.md](README.ru.md)
+
 <p align="center">
   18 AI personas deliberate your hardest decisions across multiple LLM providers. One command.
 </p>
@@ -49,6 +51,7 @@ Then in Claude Code:
 /council Should we open-source our agent framework?
 /council --quick Should we add caching here?
 /council --duo Should we use microservices or monolith?
+/council --explain-route --triad conflict Why do states keep going to war?
 ```
 
 ### Codex
@@ -224,7 +227,10 @@ Cursor CLI ([cursor.com/cli](https://cursor.com/cli)) is a model **aggregator** 
 **Flags:**
 - `--no-auto-route` — disable auto-routing, use Claude-only defaults
 - `--dry-route` — print the routing table without running the council
+- `--explain-route` — explain panel selection, rejected alternatives, domain-weight seat, routing, and Chairman selection
 - `--models [path]` — manual override with YAML config (see `configs/provider-model-slots.example.yaml`)
+
+The canonical flags, triads, profiles, providers, and verdict sections are tracked in [`protocol.json`](protocol.json). Run `python3 scripts/validate-protocol.py` or `./scripts/council-simulation-checklist.sh` to verify that skill files and config examples still match the protocol.
 
 ## Deliberation Protocol
 
