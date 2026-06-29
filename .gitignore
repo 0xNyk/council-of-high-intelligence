@@ -21,6 +21,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+dist/
 
 # Node and package managers
 node_modules/
