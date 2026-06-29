@@ -1,3 +1,6 @@
+.venv/
+dist/
+__pycache__/
 # OS cruft
 .DS_Store
 Thumbs.db
@@ -14,3 +17,5 @@ Thumbs.db
 # Local scratch
 tmp/
 scratch/
+
+.agent/

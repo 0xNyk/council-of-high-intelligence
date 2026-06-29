@@ -299,6 +299,76 @@ Installs 18 council agents plus skill files for Claude, Codex, and/or Gemini CLI
 
 Restart your target client(s) after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
 
+### MCP Server Integration
+
+The Council of High Intelligence can also be used as a standalone **Model Context Protocol (MCP)** server, exposing all 18 personas, domain triads, routing algorithms, and protocol rules to any MCP-compatible client.
+
+The MCP server is packaged as a standard Python CLI tool. You can install it globally using `pip`, `pipx`, or `uv`:
+
+```bash
+# Install globally via pipx (recommended)
+pipx install council-mcp
+
+# Or install in your active environment
+pip install council-mcp
+```
+
+#### Client Configuration
+
+Because GUI applications (like Claude Desktop or Antigravity IDE) often do not inherit your terminal's `PATH` variables, it is highly recommended to use the **absolute path** to the `council` binary in your virtual environment (e.g., `/path/to/your/project/.venv/bin/council`), or use `uvx` for a zero-install approach.
+
+> [!TIP]
+> **How to find your absolute path:** After installing the package, simply run `which council` in your terminal. Copy the exact path it outputs and use that as your `command`.
+
+##### Antigravity IDE
+The recommended way to configure the server is directly through the IDE's user interface:
+1. Open the **Antigravity IDE Settings** and navigate to **Customizations** on the left-hand side.
+2. Click **Open MCP Config** and add the following configuration:
+```json
+{
+  "mcpServers": {
+    "council": {
+      "command": "/absolute/path/to/your/.venv/bin/council",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+##### Claude Desktop
+Add the following to your `claude_desktop_config.json` (accessible via Claude Desktop's developer settings):
+```json
+{
+  "mcpServers": {
+    "council": {
+      "command": "/absolute/path/to/your/.venv/bin/council",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+##### Cursor
+Go to **Cursor Settings > Features > MCP**, click **Add New**, and configure:
+- **Type**: `command`
+- **Name**: `council`
+- **Command**: `/absolute/path/to/your/.venv/bin/council mcp`
+
+#### Available Tools & Resources
+The server exposes 18 tools and 5 resources, acting as a **knowledge and orchestration layer**. It does *not* execute LLM calls directly; instead, it generates the structured multi-round prompts, enforces the deliberation protocols, and renders the final verdicts, allowing the client AI to execute the actual reasoning.
+
+**Key Tools:**
+- `select_panel`: Select panel members for a problem (auto/manual/triad/profile/duo)
+- `detect_providers`: Detect available LLM providers (Anthropic, OpenAI, Google, Ollama, NIM, Cursor)
+- `compute_routing`: Compute member-to-provider routing table
+- `generate_round_prompt`: Generate the exact prompts for any deliberation round
+- `parse_stances_and_tally`: Parse STANCE lines and compute the weighted vote tally
+- `render_verdict`: Render the final verdict document from structured data
+
+**Resources:**
+- `council://members`: All 18 members as structured JSON
+- `council://protocol/{mode}`: Step-by-step protocol specifications
+
 ## Requirements
 
 - [Claude Code](https://claude.ai/claude-code) CLI (required for Claude usage)
