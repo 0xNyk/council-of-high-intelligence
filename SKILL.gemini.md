@@ -16,6 +16,9 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 /council --triad [domain] [problem]
 /council --members socrates,feynman,ada [problem]
 /council --profile exploration-orthogonal [problem]
+/council --dry-route --triad conflict [problem]
+/council --explain-route --profile geopolitics [problem]
+/council --chairman google --quick [problem]
 ```
 
 ## Flags
@@ -27,7 +30,14 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 | `--duo` | 2-member polarity dialectic |
 | `--triad [domain]` | Use predefined 3-member panel |
 | `--members a,b,c` | Use explicit member names |
-| `--profile [name]` | Use profile panel (`classic`, `exploration-orthogonal`, `execution-lean`) |
+| `--profile [name]` | Use profile panel (`classic`, `exploration-orthogonal`, `execution-lean`, `geopolitics`, `startup`, `security`, `research`, `policy`) |
+| `--models [path]` | Use a manual provider/model slot mapping |
+| `--no-auto-route` | Disable provider auto-routing and use Gemini-local defaults |
+| `--dry-route` | Print selected panel, routing table, and Chairman selection without running deliberation |
+| `--explain-route` | Explain why this panel/routing was selected and name rejected alternatives |
+| `--chairman [name]` | Override the Chairman provider/model used for synthesis |
+
+Flag priority: `--quick` / `--duo` set mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, `--explain-route`, and `--chairman` are additive.
 
 If no panel flag is present, auto-select the best triad from problem context.
 
@@ -65,6 +75,11 @@ If no panel flag is present, auto-select the best triad from problem context.
 - `classic`: all 18 members
 - `exploration-orthogonal`: socrates, feynman, sun-tzu, machiavelli, ada, lao-tzu, aurelius, torvalds, karpathy, sutskever, kahneman, meadows
 - `execution-lean`: torvalds, feynman, sun-tzu, aurelius, ada
+- `geopolitics`: sun-tzu, machiavelli, taleb, meadows, aurelius
+- `startup`: torvalds, munger, machiavelli, rams, kahneman
+- `security`: sun-tzu, feynman, ada, taleb, torvalds
+- `research`: socrates, feynman, ada, karpathy, sutskever
+- `policy`: aurelius, meadows, kahneman, machiavelli, socrates
 
 ## Execution Protocol
 
@@ -84,6 +99,7 @@ Extract:
 - Mode: `full` (default), `quick`, or `duo`
 - Problem statement
 - Panel selection via `--members`, `--triad`, `--profile`, or `--full`
+- Additive controls: `--models`, `--no-auto-route`, `--dry-route`, `--explain-route`, `--chairman`
 
 For `--duo` without explicit members, choose a polarity pair from keywords:
 
@@ -93,6 +109,8 @@ For `--duo` without explicit members, choose a polarity pair from keywords:
 - ai/ml/model: `karpathy` + `sutskever`
 - decision/bias: `kahneman` + `feynman`
 - default fallback: `socrates` + `feynman`
+
+Designate the domain-weight seat before any analysis. If `--explain-route` is present, emit an `Explain Route` block before deliberation with selected panel, rejected alternatives, domain-weight seat, provider routing, Chairman plan, and override hints. If `--dry-route` is also present, stop after the route explanation.
 
 ### Step 2.5: Runtime Reliability Defaults
 
