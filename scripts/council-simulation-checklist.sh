@@ -233,5 +233,13 @@ pass "install.sh --dry-run --codex completed"
 grep -q "Installed Codex skill to" /tmp/council-install-dry-run-codex.log || fail "codex dry-run output missing Codex skill summary"
 pass "Codex install summary output present"
 
+./install.sh --dry-run --antigravity >/tmp/council-install-dry-run-antigravity.log
+pass "install.sh --dry-run --antigravity completed"
+
+grep -q "Installed Antigravity skill to" /tmp/council-install-dry-run-antigravity.log || fail "antigravity dry-run output missing Antigravity skill summary"
+pass "Antigravity install summary output present"
+
 echo
 echo "Checklist complete."
+
+
