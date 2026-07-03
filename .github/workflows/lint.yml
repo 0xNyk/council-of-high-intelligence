@@ -35,3 +35,8 @@ jobs:
             SKILL.md SKILL.codex.md \
             "agents/**/*.md" \
             "demos/**/*.md"
+
+      - name: Protocol validation
+        run: |
+          python3 scripts/validate-protocol.py
+          python3 scripts/explain-route.py --triad conflict --problem "Why do states keep going to war?" | grep "Explain Route"

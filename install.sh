@@ -132,6 +132,11 @@ if [[ "${INSTALL_GEMINI}" == true ]] && [[ ! -f "${SCRIPT_DIR}/SKILL.gemini.md" 
   exit 1
 fi
 
+if [[ ! -f "${SCRIPT_DIR}/protocol.json" ]]; then
+  echo "Error: protocol.json not found at ${SCRIPT_DIR}/protocol.json" >&2
+  exit 1
+fi
+
 shopt -s nullglob
 agent_files=("${SCRIPT_DIR}"/agents/council-*.md)
 shopt -u nullglob
@@ -165,11 +170,14 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
   echo "Installing Claude council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${CLAUDE_SKILL_DEST}"
 
+  echo "Installing Claude council protocol..."
+  run_cmd install -m 0644 "${SCRIPT_DIR}/protocol.json" "${CLAUDE_SKILL_DEST_DIR}/protocol.json"
+
   echo "Installing Claude council scripts..."
   run_cmd mkdir -p "${CLAUDE_SCRIPTS_DEST_DIR}"
   scripts_installed=0
   shopt -s nullglob
-  script_files=("${SCRIPT_DIR}"/scripts/detect-*.sh)
+  script_files=("${SCRIPT_DIR}"/scripts/*.sh "${SCRIPT_DIR}"/scripts/*.py)
   shopt -u nullglob
   for script_file in "${script_files[@]}"; do
     run_cmd install -m 0755 "${script_file}" "${CLAUDE_SCRIPTS_DEST_DIR}/"
@@ -209,6 +217,9 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
   echo "Installing Codex council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.codex.md" "${CODEX_SKILL_DEST}"
 
+  echo "Installing Codex council protocol..."
+  run_cmd install -m 0644 "${SCRIPT_DIR}/protocol.json" "${CODEX_SKILL_DEST_DIR}/protocol.json"
+
   echo "Installing Codex council agents..."
   codex_agents_installed=0
   for agent_file in "${agent_files[@]}"; do
@@ -219,7 +230,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
   echo "Installing Codex council scripts..."
   codex_scripts_installed=0
   shopt -s nullglob
-  codex_script_files=("${SCRIPT_DIR}"/scripts/detect-*.sh)
+  codex_script_files=("${SCRIPT_DIR}"/scripts/*.sh "${SCRIPT_DIR}"/scripts/*.py)
   shopt -u nullglob
   for script_file in "${codex_script_files[@]}"; do
     run_cmd install -m 0755 "${script_file}" "${CODEX_SCRIPTS_DEST_DIR}/"
@@ -274,6 +285,9 @@ EOF
   echo "Installing Gemini council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.gemini.md" "${GEMINI_SKILL_DEST}"
 
+  echo "Installing Gemini council protocol..."
+  run_cmd install -m 0644 "${SCRIPT_DIR}/protocol.json" "${GEMINI_EXT_DEST_DIR}/protocol.json"
+
   echo "Installing Gemini council agents..."
   gemini_agents_installed=0
   for agent_file in "${agent_files[@]}"; do
@@ -284,7 +298,7 @@ EOF
   echo "Installing Gemini council scripts..."
   gemini_scripts_installed=0
   shopt -s nullglob
-  gemini_script_files=("${SCRIPT_DIR}"/scripts/detect-*.sh)
+  gemini_script_files=("${SCRIPT_DIR}"/scripts/*.sh "${SCRIPT_DIR}"/scripts/*.py)
   shopt -u nullglob
   for script_file in "${gemini_script_files[@]}"; do
     run_cmd install -m 0755 "${script_file}" "${GEMINI_SCRIPTS_DEST_DIR}/"
@@ -315,6 +329,7 @@ echo "Done."
 if [[ "${INSTALL_CLAUDE}" == true ]]; then
   echo "  Installed ${installed_count} council agents to ${AGENTS_DEST}"
   echo "  Installed skill to ${CLAUDE_SKILL_DEST}"
+  echo "  Installed protocol to ${CLAUDE_SKILL_DEST_DIR}/protocol.json"
   echo "  Installed ${scripts_installed} scripts to ${CLAUDE_SCRIPTS_DEST_DIR}"
   if [[ "$COPY_CONFIGS" == true ]]; then
     echo "  Installed ${claude_configs_installed} config files to ${CLAUDE_CONFIGS_DEST_DIR}"
@@ -322,6 +337,7 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
 fi
 if [[ "${INSTALL_CODEX}" == true ]]; then
   echo "  Installed Codex skill to ${CODEX_SKILL_DEST}"
+  echo "  Installed Codex protocol to ${CODEX_SKILL_DEST_DIR}/protocol.json"
   echo "  Installed ${codex_agents_installed} Codex council agents to ${CODEX_AGENTS_DEST_DIR}"
   echo "  Installed ${codex_scripts_installed} Codex scripts to ${CODEX_SCRIPTS_DEST_DIR}"
   if [[ "$COPY_CONFIGS" == true ]]; then
@@ -330,6 +346,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
 fi
 if [[ "${INSTALL_GEMINI}" == true ]]; then
   echo "  Installed Gemini skill to ${GEMINI_SKILL_DEST}"
+  echo "  Installed Gemini protocol to ${GEMINI_EXT_DEST_DIR}/protocol.json"
   echo "  Installed ${gemini_agents_installed} Gemini council agents to ${GEMINI_AGENTS_DEST_DIR}"
   echo "  Installed ${gemini_scripts_installed} Gemini scripts to ${GEMINI_SCRIPTS_DEST_DIR}"
   if [[ "$COPY_CONFIGS" == true ]]; then

@@ -16,6 +16,9 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 /council --triad [domain] [problem]
 /council --members socrates,feynman,ada [problem]
 /council --profile exploration-orthogonal [problem]
+/council --dry-route --triad conflict [problem]
+/council --explain-route --profile geopolitics [problem]
+/council --chairman openai --quick [problem]
 ```
 
 ## Flags
@@ -27,9 +30,16 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 | `--duo` | 2-member polarity dialectic |
 | `--triad [domain]` | Use predefined 3-member panel |
 | `--members a,b,c` | Use explicit member names |
-| `--profile [name]` | Use profile panel (`classic`, `exploration-orthogonal`, `execution-lean`) |
+| `--profile [name]` | Use profile panel (`classic`, `exploration-orthogonal`, `execution-lean`, `geopolitics`, `startup`, `security`, `research`, `policy`) |
+| `--models [path]` | Use a manual provider/model slot mapping |
+| `--no-auto-route` | Disable provider auto-routing and use Codex-local defaults |
+| `--dry-route` | Print selected panel, routing table, and Chairman selection without running deliberation |
+| `--explain-route` | Explain why this panel/routing was selected and name rejected alternatives |
+| `--chairman [name]` | Override the Chairman provider/model used for synthesis |
 
-If no panel flag is present, auto-select the best triad from problem context.
+Flag priority: `--quick` / `--duo` set mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, `--explain-route`, and `--chairman` are additive.
+
+If no panel flag is present, auto-select the best triad from problem context. If the user writes in Russian, keep all coordinator notes and final output in Russian.
 
 ## Member Roster
 
@@ -65,6 +75,21 @@ If no panel flag is present, auto-select the best triad from problem context.
 - `classic`: all 18 members
 - `exploration-orthogonal`: socrates, feynman, sun-tzu, machiavelli, ada, lao-tzu, aurelius, torvalds, karpathy, sutskever, kahneman, meadows
 - `execution-lean`: torvalds, feynman, sun-tzu, aurelius, ada
+- `geopolitics`: sun-tzu, machiavelli, taleb, meadows, aurelius
+- `startup`: torvalds, munger, machiavelli, rams, kahneman
+- `security`: sun-tzu, feynman, ada, taleb, torvalds
+- `research`: socrates, feynman, ada, karpathy, sutskever
+- `policy`: aurelius, meadows, kahneman, machiavelli, socrates
+
+## Russian Command Examples
+
+```text
+/council --quick Стоит ли нам запускать эту функцию сегодня?
+/council --triad conflict Почему государства постоянно воюют?
+/council --profile geopolitics Какие риски у расширения на новый рынок?
+/council --explain-route --triad security Как оценить угрозы для нашей системы?
+/council --dry-route --profile startup Как выбрать стратегию монетизации?
+```
 
 ## Execution Protocol
 
@@ -84,6 +109,7 @@ Extract:
 - Mode: `full` (default), `quick`, or `duo`
 - Problem statement
 - Panel selection via `--members`, `--triad`, `--profile`, or `--full`
+- Additive controls: `--models`, `--no-auto-route`, `--dry-route`, `--explain-route`, `--chairman`
 
 For `--duo` without explicit members, choose a polarity pair from keywords:
 
@@ -93,6 +119,59 @@ For `--duo` without explicit members, choose a polarity pair from keywords:
 - ai/ml/model: `karpathy` + `sutskever`
 - decision/bias: `kahneman` + `feynman`
 - default fallback: `socrates` + `feynman`
+
+For `--profile`, use the profile list above. For `--triad` with a profile-specific name not listed in the base triads, pick the closest available profile members and state that the triad was profile-specific.
+
+Designate the domain-weight seat before any analysis:
+
+1. Pick the single member whose domain best matches the problem.
+2. Give that member 1.5x weight for full/quick tie-breaking.
+3. If two members are equally on-domain, designate none and use equal weights.
+4. State the decision before Round 1.
+
+### Step 2.1: Codex Provider Routing
+
+Resolve provider availability in this order:
+
+1. If `--models [path]` is present, read that YAML file and use its seat mapping.
+2. If `--no-auto-route` is present, skip detection and use Codex host/sub-agent defaults.
+3. Otherwise run `~/.codex/skills/council/scripts/detect-providers.sh` if present, then `./scripts/detect-providers.sh`.
+4. If no detection script exists, assume one provider: `anthropic` via host sub-agent.
+
+Routing rules:
+
+1. Separate polarity-pair members across providers when alternatives exist.
+2. Spread seats evenly across available providers.
+3. Use each agent's `provider_affinity` as a soft tiebreaker.
+4. Use high-tier models for agents with `model: opus` and mid-tier models for `model: sonnet`.
+5. Treat `cursor_cli` and `nvidia_nim` as one provider each for spread, even when they expose multiple model families.
+
+Always record a routing table:
+
+```text
+member -> provider -> model -> exec_method
+```
+
+### Step 2.2: Explain Route Mode
+
+If `--explain-route` is present, emit an `Explain Route` block before any deliberation:
+
+1. `Selected Panel`: mode, members, and why this panel fits the problem.
+2. `Rejected Alternatives`: 2-4 plausible triads/profiles not chosen and why.
+3. `Domain-Weight Seat`: member, weight, and rationale, or `none`.
+4. `Provider Routing`: routing table and any provider limitations.
+5. `Chairman Plan`: selected/expected Chairman and rationale.
+6. `User Override Hints`: concrete commands the user could run to choose another panel.
+
+If `--dry-route` is also present, stop after this block and do not run Round 1. If `--dry-route` is present without `--explain-route`, print the selected panel, routing table, and Chairman plan, then stop.
+
+When local filesystem access is available, prefer the helper script for consistent formatting:
+
+```bash
+python3 ~/.codex/skills/council/scripts/explain-route.py --triad <domain> --problem "<problem>"
+```
+
+If the helper is not installed, produce the same block directly from the protocol tables above.
 
 ### Step 2.5: Runtime Reliability Defaults
 
@@ -205,8 +284,9 @@ Round execution reliability policy:
 Synthesis is performed by an explicit **Chairman** — a model that did NOT deliberate in Rounds 1–3. The Chairman is selected before Round 1 using this algorithm (first match wins):
 
 1. **Explicit override**: `--chairman <name>` was passed (provider tag — `anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli` — or a model alias).
-2. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
-3. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
+2. **Config override**: if `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
+3. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
+4. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
 
 The Chairman is dispatched as a single call with the full audit transcript (Round 2 de-anonymized using the mapping retained in coordinator state — see Step 4 anonymization). Constraint: Chairman MUST NOT be a deliberating member in the same session.
 

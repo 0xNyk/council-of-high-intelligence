@@ -28,6 +28,9 @@ fi
 [[ -f "configs/provider-model-slots.example.yaml" ]] || fail "configs/provider-model-slots.example.yaml is missing"
 pass "Provider/model slot template exists"
 
+[[ -f "protocol.json" ]] || fail "protocol.json is missing"
+pass "Canonical protocol file exists"
+
 [[ -f "CLAUDE.md" ]] || warn "CLAUDE.md is missing (recommended for project conventions)"
 
 # --- SKILL.md content checks ---
@@ -187,6 +190,13 @@ fi
 
 [[ -f "configs/auto-route-defaults.yaml" ]] || fail "configs/auto-route-defaults.yaml is missing"
 pass "Auto-route defaults config exists"
+
+python3 scripts/validate-protocol.py
+pass "Canonical protocol validation passed"
+
+python3 scripts/explain-route.py --triad conflict --problem "Why do states keep going to war?" >/tmp/council-explain-route.log
+grep -q "Explain Route" /tmp/council-explain-route.log || fail "explain-route helper did not produce Explain Route output"
+pass "explain-route helper completed"
 
 grep -q -- "--no-auto-route" SKILL.md || fail "--no-auto-route flag missing in SKILL.md"
 pass "--no-auto-route flag documented in SKILL.md"
