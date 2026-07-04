@@ -329,6 +329,19 @@ rm -f "$PROMPT_FILE"
 ```
 3. Capture stdout. Timeout: 60 seconds.
 
+**For `antigravity_cli` (Google)** — run via Bash tool:
+1. Read and extract identity sections (same as codex_exec above)
+2. Run (same quoted-heredoc pattern as above):
+```bash
+PROMPT_FILE="$(mktemp)"
+cat > "$PROMPT_FILE" <<'COUNCIL_PROMPT_EOF'
+{full prompt}
+COUNCIL_PROMPT_EOF
+agy --model {model} -p "$(cat "$PROMPT_FILE")" 2>/dev/null
+rm -f "$PROMPT_FILE"
+```
+3. Capture stdout. Timeout: 60 seconds.
+
 **For `ollama_run` (Ollama)** — run via Bash tool:
 1. Read and extract identity sections (same as above)
 2. Run (same quoted-heredoc pattern — never inline the prompt):
@@ -522,7 +535,7 @@ Tie-breaking operates on the **structured `STANCE:` lines** collected in STEP 5 
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
-Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / ollama_run / cursor_cli / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
+Synthesis is performed by the **Chairman selected in STEP 1.7**, not by the coordinator. Dispatch the synthesis as a single call (subagent / codex_exec / gemini_cli / antigravity_cli / ollama_run / cursor_cli / openai-compatible — whichever matches the Chairman's provider) using the prompt template below.
 
 **Chairman prompt template:**
 ```

@@ -280,9 +280,9 @@ Full mode runs 7 steps: provider routing → problem restate gate → independen
 
 Update later with `/plugin update council`. Plugin installs get automatic updates and namespaced agents (`council:council-socrates`, …). If you previously used `install.sh`, the plugin takes precedence — no cleanup needed.
 
-### Option B — install.sh (Claude Code, Codex, and/or Gemini CLI)
+### Option B — install.sh (Claude Code, Codex, Gemini CLI, and/or Antigravity CLI)
 
-Installs 18 council agents plus skill files for Claude, Codex, and/or Gemini CLI.
+Installs 18 council agents plus skill files for Claude, Codex, Gemini CLI, and/or Antigravity CLI.
 
 ```bash
 ./install.sh                                   # Claude install (default)
@@ -290,9 +290,12 @@ Installs 18 council agents plus skill files for Claude, Codex, and/or Gemini CLI
 ./install.sh --codex-only                      # Codex-only install
 ./install.sh --gemini                          # Claude + Gemini CLI extension install
 ./install.sh --gemini-only                     # Gemini-only install
+./install.sh --antigravity                     # Claude + Antigravity CLI plugin install
+./install.sh --antigravity-only                # Antigravity-only install
 ./install.sh --claude-dir /path/to/.claude     # Non-default Claude config directory
 ./install.sh --codex-dir /path/to/.codex       # Non-default Codex config directory
 ./install.sh --gemini-dir /path/to/.gemini     # Non-default Gemini config directory
+./install.sh --antigravity-dir /path/to/dir    # Non-default Antigravity config directory
 ./install.sh --dry-run                          # Preview without writing
 ./install.sh --copy-configs                     # Also install model routing templates
 ```
@@ -308,6 +311,7 @@ Restart your target client(s) after installing. Run `./scripts/council-simulatio
 **Optional providers** (auto-detected for multi-provider routing):
 - [Codex CLI](https://github.com/openai/codex) (OpenAI) — `npm i -g @openai/codex`
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) — see [gemini-cli repo](https://github.com/google-gemini/gemini-cli)
+- [Antigravity CLI](https://antigravity.google/docs) (Google) — see [Antigravity CLI docs](https://antigravity.google/docs)
 - [Ollama](https://ollama.com) (local models) — install from ollama.com
 - [Cursor CLI](https://cursor.com/cli) (GPT/Claude/Gemini/Grok aggregator) — `curl https://cursor.com/install -fsS | bash`
 

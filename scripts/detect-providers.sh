@@ -61,6 +61,15 @@ else
   providers+=("$(json_provider "google" "false" "gemini_cli" "${gemini_bin:-not_found}" '')")
 fi
 
+# Google via Antigravity CLI
+agy_bin="$(check_command agy)"
+if [[ -n "$agy_bin" ]] && run_with_timeout agy --version >/dev/null 2>&1; then
+  providers+=("$(json_provider "antigravity" "true" "antigravity_cli" "$agy_bin" '"gemini-3.5-flash"')")
+else
+  providers+=("$(json_provider "antigravity" "false" "antigravity_cli" "${agy_bin:-not_found}" '')")
+fi
+
+
 # Ollama (local models)
 ollama_bin="$(check_command ollama)"
 ollama_available=false

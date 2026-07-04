@@ -19,6 +19,8 @@ pass "SKILL.md exists"
 pass "SKILL.codex.md exists"
 [[ -f "SKILL.gemini.md" ]] || fail "SKILL.gemini.md is missing"
 pass "SKILL.gemini.md exists"
+[[ -f "SKILL.antigravity.md" ]] || fail "SKILL.antigravity.md is missing"
+pass "SKILL.antigravity.md exists"
 
 if compgen -G "agents/council-*.md" >/dev/null; then
   agent_count=$(compgen -G "agents/council-*.md" | wc -l | tr -d ' ')
@@ -308,6 +310,12 @@ pass "install.sh --dry-run --gemini completed"
 
 grep -q "gemini-extension.json" "${TMP_LOG_DIR}/dry-run-gemini.log" || fail "gemini dry-run output missing gemini-extension.json manifest step"
 pass "Gemini install manifest step present"
+
+./install.sh --dry-run --antigravity >"${TMP_LOG_DIR}/dry-run-antigravity.log"
+pass "install.sh --dry-run --antigravity completed"
+
+grep -q "plugin.json" "${TMP_LOG_DIR}/dry-run-antigravity.log" || fail "antigravity dry-run output missing plugin.json manifest step"
+pass "Antigravity install manifest step present"
 
 echo
 echo "Checklist complete."

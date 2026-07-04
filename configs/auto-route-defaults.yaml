@@ -24,6 +24,9 @@ provider_models:
     # Verify live IDs with `cursor-agent --list-models`.
     high: gpt-5.4-high
     mid: gemini-3-pro
+  antigravity:
+    high: gemini-3.5-flash
+    mid: gemini-3.5-flash
 
 # Chairman defaults — used by SKILL.md STEP 1.7 selection algorithm.
 # Per-provider tier used when the auto-select algorithm picks that provider as Chairman.
@@ -34,6 +37,7 @@ chairman_defaults:
   ollama: null  # uses first available local model
   nvidia_nim: deepseek-ai/deepseek-v4-pro
   cursor_cli: gpt-5.4-high
+  antigravity: gemini-3.5-flash
 
 # Explicit override for the Chairman across all sessions.
 # Leave null/commented to use the STEP 1.7 selection algorithm.
