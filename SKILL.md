@@ -39,6 +39,15 @@ You are the Council Coordinator. Your job is to convene the right council member
 
 Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, and `--chairman` are additive.
 
+## Asset Resolution
+
+This skill is distributed two ways, so council assets live in one of two roots. Resolve each asset by trying these locations in order and use the first that exists:
+
+1. **install.sh layout**: agents at `~/.claude/agents/council-{name}.md`, scripts at `~/.claude/skills/council/scripts/`, configs at `~/.claude/skills/council/configs/`
+2. **Plugin layout** (marketplace install): agents at `${CLAUDE_PLUGIN_ROOT}/agents/council-{name}.md`, scripts at `${CLAUDE_PLUGIN_ROOT}/scripts/`, configs at `${CLAUDE_PLUGIN_ROOT}/configs/`. Plugin-provided agents are also directly addressable as namespaced subagents (`council:council-{name}`).
+
+Every later reference to a `~/.claude/...` council path means "the resolved asset root" — substitute the plugin paths when running from a marketplace install.
+
 ---
 
 ## The 18 Council Members

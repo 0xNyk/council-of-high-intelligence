@@ -261,6 +261,17 @@ Full mode runs 7 steps: provider routing → problem restate gate → independen
 
 ## Installation
 
+### Option A — Claude Code plugin marketplace (recommended for Claude Code)
+
+```text
+/plugin marketplace add 0xNyk/council-of-high-intelligence
+/plugin install council@council-of-high-intelligence
+```
+
+Update later with `/plugin update council`. Plugin installs get automatic updates and namespaced agents (`council:council-socrates`, …). If you previously used `install.sh`, the plugin takes precedence — no cleanup needed.
+
+### Option B — install.sh (Claude Code, Codex, and/or Gemini CLI)
+
 Installs 18 council agents plus skill files for Claude, Codex, and/or Gemini CLI.
 
 ```bash

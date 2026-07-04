@@ -1,0 +1,16 @@
+{
+  "name": "council-of-high-intelligence",
+  "description": "Official marketplace for the Council of High Intelligence — multi-persona, multi-provider deliberation for Claude Code.",
+  "owner": {
+    "name": "0xNyk",
+    "url": "https://github.com/0xNyk"
+  },
+  "plugins": [
+    {
+      "name": "council",
+      "source": "./",
+      "description": "18 AI personas deliberate your hardest decisions — structured multi-round deliberation with genuine model diversity. One command: /council",
+      "version": "1.1.0"
+    }
+  ]
+}

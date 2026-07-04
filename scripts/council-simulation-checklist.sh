@@ -30,6 +30,21 @@ fi
 [[ -f "configs/provider-model-slots.example.yaml" ]] || fail "configs/provider-model-slots.example.yaml is missing"
 pass "Provider/model slot template exists"
 
+# --- Plugin manifest checks ---
+
+[[ -f ".claude-plugin/plugin.json" ]] || fail ".claude-plugin/plugin.json is missing"
+[[ -f ".claude-plugin/marketplace.json" ]] || fail ".claude-plugin/marketplace.json is missing"
+[[ -e "skills/council/SKILL.md" ]] || fail "skills/council/SKILL.md (plugin skill path) is missing or a broken symlink"
+pass "Plugin manifests and skill path present"
+
+changelog_version=$(sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' CHANGELOG.md | head -1)
+plugin_version=$(sed -nE 's/.*"version": "([0-9]+\.[0-9]+\.[0-9]+)".*/\1/p' .claude-plugin/plugin.json | head -1)
+marketplace_version=$(sed -nE 's/.*"version": "([0-9]+\.[0-9]+\.[0-9]+)".*/\1/p' .claude-plugin/marketplace.json | head -1)
+if [[ "$plugin_version" != "$changelog_version" ]] || [[ "$marketplace_version" != "$changelog_version" ]]; then
+  fail "Version drift: CHANGELOG=${changelog_version} plugin.json=${plugin_version} marketplace.json=${marketplace_version} — bump the manifests when releasing"
+fi
+pass "Plugin manifest versions match CHANGELOG (${changelog_version})"
+
 [[ -f "CLAUDE.md" ]] || warn "CLAUDE.md is missing (recommended for project conventions)"
 
 # --- SKILL.md content checks ---
