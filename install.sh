@@ -9,29 +9,34 @@ PROJECT_VERSION="${PROJECT_VERSION:-0.0.0}"
 CLAUDE_DIR="${HOME}/.claude"
 CODEX_DIR="${HOME}/.codex"
 GEMINI_DIR="${HOME}/.gemini"
+OPENCODE_DIR="${HOME}/.config/opencode"
 DRY_RUN=false
 COPY_CONFIGS=false
 INSTALL_CLAUDE=true
 INSTALL_CODEX=false
 INSTALL_GEMINI=false
+INSTALL_OPENCODE=false
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--claude-dir PATH] [--codex-dir PATH] [--gemini-dir PATH] [--codex] [--codex-only] [--gemini] [--gemini-only] [--copy-configs] [--dry-run] [--help]
+Usage: ./install.sh [--claude-dir PATH] [--codex-dir PATH] [--gemini-dir PATH] [--opencode-dir PATH] [--codex] [--codex-only] [--gemini] [--gemini-only] [--opencode] [--opencode-only] [--copy-configs] [--dry-run] [--help]
 
-Install Council of High Intelligence into Claude Code, Codex, and/or Gemini CLI skill directories.
+Install Council of High Intelligence into Claude Code, Codex, Gemini CLI, and/or opencode skill directories.
 
 Options:
-  --claude-dir PATH  Target Claude config directory (default: ~/.claude)
-  --codex-dir PATH   Target Codex config directory (default: ~/.codex)
-  --gemini-dir PATH  Target Gemini config directory (default: ~/.gemini)
-  --codex            Also install a Codex-compatible council skill
-  --codex-only       Install only the Codex skill
-  --gemini           Also install a Gemini-compatible council skill
-  --gemini-only      Install only the Gemini skill
-  --copy-configs     Also install repo configs/ into skill config folders
-  --dry-run          Print actions without writing files
-  --help             Show this help message
+  --claude-dir PATH    Target Claude config directory (default: ~/.claude)
+  --codex-dir PATH     Target Codex config directory (default: ~/.codex)
+  --gemini-dir PATH    Target Gemini config directory (default: ~/.gemini)
+  --opencode-dir PATH  Target opencode config directory (default: ~/.config/opencode)
+  --codex              Also install a Codex-compatible council skill
+  --codex-only         Install only the Codex skill
+  --gemini             Also install a Gemini-compatible council skill
+  --gemini-only        Install only the Gemini skill
+  --opencode           Also install an opencode-compatible council skill and native subagents
+  --opencode-only      Install only the opencode skill and subagents
+  --copy-configs       Also install repo configs/ into skill config folders
+  --dry-run            Print actions without writing files
+  --help               Show this help message
 EOF
 }
 
@@ -64,6 +69,15 @@ while [[ $# -gt 0 ]]; do
       GEMINI_DIR="$2"
       shift 2
       ;;
+    --opencode-dir)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --opencode-dir requires a path argument" >&2
+        usage
+        exit 1
+      fi
+      OPENCODE_DIR="$2"
+      shift 2
+      ;;
     --codex)
       INSTALL_CODEX=true
       shift
@@ -80,6 +94,15 @@ while [[ $# -gt 0 ]]; do
     --gemini-only)
       INSTALL_CLAUDE=false
       INSTALL_GEMINI=true
+      shift
+      ;;
+    --opencode)
+      INSTALL_OPENCODE=true
+      shift
+      ;;
+    --opencode-only)
+      INSTALL_CLAUDE=false
+      INSTALL_OPENCODE=true
       shift
       ;;
     --copy-configs)
@@ -102,7 +125,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "${INSTALL_CLAUDE}" == false ]] && [[ "${INSTALL_CODEX}" == false ]] && [[ "${INSTALL_GEMINI}" == false ]]; then
+if [[ "${INSTALL_CLAUDE}" == false ]] && [[ "${INSTALL_CODEX}" == false ]] && [[ "${INSTALL_GEMINI}" == false ]] && [[ "${INSTALL_OPENCODE}" == false ]]; then
   echo "Error: no install target selected" >&2
   usage
   exit 1
@@ -133,6 +156,11 @@ fi
 
 if [[ "${INSTALL_GEMINI}" == true ]] && [[ ! -f "${SCRIPT_DIR}/SKILL.gemini.md" ]]; then
   echo "Error: SKILL.gemini.md not found at ${SCRIPT_DIR}/SKILL.gemini.md" >&2
+  exit 1
+fi
+
+if [[ "${INSTALL_OPENCODE}" == true ]] && [[ ! -f "${SCRIPT_DIR}/SKILL.opencode.md" ]]; then
+  echo "Error: SKILL.opencode.md not found at ${SCRIPT_DIR}/SKILL.opencode.md" >&2
   exit 1
 fi
 
@@ -314,6 +342,58 @@ EOF
   fi
 fi
 
+if [[ "${INSTALL_OPENCODE}" == true ]]; then
+  echo
+  OPENCODE_SKILL_DEST_DIR="${OPENCODE_DIR}/skills/council"
+  OPENCODE_SKILL_DEST="${OPENCODE_SKILL_DEST_DIR}/SKILL.md"
+  OPENCODE_AGENTS_DEST_DIR="${OPENCODE_DIR}/agent"
+  OPENCODE_SCRIPTS_DEST_DIR="${OPENCODE_SKILL_DEST_DIR}/scripts"
+  OPENCODE_CONFIGS_DEST_DIR="${OPENCODE_SKILL_DEST_DIR}/configs"
+
+  echo "opencode target directory: ${OPENCODE_DIR}"
+  echo "Creating opencode destination directories..."
+  run_cmd mkdir -p "${OPENCODE_SKILL_DEST_DIR}" "${OPENCODE_AGENTS_DEST_DIR}" "${OPENCODE_SCRIPTS_DEST_DIR}"
+
+  echo "Installing opencode council skill..."
+  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.opencode.md" "${OPENCODE_SKILL_DEST}"
+
+  echo "Converting and installing opencode council subagents..."
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "[dry-run] python3 ${SCRIPT_DIR}/scripts/convert-agents-opencode.py ${SCRIPT_DIR}/agents ${OPENCODE_AGENTS_DEST_DIR}"
+    opencode_agents_installed=${#agent_files[@]}
+  else
+    opencode_agents_installed="$(python3 "${SCRIPT_DIR}/scripts/convert-agents-opencode.py" "${SCRIPT_DIR}/agents" "${OPENCODE_AGENTS_DEST_DIR}")"
+  fi
+
+  echo "Installing opencode council scripts..."
+  opencode_scripts_installed=0
+  shopt -s nullglob
+  opencode_script_files=("${SCRIPT_DIR}"/scripts/detect-*.sh)
+  shopt -u nullglob
+  for script_file in "${opencode_script_files[@]}"; do
+    run_cmd install -m 0755 "${script_file}" "${OPENCODE_SCRIPTS_DEST_DIR}/"
+    ((opencode_scripts_installed+=1))
+  done
+
+  opencode_configs_installed=0
+  if [[ "$COPY_CONFIGS" == true ]]; then
+    if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
+      run_cmd mkdir -p "${OPENCODE_CONFIGS_DEST_DIR}"
+      shopt -s nullglob
+      opencode_config_files=("${CONFIGS_SRC_DIR}"/*)
+      shopt -u nullglob
+      for config_file in "${opencode_config_files[@]}"; do
+        if [[ -f "${config_file}" ]]; then
+          run_cmd install -m 0644 "${config_file}" "${OPENCODE_CONFIGS_DEST_DIR}/"
+          ((opencode_configs_installed+=1))
+        fi
+      done
+    else
+      echo "Warning: --copy-configs was set but ${CONFIGS_SRC_DIR} does not exist."
+    fi
+  fi
+fi
+
 echo
 echo "Done."
 if [[ "${INSTALL_CLAUDE}" == true ]]; then
@@ -338,6 +418,14 @@ if [[ "${INSTALL_GEMINI}" == true ]]; then
   echo "  Installed ${gemini_scripts_installed} Gemini scripts to ${GEMINI_SCRIPTS_DEST_DIR}"
   if [[ "$COPY_CONFIGS" == true ]]; then
     echo "  Installed ${gemini_configs_installed} Gemini config files to ${GEMINI_CONFIGS_DEST_DIR}"
+  fi
+fi
+if [[ "${INSTALL_OPENCODE}" == true ]]; then
+  echo "  Installed opencode skill to ${OPENCODE_SKILL_DEST}"
+  echo "  Installed ${opencode_agents_installed} opencode council subagents to ${OPENCODE_AGENTS_DEST_DIR}"
+  echo "  Installed ${opencode_scripts_installed} opencode scripts to ${OPENCODE_SCRIPTS_DEST_DIR}"
+  if [[ "$COPY_CONFIGS" == true ]]; then
+    echo "  Installed ${opencode_configs_installed} opencode config files to ${OPENCODE_CONFIGS_DEST_DIR}"
   fi
 fi
 
