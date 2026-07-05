@@ -88,7 +88,7 @@ Prompt:
 What good output looks like:
 - 200-word max analyses from each member
 - 75-word final positions
-- Quick Verdict with: Panel, Positions, Consensus, Key Disagreement, Recommended Action
+- Quick Verdict with: Panel, Positions, Consensus, Vote Tally, Key Disagreement, Recommended Action
 - Total output significantly shorter than full mode
 - Clear, decisive recommendation
 

@@ -19,6 +19,8 @@ pass "SKILL.md exists"
 pass "SKILL.codex.md exists"
 [[ -f "SKILL.gemini.md" ]] || fail "SKILL.gemini.md is missing"
 pass "SKILL.gemini.md exists"
+[[ -f "SKILL.opencode.md" ]] || fail "SKILL.opencode.md is missing"
+pass "SKILL.opencode.md exists"
 
 if compgen -G "agents/council-*.md" >/dev/null; then
   agent_count=$(compgen -G "agents/council-*.md" | wc -l | tr -d ' ')
@@ -166,6 +168,12 @@ for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md; do
 done
 pass "Structured stance + weighted tally present in all three SKILL files"
 
+# NOTE: SKILL.opencode.md is existence/lint/install-guarded only for now. It was
+# authored from a pre-v1.2.0 base and still lacks E3 (reasoning_method), E9
+# (confidence factors in the STEP 6 tally), E7 (.council.yaml project overrides),
+# and the Asset Resolution section. Extend the content-parity greps above to it
+# once it reaches feature parity — tracked in the SKILL.opencode.md drift issue.
+
 # --- Agent structure checks ---
 
 required_sections=("Identity" "Grounding Protocol" "Analytical Method" "What You See" "What You Tend to Miss" "When Deliberating" "Output Format (Council Round 2)" "Output Format (Standalone)")
@@ -308,6 +316,12 @@ pass "install.sh --dry-run --gemini completed"
 
 grep -q "gemini-extension.json" "${TMP_LOG_DIR}/dry-run-gemini.log" || fail "gemini dry-run output missing gemini-extension.json manifest step"
 pass "Gemini install manifest step present"
+
+./install.sh --dry-run --opencode >"${TMP_LOG_DIR}/dry-run-opencode.log"
+pass "install.sh --dry-run --opencode completed"
+
+grep -q "Installed opencode skill to" "${TMP_LOG_DIR}/dry-run-opencode.log" || fail "opencode dry-run output missing opencode skill summary"
+pass "opencode install summary output present"
 
 echo
 echo "Checklist complete."
