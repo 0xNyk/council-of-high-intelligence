@@ -2,7 +2,7 @@
 name: council-musashi
 description: "Council member. Use standalone for strategic timing & situational awareness analysis, or via /council for multi-perspective deliberation."
 model: sonnet
-color: crimson
+color: red
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Miyamoto Musashi
