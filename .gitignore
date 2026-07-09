@@ -14,3 +14,12 @@ Thumbs.db
 # Local scratch
 tmp/
 scratch/
+
+# Local env
+.env
+.env.local
+
+# Python caches
+__pycache__/
+*.py[cod]
+
