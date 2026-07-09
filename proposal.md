@@ -14,7 +14,7 @@ While the current CLI execution is great for quick terminal runs, moving the orc
 
 1. **Interchangeable Engine Backends:** Moving the core protocol into a structured Python module. This would allow the council to seamlessly switch between different orchestration backends, starting with **Agno** and **LangGraph** (via StateGraph), while maintaining the exact same cognitive flow.
    
-2. **Environment-Driven Configuration:** Decoupling API paths by introducing a clean environment setup (`.env`). This will allow users to seamlessly route the council's requests to OpenRouter, local **Ollama** instances, or enterprise **LiteLLM** proxies without hardcoding paths or relying heavily on global CLI binaries.
+2. **Environment-Driven Configuration:** Decoupling API paths by introducing environment variables. This will allow users to seamlessly route the council's requests to OpenRouter, local **Ollama** instances, or enterprise **LiteLLM** proxies without hardcoding paths or relying heavily on global CLI binaries.
 
 3. **Dynamic Council Scaling:** Upgrading the runner to dynamically parse, scale, and spin up any combination of the 18 personas currently defined in the `agents/` folder using a simple parametric flag (e.g., `--members socrates,feynman`).
 
@@ -29,11 +29,9 @@ We have successfully engineered and structured the following key improvements in
 ```
 council_engine/
   ├── __init__.py           # Unified exports
-  ├── core.py               # Shared persona parser, .env loader, and config resolver
+  ├── core.py               # Shared persona parser and config resolver
   ├── agno_engine.py        # Agno (Phidata) orchestration module
   └── langgraph_engine.py   # LangGraph StateGraph orchestration module
-.env                        # Local environment variables (gitignored)
-.env.example                # Local environment variables template
 run_framework.py            # Parametric CLI runner
 agno_council.py            # Backwards-compatible modular delegator
 ```
@@ -43,11 +41,10 @@ agno_council.py            # Backwards-compatible modular delegator
 * **Agno Backend (`agno_engine.py`):** Leverages Agno's `Agent` class for direct, high-level multi-persona coordination loops.
 * **LangGraph Backend (`langgraph_engine.py`):** Leverages a fully state-chart mapped `StateGraph` containing isolated node operations (`round1`, `round2`, `round3`, `synthesis`). Perfect for long-running workflows and complex persistence.
 
-### B. Platform-Agnostic, Zero-Dependency Environment System
+### B. Platform-Agnostic Environment System
 To prevent security leaks and platform-lockin, we removed all hardcoded fallback keys and direct dependencies on `OPENROUTER_API_KEY`:
-* **Zero-Dependency `.env` Parser:** Implemented a manual `.env` file loader in `core.py` that loads variables on import without requiring external python packages (like `python-dotenv`), eliminating dependency conflicts.
 * **Decoupled API Key & Endpoint Resolution (`get_config`):**
-  * `COUNCIL_API_KEY`: Strictly reads the API key (throws a clear `ValueError` if not set or if left as a placeholder).
+  * `COUNCIL_API_KEY`: Strictly reads the API key from environment variables (throws a clear `ValueError` if not set or if left as a placeholder).
   * `COUNCIL_BASE_URL`: Defines the destination endpoint. Makes the framework completely ready to map to a local **LiteLLM proxy** (`http://localhost:4000`) or an **Ollama** server, bypassing cloud aggregators entirely.
   * `COUNCIL_MODEL`: Set dynamically in the environment (e.g., `deepseek/deepseek-v4-flash`, `gpt-4o`, `claude-3-5-sonnet`).
   * `COUNCIL_REASONING`: Dynamically toggles DeepSeek's `"reasoning": {"enabled": true}` parameters in the JSON payload root.
@@ -67,7 +64,7 @@ To prevent security leaks and platform-lockin, we removed all hardcoded fallback
 
 | Benefit | Before | After |
 | :--- | :--- | :--- |
-| **Security** | Hardcoded OpenRouter API keys in multiple files. | No API keys in the code. Secured with local `.env` and environment checks. |
+| **Security** | Hardcoded OpenRouter API keys in multiple files. | No API keys in the code. Secured with runtime environment checks. |
 | **Decoupling** | Hardcoded to OpenRouter and DeepSeek. | Completely agnostic. Easily routed to LiteLLM, Ollama, OpenAI, or Anthropic. |
 | **Scalability** | Fixed at 3 predefined council members. | Dynamically scales to any of the 18 personas via command-line arguments. |
 | **Frameworks** | Legacy procedural Agno code only. | Clean Object-Oriented Agno and Stateful LangGraph compilation. |

@@ -2,30 +2,11 @@ import os
 import re
 import yaml
 
-def load_dotenv():
-    """Manually load .env file into os.environ if it exists."""
-    for dotenv_path in [".env", "../.env"]:
-        if os.path.exists(dotenv_path):
-            with open(dotenv_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    if "=" in line:
-                        key, val = line.split("=", 1)
-                        key = key.strip()
-                        val = val.strip().strip('"').strip("'")
-                        if key and key not in os.environ:
-                            os.environ[key] = val
-
-# Run dotenv loading immediately upon package import
-load_dotenv()
-
 def get_config():
     """Returns the unified config values from environment variables with sensible defaults."""
     api_key = os.getenv("COUNCIL_API_KEY")
     if not api_key or api_key.strip() in ("", "your_api_key_here"):
-        raise ValueError("[ERROR] No API key found. Please set COUNCIL_API_KEY in your environment or .env file.")
+        raise ValueError("[ERROR] No API key found. Please set COUNCIL_API_KEY in your environment.")
         
     base_url = os.getenv("COUNCIL_BASE_URL")
     model = os.getenv("COUNCIL_MODEL")
@@ -37,6 +18,7 @@ def get_config():
         "model": model,
         "reasoning_enabled": reasoning_enabled
     }
+
 
 def parse_agent_file(agent_name):
     """
