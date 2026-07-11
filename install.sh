@@ -174,6 +174,10 @@ if [[ ${#agent_files[@]} -eq 0 ]]; then
 fi
 
 CONFIGS_SRC_DIR="${SCRIPT_DIR}/configs"
+if [[ ! -f "${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" ]]; then
+  echo "Error: canonical model catalog not found at ${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" >&2
+  exit 1
+fi
 
 echo "Installing Council of High Intelligence..."
 if [[ "${INSTALL_CLAUDE}" == true ]]; then
@@ -185,7 +189,7 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
 
   echo "Claude target directory: ${CLAUDE_DIR}"
   echo "Creating Claude destination directories..."
-  run_cmd mkdir -p "${AGENTS_DEST}" "${CLAUDE_SKILL_DEST_DIR}"
+  run_cmd mkdir -p "${AGENTS_DEST}" "${CLAUDE_SKILL_DEST_DIR}" "${CLAUDE_CONFIGS_DEST_DIR}"
 
   echo "Installing Claude council agents..."
   installed_count=0
@@ -208,7 +212,10 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
     ((scripts_installed+=1))
   done
 
-  claude_configs_installed=0
+  echo "Installing Claude model catalog..."
+  run_cmd install -m 0644 "${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" "${CLAUDE_CONFIGS_DEST_DIR}/"
+
+  claude_configs_installed=1
   if [[ "$COPY_CONFIGS" == true ]]; then
     if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
       run_cmd mkdir -p "${CLAUDE_CONFIGS_DEST_DIR}"
@@ -217,6 +224,7 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
       shopt -u nullglob
       for config_file in "${config_files[@]}"; do
         if [[ -f "${config_file}" ]]; then
+          [[ "$(basename "${config_file}")" == "auto-route-defaults.yaml" ]] && continue
           run_cmd install -m 0644 "${config_file}" "${CLAUDE_CONFIGS_DEST_DIR}/"
           ((claude_configs_installed+=1))
         fi
@@ -236,7 +244,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
 
   echo "Codex target directory: ${CODEX_DIR}"
   echo "Creating Codex destination directories..."
-  run_cmd mkdir -p "${CODEX_SKILL_DEST_DIR}" "${CODEX_AGENTS_DEST_DIR}" "${CODEX_SCRIPTS_DEST_DIR}"
+  run_cmd mkdir -p "${CODEX_SKILL_DEST_DIR}" "${CODEX_AGENTS_DEST_DIR}" "${CODEX_SCRIPTS_DEST_DIR}" "${CODEX_CONFIGS_DEST_DIR}"
 
   echo "Installing Codex council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.codex.md" "${CODEX_SKILL_DEST}"
@@ -258,7 +266,10 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
     ((codex_scripts_installed+=1))
   done
 
-  codex_configs_installed=0
+  echo "Installing Codex model catalog..."
+  run_cmd install -m 0644 "${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" "${CODEX_CONFIGS_DEST_DIR}/"
+
+  codex_configs_installed=1
   if [[ "$COPY_CONFIGS" == true ]]; then
     if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
       run_cmd mkdir -p "${CODEX_CONFIGS_DEST_DIR}"
@@ -267,6 +278,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
       shopt -u nullglob
       for config_file in "${codex_config_files[@]}"; do
         if [[ -f "${config_file}" ]]; then
+          [[ "$(basename "${config_file}")" == "auto-route-defaults.yaml" ]] && continue
           run_cmd install -m 0644 "${config_file}" "${CODEX_CONFIGS_DEST_DIR}/"
           ((codex_configs_installed+=1))
         fi
@@ -288,7 +300,7 @@ if [[ "${INSTALL_GEMINI}" == true ]]; then
 
   echo "Gemini target directory: ${GEMINI_DIR}"
   echo "Creating Gemini destination directories..."
-  run_cmd mkdir -p "${GEMINI_EXT_DEST_DIR}" "${GEMINI_AGENTS_DEST_DIR}" "${GEMINI_SCRIPTS_DEST_DIR}"
+  run_cmd mkdir -p "${GEMINI_EXT_DEST_DIR}" "${GEMINI_AGENTS_DEST_DIR}" "${GEMINI_SCRIPTS_DEST_DIR}" "${GEMINI_CONFIGS_DEST_DIR}"
 
   echo "Writing gemini-extension.json manifest..."
   if [[ "$DRY_RUN" == false ]]; then
@@ -323,7 +335,10 @@ EOF
     ((gemini_scripts_installed+=1))
   done
 
-  gemini_configs_installed=0
+  echo "Installing Gemini model catalog..."
+  run_cmd install -m 0644 "${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" "${GEMINI_CONFIGS_DEST_DIR}/"
+
+  gemini_configs_installed=1
   if [[ "$COPY_CONFIGS" == true ]]; then
     if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
       run_cmd mkdir -p "${GEMINI_CONFIGS_DEST_DIR}"
@@ -332,6 +347,7 @@ EOF
       shopt -u nullglob
       for config_file in "${gemini_config_files[@]}"; do
         if [[ -f "${config_file}" ]]; then
+          [[ "$(basename "${config_file}")" == "auto-route-defaults.yaml" ]] && continue
           run_cmd install -m 0644 "${config_file}" "${GEMINI_CONFIGS_DEST_DIR}/"
           ((gemini_configs_installed+=1))
         fi
@@ -352,7 +368,7 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
 
   echo "opencode target directory: ${OPENCODE_DIR}"
   echo "Creating opencode destination directories..."
-  run_cmd mkdir -p "${OPENCODE_SKILL_DEST_DIR}" "${OPENCODE_AGENTS_DEST_DIR}" "${OPENCODE_SCRIPTS_DEST_DIR}"
+  run_cmd mkdir -p "${OPENCODE_SKILL_DEST_DIR}" "${OPENCODE_AGENTS_DEST_DIR}" "${OPENCODE_SCRIPTS_DEST_DIR}" "${OPENCODE_CONFIGS_DEST_DIR}"
 
   echo "Installing opencode council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.opencode.md" "${OPENCODE_SKILL_DEST}"
@@ -375,7 +391,10 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
     ((opencode_scripts_installed+=1))
   done
 
-  opencode_configs_installed=0
+  echo "Installing opencode model catalog..."
+  run_cmd install -m 0644 "${CONFIGS_SRC_DIR}/auto-route-defaults.yaml" "${OPENCODE_CONFIGS_DEST_DIR}/"
+
+  opencode_configs_installed=1
   if [[ "$COPY_CONFIGS" == true ]]; then
     if [[ -d "${CONFIGS_SRC_DIR}" ]]; then
       run_cmd mkdir -p "${OPENCODE_CONFIGS_DEST_DIR}"
@@ -384,6 +403,7 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
       shopt -u nullglob
       for config_file in "${opencode_config_files[@]}"; do
         if [[ -f "${config_file}" ]]; then
+          [[ "$(basename "${config_file}")" == "auto-route-defaults.yaml" ]] && continue
           run_cmd install -m 0644 "${config_file}" "${OPENCODE_CONFIGS_DEST_DIR}/"
           ((opencode_configs_installed+=1))
         fi

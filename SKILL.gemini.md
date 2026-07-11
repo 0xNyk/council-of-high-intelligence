@@ -70,12 +70,14 @@ If no panel flag is present, auto-select the best triad from problem context.
 
 ### Step 1: Locate Council Assets
 
-Resolve council files in this order:
+Resolve council files and the canonical model catalog in this order:
 
-1. `~/.gemini/extensions/council-of-high-intelligence/skills/council/agents/`
-2. `./agents/`
+1. `~/.gemini/extensions/council-of-high-intelligence/skills/council/` (`agents/` plus `configs/auto-route-defaults.yaml`)
+2. `./` (`agents/` plus `configs/auto-route-defaults.yaml`)
 
 If neither exists, stop and tell the user to run `./install.sh --gemini`.
+
+`configs/auto-route-defaults.yaml` is the sole source of model IDs for Anthropic, OpenAI, Google, and other auto-routed providers. Use `provider_models.<provider>.high|mid|low` for routing and the provider's `high` tier for Chairman auto-selection. `COUNCIL_MODEL_CONFIG` may override the catalog path. Never use a model ID copied from this protocol; report a clear configuration error when a required tier is absent.
 
 ### Step 2: Parse Request
 
@@ -201,8 +203,8 @@ Round execution reliability policy:
 
 Synthesis is performed by an explicit **Chairman** — a model that did NOT deliberate in Rounds 1–3. The Chairman is selected before Round 1 using this algorithm (first match wins):
 
-1. **Explicit override**: `--chairman <name>` was passed (provider tag or model alias).
-2. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
+1. **Explicit override**: `--chairman <name>` was passed (provider tag or exact catalog model ID).
+2. **Auto-select**: each available provider's catalog `high` model, **preferring a provider not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
 3. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
 
 The Chairman is dispatched as a single call with the full audit transcript (Round 2 de-anonymized using the mapping retained in coordinator state — see Step 4 anonymization). Constraint: Chairman MUST NOT be a deliberating member in the same session.

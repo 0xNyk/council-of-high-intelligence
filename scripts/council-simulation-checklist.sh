@@ -97,8 +97,11 @@ pass "Chairman role wired in SKILL.md (STEP 1.7 + --chairman flag + synthesis st
 grep -q -i "chairman" SKILL.codex.md || fail "Chairman role missing in SKILL.codex.md (issue #18)"
 pass "Chairman role wired in SKILL.codex.md"
 
-grep -q "chairman_defaults" configs/auto-route-defaults.yaml || fail "chairman_defaults block missing in auto-route-defaults.yaml (issue #18)"
-pass "Chairman defaults configured in auto-route-defaults.yaml"
+grep -q "provider_models" configs/auto-route-defaults.yaml || fail "provider_models block missing in auto-route-defaults.yaml"
+if grep -q "chairman_defaults" configs/auto-route-defaults.yaml; then
+  fail "Duplicate chairman_defaults model IDs found; Chairman must reuse provider_models.<provider>.high"
+fi
+pass "Chairman auto-selection reuses canonical high-tier models"
 
 # Verdict actionability sections (issue #21)
 grep -q "Acceptable Compromises" SKILL.md || fail "Acceptable Compromises section missing in SKILL.md (issue #21)"
@@ -243,6 +246,42 @@ fi
 [[ -f "configs/auto-route-defaults.yaml" ]] || fail "configs/auto-route-defaults.yaml is missing"
 pass "Auto-route defaults config exists"
 
+if bash scripts/detect-providers.sh --check-config >/dev/null; then
+  pass "Canonical model catalog validates"
+else
+  fail "Canonical model catalog validation failed"
+fi
+
+if grep -Eq '"(gpt|gemini|claude)-[^" ]+"' scripts/detect-providers.sh; then
+  fail "Provider model ID hardcoded in detect-providers.sh; keep IDs in auto-route-defaults.yaml"
+fi
+pass "Provider detector contains no hardcoded Anthropic/OpenAI/Google model IDs"
+
+TEST_MODEL_CONFIG="$(mktemp)"
+cat >"${TEST_MODEL_CONFIG}" <<'EOF'
+provider_models:
+  anthropic:
+    high: test-anthropic-high
+    mid: test-anthropic-mid
+    low: test-anthropic-low
+  openai:
+    high: test-openai-high
+    mid: test-openai-mid
+  google:
+    high: test-google-high
+    mid: test-google-mid
+  cursor_cli:
+    high: test-cursor-high
+    mid: test-cursor-mid
+  nvidia_nim:
+    high: test-nim-high
+    mid: test-nim-mid
+EOF
+custom_detect_output="$(bash scripts/detect-providers.sh --config "${TEST_MODEL_CONFIG}")"
+rm -f "${TEST_MODEL_CONFIG}"
+echo "${custom_detect_output}" | grep -q '"models":\["test-anthropic-high","test-anthropic-mid","test-anthropic-low"\]' || fail "Detector did not load Anthropic models from custom catalog"
+pass "Custom model catalog propagates into provider detection"
+
 grep -q -- "--no-auto-route" SKILL.md || fail "--no-auto-route flag missing in SKILL.md"
 pass "--no-auto-route flag documented in SKILL.md"
 
@@ -287,6 +326,9 @@ trap 'rm -rf "${TMP_LOG_DIR}"' EXIT
 
 ./install.sh --dry-run >"${TMP_LOG_DIR}/dry-run.log"
 pass "install.sh --dry-run completed"
+
+grep -q "auto-route-defaults.yaml" "${TMP_LOG_DIR}/dry-run.log" || fail "default install does not include canonical model catalog"
+pass "default install includes canonical model catalog"
 
 grep -q "Installed .* council agents" "${TMP_LOG_DIR}/dry-run.log" || fail "install dry-run output missing agent install summary"
 pass "install summary output present"

@@ -35,7 +35,7 @@ You are the Council Coordinator. Your job is to convene the right council member
 | `--models [path]` | Manual provider/model slot mapping (overrides auto-routing) |
 | `--no-auto-route` | Disable auto-routing; use agent frontmatter defaults (single-provider fallback) |
 | `--dry-route` | Print the routing table without running the council |
-| `--chairman [name]` | Override the Chairman who synthesizes the verdict (e.g. `gemini`, `opus`, `gpt-5.4`). Defaults to highest-tier non-panel provider — see STEP 1.6. |
+| `--chairman [name]` | Override the Chairman who synthesizes the verdict (provider tag or model ID). Defaults to highest-tier non-panel provider — see STEP 1.6. |
 
 Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, and `--chairman` are additive.
 
@@ -189,7 +189,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 5. Log routing metadata: member → provider → model → exec_method (e.g. `feynman → nvidia_nim → deepseek-ai/deepseek-v4-pro → openai_compatible_api`).
 
 **Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
-1. Run the detection script via Bash: `bash ~/.config/opencode/skills/council/scripts/detect-providers.sh`
+1. Load the canonical model catalog at `configs/auto-route-defaults.yaml` beside the installed skill (or from `COUNCIL_MODEL_CONFIG`), then run `bash ~/.config/opencode/skills/council/scripts/detect-providers.sh`. Detection, routing, and Chairman selection must use this catalog; never substitute IDs from protocol prose.
 2. Parse the JSON output. If `provider_count == 1` (only anthropic): skip routing entirely, use agent frontmatter defaults. Proceed to Step 1.5.
 3. If `provider_count >= 2`: apply the routing algorithm below.
 4. If `--dry-route`: print the routing table and stop (do not convene the council).
@@ -198,7 +198,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 1. **Polarity pair separation** (hard constraint): For any polarity pair where both members are on the panel, assign them to different providers. Check the `council.polarity_pairs` field in each member's frontmatter.
 2. **Provider spread** (hard constraint): Distribute members across available providers as evenly as possible. With N providers and M members, each provider gets floor(M/N) or ceil(M/N) members. Aggregators — NIM (`nvidia_nim`) and Cursor (`cursor_cli`) — are each treated as a single "provider" for spread purposes even though they serve multiple model families; the within-aggregator diversity is captured by `models[]`. Because Cursor can serve `claude-*` models, do not place a Cursor seat using a `claude-*` model opposite a native `anthropic` seat in a polarity pair (rule 1) — pick a cross-family Cursor model (`gpt-*`, `gemini-*`, `grok-*`) for that seat instead.
 3. **Provider affinity** (soft tiebreaker): Use the `council.provider_affinity` field in each member's frontmatter. When choosing which provider to assign a member to, prefer providers listed earlier in their affinity array. Members whose affinity does not list `nvidia_nim` should be assigned NIM only when no other provider has capacity.
-4. **Tier matching** (soft): Members with `model: opus` in frontmatter get high-tier models per `configs/auto-route-defaults.yaml` `provider_models.<provider>.high`. Members with `model: sonnet` get `.mid`. For NIM, `high` is the largest available reasoning model (default `deepseek-ai/deepseek-v4-pro`); `mid` is a smaller/faster variant.
+4. **Tier matching** (soft): Members with `model: opus` in frontmatter get `provider_models.<provider>.high` from the canonical catalog. Members with `model: sonnet` get `.mid`; optional economical seats use `.low`. Never embed a provider model ID in the routing algorithm.
 5. **OpenAI-compatible seat hydration**: For every seat assigned to a provider with `exec_method: openai_compatible_api`, the coordinator reads `base_url` and `api_key_env` from the detection JSON entry (NIM defaults to `https://integrate.api.nvidia.com/v1` and `NVIDIA_API_KEY`). The resolved API key is held in coordinator state only — never written to logs or transcripts.
 
 **Path C — No routing** (`--no-auto-route`):
@@ -228,27 +228,16 @@ Do NOT begin your analysis yet. Just the restatement and alternative framing. 50
 
 ### STEP 1.7: Chairman Selection
 
-The Chairman is the synthesizer — a named, audited role distinct from the deliberating members. The Chairman does NOT participate in Rounds 1–3. They emit the final verdict in STEP 7 only. Promoting synthesis to a named role makes the synthesis prompt explicit and auditable, and lets us pick a model distinct from any deliberating seat — matching Karpathy `llm-council` (Gemini 3 Pro chair over Claude/GPT/Grok panel) and Perplexity Model Council patterns.
+The Chairman is the synthesizer — a named, audited role distinct from the deliberating members. The Chairman does NOT participate in Rounds 1–3. They emit the final verdict in STEP 7 only. Promoting synthesis to a named role makes the synthesis prompt explicit and auditable, and lets us pick a model distinct from any deliberating seat — matching `llm-council` and Perplexity Model Council patterns.
 
 **Why now:** The Chairman is selected after panel + restate, before Round 1, because (a) the Chairman selection depends on the panel composition (must not overlap), and (b) selecting it up-front keeps the synthesis prompt fixed across the session.
 
 **Selection algorithm** (apply in order — first match wins):
 
-1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-2.5-pro`).
+1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli`) or an exact model ID from the canonical catalog.
 2. **Config override**: If `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
-3. **Auto-select** (default): Pick the highest-tier model among detected providers, **preferring a provider not already on the panel** when possible. Tie-breaker: provider listed first in the detected-providers JSON.
-4. **Single-provider fallback**: If only one provider is detected, use that provider's highest tier (`opus` by default). Note in the verdict that the Chairman shares a provider with one or more panel members.
-
-**Default tier mapping** (used in step 3 above; see `configs/auto-route-defaults.yaml` `chairman_defaults:`):
-
-| Provider | Default Chairman model |
-|---|---|
-| anthropic | `opus` |
-| openai | `gpt-5.4` |
-| google | `gemini-2.5-pro` |
-| ollama | first available local model |
-| nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
-| cursor_cli | `gpt-5.4-high` |
+3. **Auto-select** (default): Pick `provider_models.<provider>.high` from the canonical catalog among detected providers, **preferring a provider not already on the panel** when possible. For a dynamic local provider whose `high` is null, use its first detected model. Tie-breaker: provider listed first in the detected-providers JSON.
+4. **Single-provider fallback**: If only one provider is detected, use that provider's catalog `high` tier. Note in the verdict that the Chairman shares a provider with one or more panel members.
 
 **Constraints:**
 - Chairman is NOT a deliberating member in the same session (hard constraint — a panel member's prior outputs are exactly what the Chairman is auditing).
@@ -305,7 +294,7 @@ cursor-agent -p --mode ask --model {model} --output-format text "{full prompt}" 
 4. Capture stdout as the member's output. Timeout: 90 seconds.
 5. If stdout is empty or the command exits non-zero, treat as a failed call and apply the Fallback rule.
 
-Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer cross-family Cursor models (e.g. `gpt-5.4-high`, `gemini-2.5-pro`, `grok-4`) when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`.
+Cursor is a model **aggregator** — one binary (`cursor-agent`) serves multiple model families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer a cross-family Cursor model from the canonical catalog when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`, then update the catalog.
 
 **For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above).

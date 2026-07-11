@@ -3,9 +3,45 @@ set -euo pipefail
 
 # Council of High Intelligence — Provider Detection Script
 # Detects available LLM providers and outputs structured JSON to stdout.
-# Usage: ./scripts/detect-providers.sh
+# Usage: ./scripts/detect-providers.sh [--config PATH] [--check-config]
 
 TIMEOUT_SECONDS=5
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODEL_CONFIG="${COUNCIL_MODEL_CONFIG:-${SCRIPT_DIR}/../configs/auto-route-defaults.yaml}"
+CHECK_CONFIG_ONLY=false
+
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/detect-providers.sh [--config PATH] [--check-config]
+
+Options:
+  --config PATH   Read model IDs from this catalog instead of the bundled one
+  --check-config  Validate the catalog without probing provider CLIs
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      [[ $# -ge 2 ]] || { echo "Error: --config requires a path" >&2; exit 2; }
+      MODEL_CONFIG="$2"
+      shift 2
+      ;;
+    --check-config)
+      CHECK_CONFIG_ONLY=true
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Error: unknown argument '$1'" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
 
 # --- Helper functions ---
 
@@ -14,6 +50,78 @@ json_provider() {
   printf '{"name":"%s","available":%s,"exec_method":"%s","binary":"%s","models":[%s]}' \
     "$name" "$available" "$exec_method" "$binary" "$models"
 }
+
+# Read one scalar from provider_models.<provider>.<tier>. This deliberately
+# supports only the small, stable YAML subset used by the catalog, avoiding a
+# runtime dependency on yq/Python in installed skills.
+model_config_get() {
+  local provider="$1" tier="$2"
+  awk -v provider="$provider" -v tier="$tier" '
+    /^provider_models:[[:space:]]*$/ { in_models=1; next }
+    in_models && /^[^[:space:]#]/ { exit }
+    in_models && $0 ~ "^  " provider ":[[:space:]]*$" { in_provider=1; next }
+    in_provider && /^  [^[:space:]][^:]*:[[:space:]]*$/ { exit }
+    in_provider && $0 ~ "^    " tier ":[[:space:]]*" {
+      value=$0
+      sub("^    " tier ":[[:space:]]*", "", value)
+      sub(/[[:space:]]+#.*$/, "", value)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      if ((value ~ /^\".*\"$/) || (value ~ /^\047.*\047$/)) {
+        value=substr(value, 2, length(value)-2)
+      }
+      if (value != "null" && value != "~") print value
+      exit
+    }
+  ' "$MODEL_CONFIG"
+}
+
+json_quote() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '"%s"' "$value"
+}
+
+provider_models_json() {
+  local provider="$1" tier value result="" seen="|"
+  for tier in high mid low; do
+    value="$(model_config_get "$provider" "$tier")"
+    [[ -n "$value" ]] || continue
+    if [[ "$seen" != *"|${value}|"* ]]; then
+      [[ -z "$result" ]] || result+=","
+      result+="$(json_quote "$value")"
+      seen+="${value}|"
+    fi
+  done
+  printf '%s' "$result"
+}
+
+validate_model_config() {
+  local provider tier value failed=false
+  [[ -r "$MODEL_CONFIG" ]] || {
+    echo "Error: model catalog is not readable: $MODEL_CONFIG" >&2
+    return 1
+  }
+  for provider in anthropic openai google; do
+    for tier in high mid; do
+      value="$(model_config_get "$provider" "$tier")"
+      if [[ -z "$value" ]]; then
+        echo "Error: missing provider_models.${provider}.${tier} in $MODEL_CONFIG" >&2
+        failed=true
+      elif [[ "$value" =~ [[:space:]\"] ]]; then
+        echo "Error: invalid model ID at provider_models.${provider}.${tier}: '$value'" >&2
+        failed=true
+      fi
+    done
+  done
+  [[ "$failed" == false ]]
+}
+
+validate_model_config
+if [[ "$CHECK_CONFIG_ONLY" == true ]]; then
+  printf 'Model catalog OK: %s\n' "$MODEL_CONFIG"
+  exit 0
+fi
 
 check_command() {
   command -v "$1" 2>/dev/null || echo ""
@@ -43,12 +151,12 @@ run_with_timeout() {
 providers=()
 
 # Anthropic — always available (host runtime)
-providers+=("$(json_provider "anthropic" "true" "subagent" "native" '"opus","sonnet","haiku"')")
+providers+=("$(json_provider "anthropic" "true" "subagent" "native" "$(provider_models_json anthropic)")")
 
 # OpenAI via Codex CLI
 codex_bin="$(check_command codex)"
 if [[ -n "$codex_bin" ]] && run_with_timeout codex --version >/dev/null 2>&1; then
-  providers+=("$(json_provider "openai" "true" "codex_exec" "$codex_bin" '"gpt-5.4"')")
+  providers+=("$(json_provider "openai" "true" "codex_exec" "$codex_bin" "$(provider_models_json openai)")")
 else
   providers+=("$(json_provider "openai" "false" "codex_exec" "${codex_bin:-not_found}" '')")
 fi
@@ -56,7 +164,7 @@ fi
 # Google via Gemini CLI
 gemini_bin="$(check_command gemini)"
 if [[ -n "$gemini_bin" ]] && run_with_timeout gemini --version >/dev/null 2>&1; then
-  providers+=("$(json_provider "google" "true" "gemini_cli" "$gemini_bin" '"gemini-3-pro"')")
+  providers+=("$(json_provider "google" "true" "gemini_cli" "$gemini_bin" "$(provider_models_json google)")")
 else
   providers+=("$(json_provider "google" "false" "gemini_cli" "${gemini_bin:-not_found}" '')")
 fi
@@ -80,9 +188,8 @@ providers+=("$(json_provider "ollama" "$ollama_available" "ollama_run" "${ollama
 # Claude, Gemini, and Grok families through one binary + CURSOR_API_KEY.
 cursor_bin="$(check_command cursor-agent)"
 if [[ -n "$cursor_bin" ]] && run_with_timeout cursor-agent --version >/dev/null 2>&1; then
-  # Cross-family defaults so a Cursor seat adds real diversity, not a
-  # second Anthropic-biased model. Verify live IDs with `cursor-agent --list-models`.
-  providers+=("$(json_provider "cursor_cli" "true" "cursor_cli" "$cursor_bin" '"gpt-5.4-high","claude-opus-4-7-thinking-high","gemini-3-pro","grok-4"')")
+  # Cross-family defaults come from the same canonical catalog.
+  providers+=("$(json_provider "cursor_cli" "true" "cursor_cli" "$cursor_bin" "$(provider_models_json cursor_cli)")")
 else
   providers+=("$(json_provider "cursor_cli" "false" "cursor_cli" "${cursor_bin:-not_found}" '')")
 fi
@@ -108,8 +215,7 @@ if [[ -n "${NVIDIA_API_KEY:-}" ]]; then
       # Curl unavailable; trust env var presence + key prefix as availability signal.
       nim_available=true
     fi
-    # Default model suggestions (verify live IDs at build.nvidia.com/models).
-    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
+    nim_models="$(provider_models_json nvidia_nim)"
   fi
 fi
 providers+=("$(json_provider "nvidia_nim" "$nim_available" "openai_compatible_api" "$nim_endpoint" "$nim_models")")

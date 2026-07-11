@@ -236,6 +236,16 @@ Cursor CLI ([cursor.com/cli](https://cursor.com/cli)) is a model **aggregator** 
 - `--dry-route` — print the routing table without running the council
 - `--models [path]` — manual override with YAML config (see `configs/provider-model-slots.example.yaml`)
 
+### Updating provider models
+
+All auto-routed model IDs live in one file: [`configs/auto-route-defaults.yaml`](configs/auto-route-defaults.yaml). To upgrade Anthropic, OpenAI, or Google, edit that provider's `high`, `mid`, and optional `low` values, then validate the catalog:
+
+```bash
+./scripts/detect-providers.sh --check-config
+```
+
+Provider detection and Chairman selection read the same values, so no shell script or coordinator prompt needs a matching edit. To test a catalog without changing the repository, pass `--config /path/to/catalog.yaml` or set `COUNCIL_MODEL_CONFIG=/path/to/catalog.yaml`. Manual `--models` seat maps intentionally remain pinned and are not rewritten automatically.
+
 ## Deliberation Protocol
 
 Full mode runs 7 steps: provider routing → problem restate gate → independent analysis → cross-examination → enforcement scan → final positions → verdict synthesis. Verdicts lead with what the council doesn't know.
@@ -294,10 +304,10 @@ Installs 18 council agents plus skill files for Claude, Codex, and/or Gemini CLI
 ./install.sh --codex-dir /path/to/.codex       # Non-default Codex config directory
 ./install.sh --gemini-dir /path/to/.gemini     # Non-default Gemini config directory
 ./install.sh --dry-run                          # Preview without writing
-./install.sh --copy-configs                     # Also install model routing templates
+./install.sh --copy-configs                     # Also install optional routing examples
 ```
 
-Restart your target client(s) after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
+The canonical model catalog is always installed; `--copy-configs` adds the optional example mappings. Restart your target client(s) after installing. Run `./scripts/council-simulation-checklist.sh` to validate. Try the [demo session pack](demos/session-pack.md) to test all modes.
 
 ## Requirements
 

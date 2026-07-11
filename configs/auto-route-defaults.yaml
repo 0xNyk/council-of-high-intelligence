@@ -1,12 +1,16 @@
-# Default model tier mapping per provider.
-# Used by the coordinator when auto-routing members to providers.
+# Canonical model catalog for provider detection, auto-routing, and Chairman
+# selection. Update model IDs here; do not hardcode them in scripts or protocol
+# files. `scripts/detect-providers.sh --check-config` validates the required
+# Anthropic, OpenAI, and Google entries after an edit.
 # "high" = members with model: opus in frontmatter (heavyweight analysis)
 # "mid"  = members with model: sonnet in frontmatter (faster/practical)
+# "low"  = optional economical tier advertised by provider detection
 
 provider_models:
   anthropic:
     high: opus
     mid: sonnet
+    low: haiku
   openai:
     high: gpt-5.4
     mid: gpt-5.4
@@ -25,20 +29,13 @@ provider_models:
     high: gpt-5.4-high
     mid: gemini-3-pro
 
-# Chairman defaults — used by SKILL.md STEP 1.7 selection algorithm.
-# Per-provider tier used when the auto-select algorithm picks that provider as Chairman.
-chairman_defaults:
-  anthropic: opus
-  openai: gpt-5.4
-  google: gemini-3-pro
-  ollama: null  # uses first available local model
-  nvidia_nim: deepseek-ai/deepseek-v4-pro
-  cursor_cli: gpt-5.4-high
+# Chairman auto-selection uses each provider's `high` model above. This avoids
+# a second set of model IDs drifting out of sync.
 
 # Explicit override for the Chairman across all sessions.
 # Leave null/commented to use the STEP 1.7 selection algorithm.
 # Example:
 #   chairman:
 #     provider: google
-#     model: gemini-3-pro
+#     model: <exact-model-id>
 chairman: null
