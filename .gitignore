@@ -1,16 +1,60 @@
-# OS cruft
+# Operating systems
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+Desktop.ini
 
-# Logs and local tool state
-*.log
-.gstack/
-
-# Editor
-.vscode/
+# Editors
 .idea/
+.vscode/
 *.swp
+*.swo
+*~
 
-# Local scratch
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node and package managers
+node_modules/
+.npm/
+.pnpm-store/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Logs, caches, and coverage
+*.log
+*.log.*
+.cache/
+coverage/
+htmlcov/
+.coverage
+
+# Local agent and workflow state
+.devgod/
+.gstack/
+.claude/
+.codex/
+.gemini/
+.opencode/
+
+# Local routing overrides
+configs/provider-model-slots.local.yaml
+configs/provider-model-slots.local.yml
+
+# Scratch output
 tmp/
+temp/
 scratch/
+output/
+reports/
