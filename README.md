@@ -80,6 +80,8 @@ it harder to use a long deliberation as decoration for a decision already made.
 | Quick | Restate, rapid analysis, final positions | The decision needs breadth but not a full adversarial round |
 | Duo | Opening positions, direct response, final statements | One polarity defines the decision |
 
+![Council mode selector](assets/mode-selector.jpeg)
+
 ```text
 /council --full What is the right pricing model?
 /council --quick --triad shipping Should we release today?
@@ -119,10 +121,21 @@ Evidence labels separate:
 - `ASSUMPTION`: required for the argument and still unverified;
 - `UNKNOWN`: missing information that could change the decision.
 
+## Track the outcome
+
+A verdict is useful only if it can be checked later. Before acting, record the prediction,
+owner, review date, and evidence that would change the recommendation. At the checkpoint,
+mark the result confirmed, revised, reversed, or inconclusive instead of rewriting the
+original rationale.
+
+![Council outcome ledger](assets/outcome-ledger.jpeg)
+
 ## The 18 lenses
 
 Members are analytical instruments, not impersonation claims. Each persona has a grounding
 protocol, a method, known blind spots, and a structured response contract.
+
+![Council panel composition](assets/panel-composition.jpeg)
 
 | Member | Primary lens | Useful counterweight |
 |---|---|---|
@@ -154,6 +167,8 @@ use `--members`, named triads, or the `classic`, `exploration-orthogonal`, and
 The detection script checks which supported providers are available, then the coordinator
 distributes seats across them. Polarity pairs are separated when possible so a single model
 family does not play both sides of a disagreement.
+
+![Council provider routing](assets/provider-routing.jpeg)
 
 | Provider path | Detection |
 |---|---|
