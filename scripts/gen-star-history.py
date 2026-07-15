@@ -119,7 +119,8 @@ def render(repo: str, pts: list[tuple[datetime, int]], theme: dict) -> str:
     end_x, end_y = sx(x1), sy(y_max_raw)
     label_anchor = "end"
     label_x = end_x - 10
-    updated = pts[-1][0].strftime("%b %-d, %Y")
+    last = pts[-1][0]
+    updated = f"{last:%b} {last.day}, {last.year}"
 
     font = "font-family=\"-apple-system,'Segoe UI',Helvetica,Arial,sans-serif\""
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Cumulative GitHub stars for {repo}: {y_max_raw:,} as of {updated}">
