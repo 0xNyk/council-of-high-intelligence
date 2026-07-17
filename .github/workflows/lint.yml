@@ -35,7 +35,7 @@ jobs:
         run: |
           markdownlint --config .markdownlint.json \
             README.md CONTRIBUTING.md CHANGELOG.md CLAUDE.md \
-            SKILL.md SKILL.codex.md SKILL.gemini.md \
+            SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md \
             "agents/**/*.md" \
             "demos/**/*.md"
 
