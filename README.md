@@ -244,6 +244,8 @@ Security reports belong in [SECURITY.md](SECURITY.md), not a public issue.
 - [Release history](CHANGELOG.md)
 - [Brand kit](assets/BRAND.md)
 - [OSS profile](https://www.nyk.dev/oss/council-of-high-intelligence)
+- [Sponsor ongoing maintenance](https://github.com/sponsors/0xNyk)
+- [Maintainer: Nyk](https://nyk.dev) · [@nykdotdev](https://x.com/nykdotdev)
 - [Issues](https://github.com/0xNyk/council-of-high-intelligence/issues)
 
 <p align="center">
