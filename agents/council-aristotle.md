@@ -11,7 +11,7 @@ council:
   polarity_pairs: ["lao-tzu", "munger"]
   triads: ["architecture", "innovation", "complexity", "systems"]
   duo_keywords: ["architecture", "structure", "categories"]
-  profiles: ["classic", "exploration-orthogonal"]
+  profiles: ["classic"]
   provider_affinity: ["anthropic", "openai", "google"]
   reasoning_method: taxonomic-decomposition
 ---
