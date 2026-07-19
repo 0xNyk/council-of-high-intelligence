@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="council mark">
+  <rect width="256" height="256" rx="40" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="12" height="256" fill="#C5F23F"/>
+  <g fill="none" stroke="#C5F23F" stroke-width="5" transform="translate(128,128)">
+    <circle r="36" fill="#C5F23F" fill-opacity="0.12"/>
+    <circle cx="0" cy="-70" r="12" fill="#C5F23F" fill-opacity="0.3"/>
+    <circle cx="60" cy="-35" r="10"/>
+    <circle cx="60" cy="35" r="10"/>
+    <circle cx="0" cy="70" r="12" fill="#C5F23F" fill-opacity="0.2"/>
+    <circle cx="-60" cy="35" r="10"/>
+    <circle cx="-60" cy="-35" r="10"/>
+    <path d="M0 -58 V-42 M50 -30 L32 -18 M50 30 L32 18 M0 58 V42 M-50 30 L-32 18 M-50 -30 L-32 -18" stroke-opacity="0.55"/>
+  </g>
+</svg>

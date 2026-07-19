@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-label="Council deliberation protocol blueprint">
+  <rect width="1200" height="560" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="6" height="560" fill="#C5F23F"/>
+  <text x="48" y="52" fill="#C5F23F" font-family="ui-monospace, Menlo, monospace" font-size="16" letter-spacing="0.2em">BLUEPRINT · DELIBERATION PROTOCOL</text>
+  <text x="48" y="96" fill="#fafafa" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600">How a session flows</text>
+
+  <g font-family="ui-monospace, Menlo, monospace" font-size="15">
+    <!-- steps -->
+    <rect x="48" y="160" width="200" height="120" rx="8" fill="#111" stroke="#C5F23F" stroke-opacity="0.5"/>
+    <text x="68" y="200" fill="#C5F23F">1 · RESTATE</text>
+    <text x="68" y="232" fill="#a3a3a3">Problem gate</text>
+    <text x="68" y="256" fill="#737373">Catch wrong Qs</text>
+
+    <path d="M258 220 H300" stroke="#C5F23F" stroke-opacity="0.5" stroke-width="2"/>
+
+    <rect x="310" y="160" width="200" height="120" rx="8" fill="#111" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="330" y="200" fill="#C5F23F">2 · ANALYZE</text>
+    <text x="330" y="232" fill="#a3a3a3">3–18 members</text>
+    <text x="330" y="256" fill="#737373">Polarity pairs</text>
+
+    <path d="M520 220 H562" stroke="#C5F23F" stroke-opacity="0.5" stroke-width="2"/>
+
+    <rect x="572" y="160" width="200" height="120" rx="8" fill="#111" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="592" y="200" fill="#C5F23F">3 · ATTACK</text>
+    <text x="592" y="232" fill="#a3a3a3">Dissent quota</text>
+    <text x="592" y="256" fill="#737373">Steelman oppose</text>
+
+    <path d="M782 220 H824" stroke="#C5F23F" stroke-opacity="0.5" stroke-width="2"/>
+
+    <rect x="834" y="160" width="280" height="120" rx="8" fill="#111" stroke="#C5F23F" stroke-opacity="0.7"/>
+    <text x="854" y="200" fill="#C5F23F">4 · VERDICT</text>
+    <text x="854" y="232" fill="#a3a3a3">Unresolved first</text>
+    <text x="854" y="256" fill="#737373">Next steps, not theater</text>
+  </g>
+
+  <text x="48" y="360" fill="#a3a3a3" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18">Modes: full · quick · duo — same protocol, fewer seats.</text>
+  <text x="48" y="420" fill="#737373" font-family="ui-monospace, Menlo, monospace" font-size="14">Multi-provider routing spreads members across Claude / OpenAI / Gemini / Ollama when configured.</text>
+  <text x="48" y="520" fill="#525252" font-family="ui-monospace, Menlo, monospace" font-size="14">council-of-high-intelligence · skill · MIT</text>
+</svg>

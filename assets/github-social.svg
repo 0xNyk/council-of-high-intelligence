@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="council-of-high-intelligence social">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#070707"/>
+      <stop offset="100%" stop-color="#121212"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#C5F23F" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <rect x="0" y="0" width="8" height="640" fill="#C5F23F"/>
+  <!-- deliberation ring: 8 seats around a table -->
+  <g transform="translate(980,300)" fill="none" stroke="#C5F23F">
+    <circle cx="0" cy="0" r="110" stroke-opacity="0.25" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="36" fill="#C5F23F" fill-opacity="0.12" stroke-opacity="0.8" stroke-width="1.5"/>
+    <g stroke-width="1.4">
+      <circle cx="0" cy="-110" r="10" fill="#C5F23F" fill-opacity="0.35" stroke-opacity="0.9"/>
+      <circle cx="78" cy="-78" r="8" stroke-opacity="0.6"/>
+      <circle cx="110" cy="0" r="8" stroke-opacity="0.6"/>
+      <circle cx="78" cy="78" r="8" stroke-opacity="0.6"/>
+      <circle cx="0" cy="110" r="10" fill="#C5F23F" fill-opacity="0.2" stroke-opacity="0.7"/>
+      <circle cx="-78" cy="78" r="8" stroke-opacity="0.6"/>
+      <circle cx="-110" cy="0" r="8" stroke-opacity="0.6"/>
+      <circle cx="-78" cy="-78" r="8" stroke-opacity="0.6"/>
+    </g>
+    <line x1="0" y1="-100" x2="0" y2="-46" stroke-opacity="0.45"/>
+    <line x1="70" y1="70" x2="28" y2="28" stroke-opacity="0.35"/>
+    <line x1="-70" y1="70" x2="-28" y2="28" stroke-opacity="0.35"/>
+  </g>
+  <text x="56" y="96" fill="#C5F23F" font-family="ui-monospace, Menlo, monospace" font-size="18" letter-spacing="0.24em">SKILL · MULTI-PERSONA · DELIBERATION</text>
+  <text x="56" y="210" fill="#fafafa" font-family="ui-sans-serif, system-ui, sans-serif" font-size="52" font-weight="700">council-of-high-intelligence</text>
+  <text x="56" y="280" fill="#a3a3a3" font-family="ui-sans-serif, system-ui, sans-serif" font-size="26">18 personas argue hard decisions. One command.</text>
+  <text x="56" y="340" fill="#737373" font-family="ui-monospace, Menlo, monospace" font-size="18">Claude Code · Codex · Gemini CLI</text>
+  <text x="56" y="560" fill="#737373" font-family="ui-monospace, Menlo, monospace" font-size="18">0xNyk · open source · nyk.dev/oss</text>
+  <text x="56" y="590" fill="#525252" font-family="ui-monospace, Menlo, monospace" font-size="14">1280×640 · social / Open Graph</text>
+</svg>
