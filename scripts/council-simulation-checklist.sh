@@ -282,6 +282,9 @@ else
   warn "shellcheck not installed; skipped"
 fi
 
+python3 -S scripts/test-convert-agents-opencode.py
+pass "opencode agent converter regression tests passed without site packages"
+
 TMP_LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_LOG_DIR}"' EXIT
 
@@ -308,6 +311,40 @@ pass "install.sh --dry-run --gemini completed"
 
 grep -q "gemini-extension.json" "${TMP_LOG_DIR}/dry-run-gemini.log" || fail "gemini dry-run output missing gemini-extension.json manifest step"
 pass "Gemini install manifest step present"
+
+./install.sh --dry-run --opencode-only --opencode-dir "${TMP_LOG_DIR}/opencode-dry-run" >"${TMP_LOG_DIR}/dry-run-opencode.log"
+pass "install.sh --dry-run --opencode-only completed"
+
+grep -q "python3 -S .*convert-agents-opencode.py" "${TMP_LOG_DIR}/dry-run-opencode.log" || fail "opencode dry run missing dependency-free agent conversion step"
+pass "opencode dry run includes dependency-free agent conversion"
+
+grep -Fq '.config/opencode/agents/' SKILL.opencode.md || fail "opencode skill does not reference the discoverable agents/ directory"
+if grep -Fq '.config/opencode/agent/' SKILL.opencode.md; then
+  fail "opencode skill still references the obsolete singular agent/ directory"
+fi
+pass "opencode skill uses the documented plural agents/ directory"
+
+OPENCODE_TEST_DIR="${TMP_LOG_DIR}/opencode-install"
+./install.sh --opencode-only --opencode-dir "${OPENCODE_TEST_DIR}" >"${TMP_LOG_DIR}/install-opencode.log"
+pass "install.sh completed a real isolated opencode installation"
+
+shopt -s nullglob
+installed_opencode_agents=("${OPENCODE_TEST_DIR}"/agents/council-*.md)
+shopt -u nullglob
+if [[ ${#installed_opencode_agents[@]} -ne "${agent_count}" ]]; then
+  fail "opencode installed ${#installed_opencode_agents[@]}/${agent_count} converted agents"
+fi
+
+for installed_agent in "${installed_opencode_agents[@]}"; do
+  frontmatter=$(awk 'NR == 1 { next } /^---$/ { exit } { print }' "${installed_agent}")
+  grep -q '^mode: subagent$' <<<"${frontmatter}" || fail "opencode mode missing in ${installed_agent}"
+  grep -q '^permission:$' <<<"${frontmatter}" || fail "opencode permissions missing in ${installed_agent}"
+  grep -q '^  claude_tier:' <<<"${frontmatter}" || fail "Claude tier metadata missing in ${installed_agent}"
+  if grep -Eq '^(name|model|color|tools):' <<<"${frontmatter}"; then
+    fail "Claude-only frontmatter leaked into ${installed_agent}"
+  fi
+done
+pass "all opencode agents were converted and validated in an isolated target"
 
 echo
 echo "Checklist complete."

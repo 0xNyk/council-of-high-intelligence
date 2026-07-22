@@ -212,7 +212,7 @@ Before any analysis begins, each member must restate the problem. This catches w
 
 Spawn each member in parallel with:
 ```
-Read your agent definition at ~/.config/opencode/agent/council-{name}.md.
+Read your agent definition at ~/.config/opencode/agents/council-{name}.md.
 
 The problem under deliberation:
 {problem}
@@ -267,11 +267,11 @@ Run all members **IN PARALLEL**. Each member sees ONLY the problem statement (bl
 **Dispatch by exec_method** (from routing table):
 
 **For `subagent` (native)** — spawn as a native opencode subagent via the `task` tool:
-- Target the subagent whose name matches the council member (defined in `~/.config/opencode/agent/council-{name}.md`, mode: `subagent`)
+- Target the subagent whose name matches the council member (defined in `~/.config/opencode/agents/council-{name}.md`, mode: `subagent`)
 - These agents have no per-agent `model` override baked in — they inherit whatever model the current opencode session/agent is configured with. Original Claude tier hints (`opus`/`sonnet`) are preserved as `council.claude_tier` in each agent's frontmatter for reference only, not applied automatically. If you want a specific model per seat, pass it via `--models` (Path A) and route that seat to one of the other exec_methods below instead.
 
 **For `codex_exec` (OpenAI)** — run via Bash tool:
-1. Read the member's agent file at `~/.config/opencode/agent/council-{name}.md`
+1. Read the member's agent file at `~/.config/opencode/agents/council-{name}.md`
 2. Extract the **Identity**, **Grounding Protocol**, and relevant **Output Format** sections (trimmed — skip Analytical Method, What You See/Miss, When Deliberating)
 3. Build the full prompt with identity inlined, then run:
 ```bash
@@ -333,7 +333,7 @@ For auto-detection of NIM specifically (when no `--models` mapping is provided),
 **Prompt template** (used for ALL providers — for external providers, inline the identity preamble):
 ```
 You are operating as a council member in a structured deliberation.
-{For subagent: "Read your agent definition at ~/.config/opencode/agent/council-{name}.md and follow it precisely."}
+{For subagent: "Read your agent definition at ~/.config/opencode/agents/council-{name}.md and follow it precisely."}
 {For external providers: paste the extracted Identity + Grounding Protocol + Output Format sections here}
 
 The problem under deliberation:
@@ -369,7 +369,7 @@ Emit to user:
 Prompt template for each member (the **Anti-conformity directive** below is evidence-based — see Choi et al., arXiv:2510.07517; Cui et al., Free-MAD arXiv:2509.11035; controlled-study arXiv:2511.07784):
 ```
 You are council-{name} in Round 2 of a structured deliberation.
-Read your agent definition at ~/.config/opencode/agent/council-{name}.md.
+Read your agent definition at ~/.config/opencode/agents/council-{name}.md.
 
 **Identity is masked in this round.** The Round 1 analyses below are labeled
 Member A, Member B, … — you do not know which colleague produced which. One
@@ -550,7 +550,7 @@ Emit to user:
 Spawn all members in parallel with:
 ```
 You are operating as a council member in a rapid deliberation.
-Read your agent definition at ~/.config/opencode/agent/council-{name}.md and follow it precisely.
+Read your agent definition at ~/.config/opencode/agents/council-{name}.md and follow it precisely.
 
 The problem under deliberation:
 {problem}
@@ -627,7 +627,7 @@ Emit to user:
 Spawn both members in parallel:
 ```
 You are operating as one half of a structured dialectic with one opponent.
-Read your agent definition at ~/.config/opencode/agent/council-{name}.md and follow it precisely.
+Read your agent definition at ~/.config/opencode/agents/council-{name}.md and follow it precisely.
 
 The problem under deliberation:
 {problem}
