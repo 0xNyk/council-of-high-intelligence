@@ -3,9 +3,12 @@ set -euo pipefail
 
 # Council of High Intelligence - provider detection.
 # Usage: ./scripts/detect-providers.sh [--host claude|codex|gemini]
+#        [--onepassword-environment ENVIRONMENT_ID]
 
 TIMEOUT_SECONDS=8
 HOST_RUNTIME="codex"
+ONEPASSWORD_ENVIRONMENT_ID=""
+INSIDE_ONEPASSWORD=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -17,6 +20,18 @@ while [[ $# -gt 0 ]]; do
       HOST_RUNTIME="$2"
       shift 2
       ;;
+    --onepassword-environment)
+      if [[ $# -lt 2 ]]; then
+        echo "--onepassword-environment requires an environment ID" >&2
+        exit 2
+      fi
+      ONEPASSWORD_ENVIRONMENT_ID="$2"
+      shift 2
+      ;;
+    --inside-onepassword)
+      INSIDE_ONEPASSWORD=true
+      shift
+      ;;
     *)
       echo "unknown argument: $1" >&2
       exit 2
@@ -25,13 +40,27 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ! "$HOST_RUNTIME" =~ ^(claude|codex|gemini)$ ]]; then
-  echo "usage: $0 [--host claude|codex|gemini]" >&2
+  echo "usage: $0 [--host claude|codex|gemini] [--onepassword-environment ID]" >&2
   exit 2
+fi
+
+# Authorize once at council startup. If the operator cancels or 1Password is
+# unavailable, continue normally and leave credential-backed providers offline.
+if [[ -n "$ONEPASSWORD_ENVIRONMENT_ID" && "$INSIDE_ONEPASSWORD" == false \
+  && -z "${MODEL_API_KEY:-}" ]] && command -v op >/dev/null 2>&1; then
+  if op_output="$(op run --environment "$ONEPASSWORD_ENVIRONMENT_ID" -- \
+      "$0" --host "$HOST_RUNTIME" \
+      --onepassword-environment "$ONEPASSWORD_ENVIRONMENT_ID" \
+      --inside-onepassword)"; then
+    printf '%s\n' "$op_output"
+    exit 0
+  fi
 fi
 
 json_provider() {
   local name="$1" available="$2" exec_method="$3" binary="$4" models_json="$5"
   local base_url="${6:-}" api_key_env="${7:-}" reasoning_effort="${8:-}"
+  local onepassword_environment_id="${9:-}"
 
   jq -cn \
     --arg name "$name" \
@@ -42,10 +71,12 @@ json_provider() {
     --arg base_url "$base_url" \
     --arg api_key_env "$api_key_env" \
     --arg reasoning_effort "$reasoning_effort" \
+    --arg onepassword_environment_id "$onepassword_environment_id" \
     '{name:$name, available:$available, exec_method:$exec_method, binary:$binary, models:$models}
       + (if $base_url == "" then {} else {base_url:$base_url} end)
       + (if $api_key_env == "" then {} else {api_key_env:$api_key_env} end)
-      + (if $reasoning_effort == "" then {} else {reasoning_effort:$reasoning_effort} end)'
+      + (if $reasoning_effort == "" then {} else {reasoning_effort:$reasoning_effort} end)
+      + (if $onepassword_environment_id == "" then {} else {credential_source:"onepassword", onepassword_environment_id:$onepassword_environment_id} end)'
 }
 
 check_command() {
@@ -118,6 +149,18 @@ if [[ -n "$grok_bin" ]] && grok_models="$(run_with_timeout grok models 2>/dev/nu
 else
   providers+=("$(json_provider xai false grok_cli "${grok_bin:-not_found}" '')")
 fi
+
+# Meta Model API. Muse Spark is not assumed to exist on OpenRouter.
+meta_endpoint="https://api.meta.ai/v1"
+meta_available=false
+if [[ -n "${MODEL_API_KEY:-}" ]] && command -v curl >/dev/null 2>&1; then
+  if run_with_timeout curl -fsS -o /dev/null \
+      -H @<(printf 'Authorization: Bearer %s\n' "${MODEL_API_KEY}") \
+      "${meta_endpoint}/models"; then
+    meta_available=true
+  fi
+fi
+providers+=("$(json_provider meta_model_api "$meta_available" openai_compatible_api "$meta_endpoint" '"muse-spark-1.1"' "$meta_endpoint" MODEL_API_KEY high "$ONEPASSWORD_ENVIRONMENT_ID")")
 
 # Ollama local models.
 ollama_bin="$(check_command ollama)"

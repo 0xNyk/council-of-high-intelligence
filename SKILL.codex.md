@@ -77,6 +77,34 @@ Resolve council files in this order:
 
 If neither exists, stop and tell the user to run `./install.sh --codex`.
 
+### Step 1.5: Detect Providers and Build the Routing Table
+
+Unless `--no-auto-route` is set, run the detector colocated with the installed skill:
+
+```bash
+bash ~/.codex/skills/council/scripts/detect-providers.sh --host codex \
+  --onepassword-environment dygiaiqcvw4lwcgwyrddcryotu
+```
+
+This is the invocation-level credential gate. It may ask the user to authorize 1Password
+once. If authorization is cancelled or unavailable, detection continues without
+credential-backed providers. For a source checkout fallback, use the same flags with
+`./scripts/detect-providers.sh`. Treat only entries with `available: true` as routable. A
+provider identity is valid only when its detected `exec_method` is used; a Codex
+`spawn_agent` seat is OpenAI, never Anthropic.
+
+If `--models` is supplied, hydrate each manual seat from that mapping. OpenAI-compatible
+seats must include `base_url` and `api_key_env`; never store or print the key. Otherwise
+spread the selected panel across available providers as evenly as possible, separate
+polarity pairs when possible, and resolve `opus`/`sonnet` frontmatter tier labels through
+`configs/auto-route-defaults.yaml`.
+
+State a checkpoint table before any model call:
+`member -> provider -> model -> exec_method`. Include unavailable requested providers and
+the fallback chosen for them. If `--dry-route` is set, also preview the Chairman selection
+and stop. If `--no-auto-route` is set, label every seat
+`openai / gpt-5.6-sol / subagent`; do not describe that mode as multi-provider.
+
 ### Step 2: Parse Request
 
 Project overrides: if `./.council.yaml` exists in the working directory, treat its keys (`profile`, `triad`, `members`, `chairman`, `models`, `no_auto_route`) as default flag values. Explicit flags always win.
@@ -114,7 +142,9 @@ Track seat state per member:
 
 ### Step 3: Run Restatement Gate (Parallel)
 
-Spawn one sub-agent per selected member with `spawn_agent`, `fork_context=true`.
+Dispatch one independent call per selected member, in parallel, using the routing table and
+the exec-method instructions in Step 3.5. Use `spawn_agent` only for seats explicitly
+routed to the OpenAI host.
 
 Prompt template:
 
@@ -132,7 +162,7 @@ Maximum 50 words total.
 
 Wait with `spawn_timeout_ms`. If a seat fails or times out:
 
-1. Retry spawn up to `retry_attempts` using backoff.
+1. Retry the same provider dispatch up to `retry_attempts` using backoff.
 2. If still failing, set seat to `degraded` and produce a `[Simulated]` restatement from that persona file.
 3. If persona file cannot be read, mark seat `offline`.
 
@@ -142,13 +172,25 @@ If live seats drop below `hard_min_live_seats`, switch to fully simulated mode f
 
 Some provider archetypes are dispatched outside the host runtime's `spawn_agent`. Anonymization (Step 4) and Chairman selection (Step 5) apply equally to these seats — no special-case logic.
 
-**`openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future)** — dispatch via HTTP:
+**`openai_compatible_api` (Meta Model API, NVIDIA NIM, or another compatible endpoint)** — dispatch via HTTP:
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
-- POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens: 1200`).
-- Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and apply the standard fallback (anthropic per the agent's `model` frontmatter).
-- Per-seat timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+- When detection emits `credential_source: onepassword`, prefix the HTTP command with
+  `op run --environment {onepassword_environment_id} --`. This normally reuses the
+  startup authorization. If 1Password relocks and authorization is cancelled, degrade only
+  that seat rather than blocking the council.
+- POST to `{base_url}/chat/completions` with an OpenAI-compatible payload containing
+  system+user messages and `max_completion_tokens: 2400`. When detection supplies
+  `reasoning_effort`, include it as a top-level field. Do not set `temperature` on a
+  reasoning model unless that endpoint documents the combination.
+- Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and
+  use the first available real provider in this order: Anthropic Fable, OpenAI Sol, Google
+  Pro. Record the actual fallback provider/model.
+- Meta Muse Spark uses `https://api.meta.ai/v1`, `MODEL_API_KEY`, model
+  `muse-spark-1.1`, and `reasoning_effort: high`. Do not route Muse through OpenRouter
+  unless its live catalog actually lists the model.
+- Per-seat timeout: 180 seconds.
 
 **`cursor_cli` (Cursor)** — dispatch via subprocess. Cursor is a model aggregator: one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families.
 

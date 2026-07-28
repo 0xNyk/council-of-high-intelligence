@@ -172,12 +172,20 @@ family does not play both sides of a disagreement.
 
 | Provider path | Detection |
 |---|---|
-| Native host subagents | Available through the active supported client |
+| Anthropic | Native on Claude; authenticated `claude` CLI elsewhere |
 | OpenAI | `codex` executable |
-| Google | `gemini` executable |
+| Google | `agy` or `gemini` executable |
+| xAI | Authenticated `grok` executable |
+| Meta Model API | `MODEL_API_KEY`, optionally hydrated from 1Password |
 | Ollama | `ollama` executable |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
 | Cursor | `cursor-agent` executable or configured login |
+
+Meta Muse Spark uses Meta's direct OpenAI-compatible endpoint at
+`https://api.meta.ai/v1`, model `muse-spark-1.1`, and `MODEL_API_KEY`; the detector does
+not assume that Muse exists on OpenRouter. A host adapter may ask once for a configured
+1Password Environment at council startup. Cancelling that authorization leaves only the
+credential-backed seat unavailable and does not stop the council.
 
 Preview routing without running a council:
 
@@ -188,7 +196,7 @@ Preview routing without running a council:
 Use `--no-auto-route` to keep native-host defaults. Use `--models <path>` with a copy of
 [`configs/provider-model-slots.example.yaml`](configs/provider-model-slots.example.yaml)
 for an explicit seat map. Provider failure is reported before the seat falls back to the
-native host.
+first available real provider.
 
 ## Installation reference
 

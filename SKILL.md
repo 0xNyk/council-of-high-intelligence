@@ -221,7 +221,10 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 5. Log routing metadata: member → provider → model → exec_method (e.g. `feynman → nvidia_nim → deepseek-ai/deepseek-v4-pro → openai_compatible_api`).
 
 **Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
-1. Run the detection script via Bash: `bash ~/.claude/skills/council/scripts/detect-providers.sh`
+1. Run the detection script via Bash:
+   `bash ~/.claude/skills/council/scripts/detect-providers.sh --host claude --onepassword-environment dygiaiqcvw4lwcgwyrddcryotu`.
+   If 1Password authorization is cancelled or unavailable, continue without
+   credential-backed providers.
 2. Parse the JSON output. If `provider_count == 1` (only anthropic): skip routing entirely, use agent frontmatter defaults. Proceed to Step 1.5.
 3. If `provider_count >= 2`: apply the routing algorithm below.
 4. If `--dry-route`: print the routing table and stop (do not convene the council).
@@ -359,9 +362,9 @@ rm -f "$PROMPT_FILE"
 
 Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer cross-family Cursor models (e.g. `gpt-5.4-high`, `gemini-3-pro`, `grok-4`) when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`.
 
-**For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
+**For `openai_compatible_api` (Meta Model API, NVIDIA NIM, or another compatible endpoint)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above).
-2. Resolve credentials at runtime: read `api_key_env` from the seat config and look up the value from the environment. If the env var is unset or empty, fall back to anthropic per the Fallback rule below — do NOT inline a placeholder.
+2. Resolve credentials at runtime: read `api_key_env` from the seat config and look up the value from the environment. If detection emits `credential_source: onepassword`, run the complete HTTP call inside `op run --environment {onepassword_environment_id} -- bash -c` so the key is hydrated only for that process. If authorization is cancelled or the env var is empty, degrade only this seat and apply the Fallback rule — do NOT inline a placeholder.
 3. Read `base_url` from the seat config (e.g. `https://integrate.api.nvidia.com/v1` for NIM).
 4. Construct an OpenAI-compatible `/chat/completions` call. The Authorization header is passed via process substitution (`-H @<(…)`) so the API key never appears in the process argv (visible to any local user via `ps`):
 ```bash
@@ -372,15 +375,18 @@ curl -sS -X POST "{base_url}/chat/completions" \
        --arg model "{model}" \
        --arg prompt "{full prompt}" \
        --arg system "You are operating as a council member in a structured deliberation." \
-       '{model: $model, messages: [{role:"system",content:$system},{role:"user",content:$prompt}], temperature: 0.7, max_tokens: 1200}')" \
+       --arg reasoning_effort "{reasoning_effort}" \
+       '{model: $model, messages: [{role:"system",content:$system},{role:"user",content:$prompt}], max_completion_tokens: 2400}
+        + (if $reasoning_effort == "" then {} else {reasoning_effort:$reasoning_effort} end)')" \
   2>/dev/null | jq -r '.choices[0].message.content // empty'
 ```
-5. Capture stdout as the member's output. Timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
-6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
+5. Meta Muse Spark uses `https://api.meta.ai/v1`, `MODEL_API_KEY`, model `muse-spark-1.1`, and `reasoning_effort: high`. Do not route Muse through OpenRouter unless its live catalog actually lists the model.
+6. Capture stdout as the member's output. Timeout: 180 seconds.
+7. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
 
 For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
 
-**Fallback**: If any external provider call fails or times out, log `[FALLBACK] {member} failed on {provider}/{model}. Falling back to anthropic/{frontmatter_model}.` and re-run as a Claude subagent. Skip the failed provider for remaining rounds.
+**Fallback**: If any external provider call fails or times out, log the failed provider/model and the actual provider/model used next. Prefer the first available real provider in this order: Anthropic Fable, OpenAI Sol, Google Pro. Skip the failed provider for remaining rounds.
 
 **Prompt template** (used for ALL providers — for external providers, inline the identity preamble):
 ```
