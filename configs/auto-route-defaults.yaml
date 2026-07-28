@@ -1,44 +1,52 @@
 # Default model tier mapping per provider.
 # Used by the coordinator when auto-routing members to providers.
 # "high" = members with model: opus in frontmatter (heavyweight analysis)
-# "mid"  = members with model: sonnet in frontmatter (faster/practical)
+# "mid"  = members with model: sonnet in frontmatter (practical tier label, not a literal Sonnet default)
 
 provider_models:
   anthropic:
-    high: opus
-    mid: sonnet
+    high: claude-fable-5
+    mid: opus
   openai:
-    high: gpt-5.4
-    mid: gpt-5.4
+    high: gpt-5.6-sol
+    mid: gpt-5.6-sol
   google:
-    high: gemini-3-pro
-    mid: gemini-3-pro
+    high: gemini-3.1-pro-high
+    mid: gemini-3.5-flash-high
+  xai:
+    high: grok-4.5
+    mid: grok-4.5
+  meta_model_api:
+    high: muse-spark-1.1
+    mid: muse-spark-1.1
   ollama:
     high: null  # uses first available model from detect-providers.sh
     mid: null
   nvidia_nim:
     high: deepseek-ai/deepseek-v4-pro
-    mid: deepseek-ai/deepseek-v4-flash
+    mid: deepseek-ai/deepseek-v4-pro
   cursor_cli:
     # Aggregator — cross-family defaults so a Cursor seat adds diversity.
     # Verify live IDs with `cursor-agent --list-models`.
-    high: gpt-5.4-high
-    mid: gemini-3-pro
+    high: gpt-5.6-sol
+    mid: gemini-3.5-flash-high
 
 # Chairman defaults — used by SKILL.md STEP 1.7 selection algorithm.
 # Per-provider tier used when the auto-select algorithm picks that provider as Chairman.
 chairman_defaults:
-  anthropic: opus
-  openai: gpt-5.4
-  google: gemini-3-pro
+  anthropic: claude-fable-5
+  openai: gpt-5.6-sol
+  google: gemini-3.1-pro-high
+  xai: grok-4.5
+  meta_model_api: muse-spark-1.1
   ollama: null  # uses first available local model
   nvidia_nim: deepseek-ai/deepseek-v4-pro
-  cursor_cli: gpt-5.4-high
+  cursor_cli: gpt-5.6-sol
 
 # Explicit override for the Chairman across all sessions.
 # Leave null/commented to use the STEP 1.7 selection algorithm.
 # Example:
 #   chairman:
 #     provider: google
-#     model: gemini-3-pro
+#     model: gemini-3.1-pro-high
 chairman: null

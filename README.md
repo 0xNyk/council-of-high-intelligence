@@ -181,10 +181,18 @@ family does not play both sides of a disagreement.
 | NVIDIA NIM | `NVIDIA_API_KEY` |
 | Cursor | `cursor-agent` executable or configured login |
 
+Routing follows the detected execution method, not a provider label inferred from the
+coordinator. In particular, a Codex host subagent is OpenAI; Anthropic seats on Codex use
+the authenticated `claude` CLI. Current first-party defaults are `gpt-5.6-sol`,
+`claude-fable-5` plus Anthropic's moving `opus` alias, `gemini-3.1-pro-high` /
+`gemini-3.5-flash-high`, and `grok-4.5`.
+
 Meta Muse Spark uses Meta's direct OpenAI-compatible endpoint at
 `https://api.meta.ai/v1`, model `muse-spark-1.1`, and `MODEL_API_KEY`; the detector does
 not assume that Muse exists on OpenRouter. A host adapter may ask once for a configured
-1Password Environment at council startup. Cancelling that authorization leaves only the
+1Password Environment at council startup when the user has explicitly set
+`COUNCIL_1PASSWORD_ENVIRONMENT`. The detector verifies that the authenticated
+catalog actually contains Muse. Cancelling authorization leaves only the
 credential-backed seat unavailable and does not stop the council.
 
 Preview routing without running a council:
@@ -196,7 +204,10 @@ Preview routing without running a council:
 Use `--no-auto-route` to keep native-host defaults. Use `--models <path>` with a copy of
 [`configs/provider-model-slots.example.yaml`](configs/provider-model-slots.example.yaml)
 for an explicit seat map. Provider failure is reported before the seat falls back to the
-first available real provider.
+first available real provider, and the actual fallback provider/model is recorded.
+Cursor counts as one provider even though it can serve several model families; use a
+cross-family Cursor model when it would otherwise duplicate another seat's model family,
+and verify live IDs with `cursor-agent --list-models`.
 
 ## Installation reference
 
@@ -214,6 +225,13 @@ first available real provider.
 
 Custom target directories are supported through `--claude-dir`, `--codex-dir`,
 `--gemini-dir`, and `--opencode-dir`. Run `./install.sh --help` for the current contract.
+To inspect an isolated Codex-only install without changing the active Codex directory:
+
+```bash
+COUNCIL_CODEX_TARGET="$(mktemp -d)"
+./install.sh --codex-only --copy-configs --codex-dir "$COUNCIL_CODEX_TARGET"
+find "$COUNCIL_CODEX_TARGET/skills/council" -maxdepth 2 -type f -print
+```
 
 ## Verify the checkout
 

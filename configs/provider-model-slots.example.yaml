@@ -1,9 +1,8 @@
 # Example seat mapping for multi-provider / multi-model exploration.
 # Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.example.yaml "..."
 #
-# Model IDs drift — verify against your provider catalogs before use
-# (these track configs/auto-route-defaults.yaml; anthropic seats use
-# the opus/sonnet aliases resolved by the host runtime).
+# Model IDs drift — verify against your provider catalogs before use.
+# These values track configs/auto-route-defaults.yaml.
 
 profile: exploration-orthogonal
 strategy:
@@ -15,37 +14,40 @@ strategy:
 seats:
   socrates:
     provider: anthropic
-    model: sonnet
+    model: claude-fable-5
     reasoning_mode: analytical
   feynman:
     provider: openai
-    model: gpt-5.4
+    model: gpt-5.6-sol
     reasoning_mode: mechanistic
   sun-tzu:
     provider: google
-    model: gemini-3-pro
+    model: gemini-3.1-pro-high
     reasoning_mode: strategic
   machiavelli:
     provider: xai
-    model: grok-4
+    model: grok-4.5
     reasoning_mode: adversarial
   ada:
-    provider: openai
-    model: gpt-5.4
+    provider: meta_model_api
+    model: muse-spark-1.1
+    exec_method: openai_compatible_api
+    base_url: https://api.meta.ai/v1
+    api_key_env: MODEL_API_KEY
     reasoning_mode: formal
   lao-tzu:
     provider: anthropic
-    model: sonnet
+    model: claude-fable-5
     reasoning_mode: emergent
   aurelius:
     provider: google
-    model: gemini-3-pro
+    model: gemini-3.5-flash-high
     reasoning_mode: normative
   torvalds:
     provider: openai
-    model: gpt-5.4
+    model: gpt-5.6-sol
     reasoning_mode: pragmatic
 
 fallback:
-  provider: anthropic
-  model: sonnet
+  provider: openai
+  model: gpt-5.6-sol

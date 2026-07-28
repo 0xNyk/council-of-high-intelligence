@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Council of High Intelligence - provider detection.
-# Usage: ./scripts/detect-providers.sh [--host claude|codex|gemini]
+# Usage: ./scripts/detect-providers.sh --host claude|codex|gemini|opencode
 #        [--onepassword-environment ENVIRONMENT_ID]
 
 TIMEOUT_SECONDS=8
-HOST_RUNTIME="codex"
+HOST_RUNTIME=""
 ONEPASSWORD_ENVIRONMENT_ID=""
 INSIDE_ONEPASSWORD=false
 
@@ -14,7 +14,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --host)
       if [[ $# -lt 2 ]]; then
-        echo "--host requires claude, codex, or gemini" >&2
+        echo "--host requires claude, codex, gemini, or opencode" >&2
         exit 2
       fi
       HOST_RUNTIME="$2"
@@ -39,8 +39,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! "$HOST_RUNTIME" =~ ^(claude|codex|gemini)$ ]]; then
-  echo "usage: $0 [--host claude|codex|gemini] [--onepassword-environment ID]" >&2
+if [[ ! "$HOST_RUNTIME" =~ ^(claude|codex|gemini|opencode)$ ]]; then
+  echo "usage: $0 --host claude|codex|gemini|opencode [--onepassword-environment ID]" >&2
   exit 2
 fi
 
@@ -129,10 +129,10 @@ fi
 agy_bin="$(check_command agy)"
 gemini_bin="$(check_command gemini)"
 if [[ -n "$agy_bin" ]] && model_output="$(run_with_timeout agy models 2>/dev/null || true)" \
-  && grep -q 'Gemini 3.1 Pro (High)' <<<"$model_output"; then
-  google_models='"Gemini 3.1 Pro (High)"'
-  if grep -q 'Gemini 3.5 Flash (High)' <<<"$model_output"; then
-    google_models+=',"Gemini 3.5 Flash (High)"'
+  && grep -qx 'gemini-3.1-pro-high' <<<"$model_output"; then
+  google_models='"gemini-3.1-pro-high"'
+  if grep -qx 'gemini-3.5-flash-high' <<<"$model_output"; then
+    google_models+=',"gemini-3.5-flash-high"'
   fi
   providers+=("$(json_provider google true antigravity_cli "$agy_bin" "$google_models")")
 elif [[ -n "$gemini_bin" ]] && run_with_timeout gemini --version >/dev/null 2>&1; then
@@ -153,14 +153,21 @@ fi
 # Meta Model API. Muse Spark is not assumed to exist on OpenRouter.
 meta_endpoint="https://api.meta.ai/v1"
 meta_available=false
+meta_credential_environment_id=""
 if [[ -n "${MODEL_API_KEY:-}" ]] && command -v curl >/dev/null 2>&1; then
-  if run_with_timeout curl -fsS -o /dev/null \
+  if meta_catalog="$(run_with_timeout curl -fsS \
       -H @<(printf 'Authorization: Bearer %s\n' "${MODEL_API_KEY}") \
-      "${meta_endpoint}/models"; then
+      "${meta_endpoint}/models")" \
+    && jq -e --arg model "muse-spark-1.1" '
+      any(.data[]?; .id == $model) or any(.models[]?; .id == $model)
+    ' >/dev/null <<<"$meta_catalog"; then
     meta_available=true
   fi
 fi
-providers+=("$(json_provider meta_model_api "$meta_available" openai_compatible_api "$meta_endpoint" '"muse-spark-1.1"' "$meta_endpoint" MODEL_API_KEY high "$ONEPASSWORD_ENVIRONMENT_ID")")
+if [[ "$INSIDE_ONEPASSWORD" == true && -n "${MODEL_API_KEY:-}" ]]; then
+  meta_credential_environment_id="$ONEPASSWORD_ENVIRONMENT_ID"
+fi
+providers+=("$(json_provider meta_model_api "$meta_available" openai_compatible_api "$meta_endpoint" '"muse-spark-1.1"' "$meta_endpoint" MODEL_API_KEY high "$meta_credential_environment_id")")
 
 # Ollama local models.
 ollama_bin="$(check_command ollama)"
@@ -176,7 +183,7 @@ providers+=("$(json_provider ollama "$ollama_available" ollama_run "${ollama_bin
 # Cursor is an aggregator and counts as one provider for spread.
 cursor_bin="$(check_command cursor-agent)"
 if [[ -n "$cursor_bin" ]] && run_with_timeout cursor-agent --version >/dev/null 2>&1; then
-  providers+=("$(json_provider cursor_cli true cursor_cli "$cursor_bin" '"gpt-5.6-sol","claude-fable-5","Gemini 3.1 Pro (High)","grok-4.5"')")
+  providers+=("$(json_provider cursor_cli true cursor_cli "$cursor_bin" '"gpt-5.6-sol","claude-fable-5","gemini-3.1-pro-high","grok-4.5"')")
 else
   providers+=("$(json_provider cursor_cli false cursor_cli "${cursor_bin:-not_found}" '')")
 fi
@@ -185,9 +192,9 @@ fi
 nim_available=false
 nim_endpoint="https://integrate.api.nvidia.com/v1"
 nim_models=""
-if [[ "${NVIDIA_API_KEY:-}" =~ ^nvapi- ]]; then
+if [[ "${NVIDIA_API_KEY:-}" =~ ^nvapi- ]] && command -v curl >/dev/null 2>&1; then
   # Keep the key out of curl's argv so other local users cannot read it via ps.
-  if ! command -v curl >/dev/null 2>&1 || run_with_timeout curl -fsS -o /dev/null \
+  if run_with_timeout curl -fsS -o /dev/null \
       -H @<(printf 'Authorization: Bearer %s\n' "${NVIDIA_API_KEY}") \
       "${nim_endpoint}/models"; then
     nim_available=true

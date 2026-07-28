@@ -33,47 +33,47 @@ seats:
   # NOT on Cursor, so it counts as a distinct provider family for spread).
   socrates:
     provider: anthropic
-    model: claude-sonnet-4
+    model: opus
     reasoning_mode: analytical
   aurelius:
     provider: anthropic
-    model: claude-opus-4
+    model: opus
     reasoning_mode: normative
 
   # Cursor seats — each routed to a DIFFERENT non-Anthropic family so one CLI
   # delivers genuine cross-model diversity.
   feynman:
     provider: cursor_cli
-    model: gpt-5.4-high
+    model: gpt-5.6-sol
     exec_method: cursor_cli
     reasoning_mode: mechanistic
   sun-tzu:
     provider: cursor_cli
-    model: gemini-3-pro
+    model: gemini-3.1-pro-high
     exec_method: cursor_cli
     reasoning_mode: strategic
   machiavelli:
     provider: cursor_cli
-    model: grok-4
+    model: grok-4.5
     exec_method: cursor_cli
     reasoning_mode: adversarial
   ada:
     provider: cursor_cli
-    model: gpt-5.4-high
+    model: gpt-5.6-sol
     exec_method: cursor_cli
     reasoning_mode: formal
 
   # A second native Anthropic seat for an emergent lens, kept off Cursor.
   lao-tzu:
     provider: anthropic
-    model: claude-sonnet-4
+    model: opus
     reasoning_mode: emergent
   torvalds:
     provider: cursor_cli
-    model: gemini-3-pro
+    model: gemini-3.1-pro-high
     exec_method: cursor_cli
     reasoning_mode: pragmatic
 
 fallback:
   provider: anthropic
-  model: claude-sonnet-4
+  model: opus

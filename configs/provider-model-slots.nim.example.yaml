@@ -8,7 +8,8 @@
 # Setup:
 #   1. Get key at https://build.nvidia.com (key prefix: nvapi-)
 #   2. export NVIDIA_API_KEY=nvapi-...
-#   3. Verify live model IDs: curl -H "Authorization: Bearer $NVIDIA_API_KEY" \
+#   3. Verify live model IDs: curl \
+#         -H @<(printf 'Authorization: Bearer %s\n' "$NVIDIA_API_KEY") \
 #         https://integrate.api.nvidia.com/v1/models | jq '.data[].id'
 #
 # Why mix providers: spreading seats across model families reduces shared
@@ -27,17 +28,18 @@ seats:
   # Anthropic seats kept for high-stakes reasoning roles
   socrates:
     provider: anthropic
-    model: claude-sonnet-4
+    model: opus
     reasoning_mode: analytical
   aurelius:
     provider: anthropic
-    model: claude-opus-4
+    model: opus
     reasoning_mode: normative
 
   # NIM seats — open-weight models via OpenAI-compatible API
   feynman:
     provider: nvidia_nim
     model: deepseek-ai/deepseek-v4-pro
+    exec_method: openai_compatible_api
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: mechanistic
@@ -45,6 +47,7 @@ seats:
   sun-tzu:
     provider: nvidia_nim
     model: moonshotai/kimi-k2.6
+    exec_method: openai_compatible_api
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: strategic
@@ -52,6 +55,7 @@ seats:
   ada:
     provider: nvidia_nim
     model: qwen/qwen3.5-397b-a17b
+    exec_method: openai_compatible_api
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: formal
@@ -59,6 +63,7 @@ seats:
   machiavelli:
     provider: nvidia_nim
     model: z-ai/glm-5.1
+    exec_method: openai_compatible_api
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: adversarial
@@ -66,6 +71,7 @@ seats:
   lao-tzu:
     provider: nvidia_nim
     model: minimaxai/minimax-m2.7
+    exec_method: openai_compatible_api
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: emergent
@@ -73,11 +79,12 @@ seats:
   # Google for breadth on a third axis
   torvalds:
     provider: google
-    model: gemini-3-pro
+    model: gemini-3.1-pro-high
     reasoning_mode: pragmatic
 
 fallback:
   provider: nvidia_nim
   model: deepseek-ai/deepseek-v4-pro
+  exec_method: openai_compatible_api
   base_url: https://integrate.api.nvidia.com/v1
   api_key_env: NVIDIA_API_KEY

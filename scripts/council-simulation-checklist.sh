@@ -19,6 +19,8 @@ pass "SKILL.md exists"
 pass "SKILL.codex.md exists"
 [[ -f "SKILL.gemini.md" ]] || fail "SKILL.gemini.md is missing"
 pass "SKILL.gemini.md exists"
+[[ -f "SKILL.opencode.md" ]] || fail "SKILL.opencode.md is missing"
+pass "SKILL.opencode.md exists"
 
 if compgen -G "agents/council-*.md" >/dev/null; then
   agent_count=$(compgen -G "agents/council-*.md" | wc -l | tr -d ' ')
@@ -153,18 +155,28 @@ pass "openai_compatible_api archetype wired in SKILL.gemini.md"
 grep -q "Session Metadata\|session metadata\|session_metadata" SKILL.gemini.md || fail "Session Metadata missing in SKILL.gemini.md (issue #7)"
 pass "Session Metadata referenced in SKILL.gemini.md"
 
+grep -q "anonymiz" SKILL.opencode.md || fail "Round 2 anonymization missing in SKILL.opencode.md (issue #17)"
+grep -q "Anti-conformity directive" SKILL.opencode.md || fail "Anti-conformity directive missing in SKILL.opencode.md (issue #19)"
+grep -q -i "chairman" SKILL.opencode.md || fail "Chairman role missing in SKILL.opencode.md (issue #18)"
+grep -q "Acceptable Compromises" SKILL.opencode.md || fail "Acceptable Compromises missing in SKILL.opencode.md (issue #21)"
+grep -q "Kill Criteria" SKILL.opencode.md || fail "Kill Criteria missing in SKILL.opencode.md (issue #21)"
+grep -q "Concrete Next Step" SKILL.opencode.md || fail "Concrete Next Step missing in SKILL.opencode.md (issue #21)"
+grep -q "openai_compatible_api\|openai-compatible\|OpenAI-Compatible" SKILL.opencode.md || fail "openai_compatible_api archetype missing in SKILL.opencode.md (issue #16)"
+grep -q "Session Metadata\|session metadata\|session_metadata" SKILL.opencode.md || fail "Session Metadata missing in SKILL.opencode.md (issue #7)"
+pass "OpenCode coordinator protocol parity checks passed"
+
 # --- Structured stance / weighted tally parity (PR #36) ---
-# All three coordinator files must carry the STANCE line, the Vote Tally
+# All coordinator files must carry the STANCE line, the Vote Tally
 # verdict field, and the 1.5x domain-weight seat. This is the check that
 # would have caught the Gemini regression.
 
-for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md; do
+for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
   grep -q "STANCE:" "${skill_file}" || fail "Structured STANCE line missing in ${skill_file} (PR #36)"
   grep -q "Vote Tally" "${skill_file}" || fail "Vote Tally verdict field missing in ${skill_file} (PR #36)"
   grep -q "1\.5" "${skill_file}" || fail "1.5x domain-weight seat missing in ${skill_file} (PR #36)"
   grep -q "2/3" "${skill_file}" || fail "2/3 consensus threshold missing in ${skill_file} (PR #36)"
 done
-pass "Structured stance + weighted tally present in all three SKILL files"
+pass "Structured stance + weighted tally present in all coordinator SKILL files"
 
 # --- Agent structure checks ---
 
@@ -230,18 +242,248 @@ pass "Verdict template dedup check done"
 [[ -x "scripts/detect-providers.sh" ]] || fail "scripts/detect-providers.sh is not executable"
 pass "detect-providers.sh exists and is executable"
 
-if detect_output="$(bash scripts/detect-providers.sh 2>/dev/null)"; then
-  if echo "$detect_output" | grep -q '"provider_count"'; then
-    pass "detect-providers.sh produces valid JSON"
+if detect_output="$(bash scripts/detect-providers.sh --host codex 2>/dev/null)"; then
+  if jq -e '
+    .host_runtime == "codex"
+    and (.provider_count | type == "number")
+    and (.multi_provider | type == "boolean")
+    and (.providers | type == "array")
+    and (all(.providers[];
+      (.name | type == "string")
+      and (.available | type == "boolean")
+      and (.exec_method | type == "string")
+      and (.binary | type == "string")
+      and (.models | type == "array")))
+  ' >/dev/null <<<"$detect_output"; then
+    pass "detect-providers.sh produces valid Codex-host JSON"
   else
-    fail "detect-providers.sh output missing provider_count field"
+    fail "detect-providers.sh output violates the Codex-host schema"
   fi
 else
   fail "detect-providers.sh exited with error"
 fi
 
+for detector_host in claude gemini opencode; do
+  if host_output="$(bash scripts/detect-providers.sh --host "$detector_host" 2>/dev/null)" \
+    && jq -e --arg host "$detector_host" '
+      .host_runtime == $host
+      and (.providers | type == "array")
+      and (all(.providers[];
+        (.name | type == "string")
+        and (.available | type == "boolean")
+        and (.exec_method | type == "string")
+        and (.models | type == "array")))
+    ' >/dev/null <<<"$host_output"; then
+    pass "detect-providers.sh reports truthful ${detector_host} host metadata"
+  else
+    fail "detect-providers.sh failed the ${detector_host} host contract"
+  fi
+done
+
+set +e
+bash scripts/detect-providers.sh >/dev/null 2>&1
+missing_host_status=$?
+set -e
+[[ "$missing_host_status" -eq 2 ]] || fail "detect-providers.sh must require --host"
+pass "detect-providers.sh fails closed when --host is missing"
+
+detector_test_dir="$(mktemp -d)"
+trap 'rm -R "${detector_test_dir}"' EXIT
+mkdir -p "${detector_test_dir}/bin"
+cat >"${detector_test_dir}/bin/curl" <<'DETECTOR_CURL_FIXTURE'
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${FAKE_META_CATALOG:-missing}" in
+  present)
+    printf '%s\n' '{"data":[{"id":"muse-spark-1.1"}]}'
+    ;;
+  missing)
+    printf '%s\n' '{"data":[{"id":"another-model"}]}'
+    ;;
+  *)
+    exit 22
+    ;;
+esac
+DETECTOR_CURL_FIXTURE
+chmod +x "${detector_test_dir}/bin/curl"
+
+missing_catalog_output="$(
+  PATH="${detector_test_dir}/bin:${PATH}" \
+    MODEL_API_KEY=fixture-key \
+    FAKE_META_CATALOG=missing \
+    bash scripts/detect-providers.sh --host codex \
+      --onepassword-environment fixture-environment
+)"
+jq -e '
+  any(.providers[];
+    .name == "meta_model_api"
+    and .available == false
+    and (has("credential_source") | not))
+' >/dev/null <<<"$missing_catalog_output" \
+  || fail "Meta detection trusted a catalog without Muse or mislabeled exported credentials"
+
+present_catalog_output="$(
+  PATH="${detector_test_dir}/bin:${PATH}" \
+    MODEL_API_KEY=fixture-key \
+    FAKE_META_CATALOG=present \
+    bash scripts/detect-providers.sh --host codex \
+      --onepassword-environment fixture-environment \
+      --inside-onepassword
+)"
+jq -e '
+  any(.providers[];
+    .name == "meta_model_api"
+    and .available == true
+    and .credential_source == "onepassword"
+    and .onepassword_environment_id == "fixture-environment")
+' >/dev/null <<<"$present_catalog_output" \
+  || fail "Meta detection did not verify Muse or record actual 1Password hydration"
+
+mkdir -p "${detector_test_dir}/no-curl-bin"
+ln -s "$(command -v jq)" "${detector_test_dir}/no-curl-bin/jq"
+detector_bash="$(command -v bash)"
+nim_without_curl_output="$(
+  PATH="${detector_test_dir}/no-curl-bin" \
+    MODEL_API_KEY='' \
+    NVIDIA_API_KEY=nvapi-fixture-key \
+    "$detector_bash" scripts/detect-providers.sh --host codex
+)"
+jq -e '
+  any(.providers[];
+    .name == "nvidia_nim"
+    and .available == false
+    and .models == [])
+' >/dev/null <<<"$nim_without_curl_output" \
+  || fail "NIM detection exposed an executable route without curl"
+
+rm -R "${detector_test_dir}"
+trap - EXIT
+pass "Meta and NIM detection fail closed and report credential provenance truthfully"
+
+if jq -e '
+  any(.providers[];
+    .name == "anthropic"
+    and .available == true
+    and .exec_method == "subagent")
+' >/dev/null <<<"$detect_output"; then
+  fail "Codex host falsely reports Anthropic through a host subagent"
+fi
+
+if jq -e '
+  any(.providers[];
+    .name == "anthropic"
+    and .available == true
+    and .exec_method == "claude_cli")
+' >/dev/null <<<"$detect_output"; then
+  pass "Codex host uses the authenticated Claude CLI for Anthropic seats"
+elif jq -e '
+  any(.providers[];
+    .name == "anthropic"
+    and .available == false
+    and .exec_method == "claude_cli")
+' >/dev/null <<<"$detect_output"; then
+  warn "Claude CLI is unavailable; Anthropic seats will not be routed"
+else
+  fail "Codex-host Anthropic detection has an unexpected execution method"
+fi
+
 [[ -f "configs/auto-route-defaults.yaml" ]] || fail "configs/auto-route-defaults.yaml is missing"
 pass "Auto-route defaults config exists"
+
+grep -q 'gpt-5.6-sol' configs/auto-route-defaults.yaml || fail "Sol default missing"
+grep -q 'claude-fable-5' configs/auto-route-defaults.yaml || fail "Fable default missing"
+grep -q 'grok-4.5' configs/auto-route-defaults.yaml || fail "Grok default missing"
+grep -q 'muse-spark-1.1' configs/auto-route-defaults.yaml || fail "Muse default missing"
+grep -q 'gemini-3.1-pro-high' configs/auto-route-defaults.yaml || fail "Gemini Pro default missing"
+grep -q 'gemini-3.5-flash-high' configs/auto-route-defaults.yaml || fail "Gemini Flash default missing"
+pass "Current-generation routing defaults are present"
+
+for host_skill in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
+  grep -q 'COUNCIL_1PASSWORD_ENVIRONMENT' "$host_skill" \
+    || fail "Optional 1Password environment contract missing in ${host_skill}"
+done
+grep -q 'credential_source:"onepassword"' scripts/detect-providers.sh \
+  || fail "Detector 1Password credential metadata missing"
+grep -q -- '-H @<(' scripts/detect-providers.sh \
+  || fail "Detector does not keep authorization headers out of process arguments"
+personal_environment_id="dygiaiqcvw4lwcg""wyrddcryotu"
+if grep -q -- '-H "Authorization: Bearer' scripts/detect-providers.sh \
+  || grep -R -q "$personal_environment_id" SKILL*.md scripts; then
+  fail "Credential safety regression or personal 1Password ID found"
+fi
+pass "1Password routing metadata and safe credential handling are wired"
+
+[[ -x "scripts/run-openai-compatible-seat.sh" ]] \
+  || fail "OpenAI-compatible seat helper is missing or not executable"
+for host_skill in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
+  grep -q 'run-openai-compatible-seat.sh' "$host_skill" \
+    || fail "OpenAI-compatible helper dispatch missing in ${host_skill}"
+done
+if MODEL_API_KEY=test-only scripts/run-openai-compatible-seat.sh \
+  https://example.invalid/v1 muse-spark-1.1 SKILL.md MODEL_API_KEY high \
+  >/dev/null 2>&1; then
+  fail "OpenAI-compatible helper accepted an unqualified endpoint binding"
+fi
+
+helper_test_dir="$(mktemp -d)"
+trap 'rm -R "${helper_test_dir}"' EXIT
+mkdir -p "${helper_test_dir}/bin"
+# shellcheck disable=SC2016 # Intentional literal command-substitution fixture.
+printf '%s\n' \
+  'Council helper fixture.' \
+  'COUNCIL_PROMPT_EOF' \
+  '$(touch should-not-run)' \
+  >"${helper_test_dir}/prompt.txt"
+cat >"${helper_test_dir}/bin/curl" <<'HELPER_CURL_FIXTURE'
+#!/usr/bin/env bash
+set -euo pipefail
+
+header_file=""
+body_file=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -H)
+      header_candidate="${2#@}"
+      if [[ "$header_candidate" == /dev/fd/* ]]; then
+        header_file="$header_candidate"
+      fi
+      shift 2
+      ;;
+    --data-binary)
+      body_file="${2#@}"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+[[ -n "$header_file" && -n "$body_file" ]]
+grep -q '^Authorization: Bearer fixture-secret$' "$header_file"
+jq -e '
+  .model == "muse-spark-1.1"
+  and .reasoning_effort == "high"
+  and (.messages[1].content | contains("COUNCIL_PROMPT_EOF"))
+  and (.messages[1].content | contains("$(touch should-not-run)"))
+' "$body_file" >/dev/null
+printf '%s\n' '{"choices":[{"message":{"content":"fixture-ok"}}]}'
+HELPER_CURL_FIXTURE
+chmod +x "${helper_test_dir}/bin/curl"
+
+helper_output="$(
+  PATH="${helper_test_dir}/bin:${PATH}" \
+    MODEL_API_KEY=fixture-secret \
+    scripts/run-openai-compatible-seat.sh \
+      https://api.meta.ai/v1 muse-spark-1.1 \
+      "${helper_test_dir}/prompt.txt" MODEL_API_KEY high
+)"
+rm -R "${helper_test_dir}"
+trap - EXIT
+[[ "$helper_output" == "fixture-ok" ]] \
+  || fail "OpenAI-compatible helper did not preserve the safe fixture payload"
+pass "OpenAI-compatible seat helper is installed, safe, functional, and fails closed"
 
 grep -q -- "--no-auto-route" SKILL.md || fail "--no-auto-route flag missing in SKILL.md"
 pass "--no-auto-route flag documented in SKILL.md"

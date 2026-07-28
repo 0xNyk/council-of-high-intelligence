@@ -12,7 +12,7 @@ council:
   triads: ["strategy", "conflict", "product", "ai-product", "economics"]
   duo_keywords: ["formalization", "systems", "abstraction"]
   profiles: ["classic", "exploration-orthogonal"]
-  provider_affinity: ["anthropic", "google"]
+  provider_affinity: ["google", "anthropic"]
   reasoning_method: incentive-backward-induction
 ---
 
