@@ -217,7 +217,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
    - Prefer one provider per seat until pool exhausted
    - Avoid placing polarity pair members on same provider when alternatives exist
    - If unavoidable, use different model families or reasoning modes
-4. **OpenAI-compatible seats**: when a seat declares a provider whose archetype is `openai_compatible_api` (e.g. `provider: nvidia_nim`, future `together`, `fireworks`, `vllm`), the seat YAML MUST include `base_url` and `api_key_env`. The coordinator resolves the API key from the named env var at routing time — never inline the value. If the env var is unset, mark the seat as unavailable and trigger the per-seat fallback path (Path C anthropic default for that member only). Set `exec_method: openai_compatible_api` for the seat.
+4. **OpenAI-compatible seats**: when a seat declares a provider whose archetype is `openai_compatible_api` (e.g. `provider: nvidia_nim`, `provider: minimax`, future `together`, `fireworks`, `vllm`), the seat YAML MUST include `base_url` and `api_key_env`. The coordinator resolves the API key from the named env var at routing time — never inline the value. If the env var is unset, mark the seat as unavailable and trigger the per-seat fallback path (Path C anthropic default for that member only). Set `exec_method: openai_compatible_api` for the seat.
 5. Log routing metadata: member → provider → model → exec_method (e.g. `feynman → nvidia_nim → deepseek-ai/deepseek-v4-pro → openai_compatible_api`).
 
 **Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
@@ -266,7 +266,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 
 **Selection algorithm** (apply in order — first match wins):
 
-1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-3-pro`).
+1. **Explicit override**: If `--chairman <name>` was passed, use it. `<name>` can be a provider tag (`anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `minimax`, `cursor_cli`) or a model alias (`opus`, `sonnet`, `gpt-5.4`, `gemini-3-pro`).
 2. **Config override**: If `configs/auto-route-defaults.yaml` has a non-null `chairman:` block, use it.
 3. **Auto-select** (default): Pick the highest-tier model among detected providers, **preferring a provider not already on the panel** when possible. Tie-breaker: provider listed first in the detected-providers JSON.
 4. **Single-provider fallback**: If only one provider is detected (Claude-only), use that provider's highest tier (`opus` by default). Note in the verdict that the Chairman shares a provider with one or more panel members.
@@ -280,6 +280,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 | google | `gemini-3-pro` |
 | ollama | first available local model |
 | nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
+| minimax | `MiniMax-M3` |
 | cursor_cli | `gpt-5.4-high` |
 
 **Constraints:**
@@ -359,7 +360,7 @@ rm -f "$PROMPT_FILE"
 
 Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families. For provider-spread purposes it counts as a single provider, but a seat routed to Cursor's `claude-*` model shares Anthropic's training bias with native `anthropic` seats. Prefer cross-family Cursor models (e.g. `gpt-5.4-high`, `gemini-3-pro`, `grok-4`) when Cursor is filling a diversity seat. Verify live model IDs with `cursor-agent --list-models`.
 
-**For `openai_compatible_api` (NVIDIA NIM, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
+**For `openai_compatible_api` (NVIDIA NIM, MiniMax, Together, Fireworks, vLLM, any OpenAI-compatible endpoint)** — run via Bash tool:
 1. Read and extract identity sections (same as codex_exec above).
 2. Resolve credentials at runtime: read `api_key_env` from the seat config and look up the value from the environment. If the env var is unset or empty, fall back to anthropic per the Fallback rule below — do NOT inline a placeholder.
 3. Read `base_url` from the seat config (e.g. `https://integrate.api.nvidia.com/v1` for NIM).
@@ -379,6 +380,8 @@ curl -sS -X POST "{base_url}/chat/completions" \
 6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
 
 For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
+
+For auto-detection of MiniMax, the same script emits a `minimax` entry with `exec_method: "openai_compatible_api"` when `MINIMAX_API_KEY` is set. `binary` is the regional endpoint URL (`https://api.minimax.io/v1` globally, or `https://api.minimaxi.com/v1` when `MINIMAX_REGION=cn`); the coordinator resolves the key from `MINIMAX_API_KEY` at routing time. Default routing models are `MiniMax-M3` (high) and `MiniMax-M2.7` (mid).
 
 **Fallback**: If any external provider call fails or times out, log `[FALLBACK] {member} failed on {provider}/{model}. Falling back to anthropic/{frontmatter_model}.` and re-run as a Claude subagent. Skip the failed provider for remaining rounds.
 

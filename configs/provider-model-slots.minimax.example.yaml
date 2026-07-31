@@ -1,0 +1,83 @@
+# MiniMax provider example for Council of High Intelligence.
+# Use with: /council --profile exploration-orthogonal --models configs/provider-model-slots.minimax.example.yaml "..."
+#
+# MiniMax (platform.minimax.io / platform.minimaxi.com) exposes its own
+# M-series chat models via an OpenAI-compatible endpoint. Two regional
+# roots serve the same API: api.minimax.io (global) and api.minimaxi.com
+# (China). Use MINIMAX_REGION=cn to select the China endpoint.
+#
+# Setup:
+#   1. Get a key at https://platform.minimax.io (or https://platform.minimaxi.com)
+#   2. export MINIMAX_API_KEY=...
+#   3. (Optional) export MINIMAX_REGION=cn   # use api.minimaxi.com
+#   4. Verify live model IDs: curl -H "Authorization: Bearer $MINIMAX_API_KEY" \
+#         https://api.minimax.io/v1/models | jq '.data[].id'
+#
+# Why mix providers: spreading seats across model families reduces shared
+# training-data bias and amplifies dissent. MiniMax adds a non-Anthropic,
+# non-OpenAI, non-Google family without a separate CLI install.
+
+profile: exploration-orthogonal
+strategy:
+  provider_spread_first: true
+  avoid_pair_collocation: true
+  force_counterfactual_if_consensus_gt: 0.70
+  require_dissenting_members: 2
+
+seats:
+  # Anthropic seats kept for high-stakes reasoning roles
+  socrates:
+    provider: anthropic
+    model: claude-sonnet-4
+    reasoning_mode: analytical
+  aurelius:
+    provider: anthropic
+    model: claude-opus-4
+    reasoning_mode: normative
+
+  # MiniMax seats — M-series chat models via OpenAI-compatible API
+  feynman:
+    provider: minimax
+    model: MiniMax-M3
+    base_url: https://api.minimax.io/v1
+    api_key_env: MINIMAX_API_KEY
+    reasoning_mode: mechanistic
+  sun-tzu:
+    provider: minimax
+    model: MiniMax-M2.7
+    base_url: https://api.minimax.io/v1
+    api_key_env: MINIMAX_API_KEY
+    reasoning_mode: strategic
+  machiavelli:
+    provider: minimax
+    model: MiniMax-M3
+    base_url: https://api.minimax.io/v1
+    api_key_env: MINIMAX_API_KEY
+    reasoning_mode: adversarial
+  ada:
+    provider: minimax
+    model: MiniMax-M2.7
+    base_url: https://api.minimax.io/v1
+    api_key_env: MINIMAX_API_KEY
+    reasoning_mode: formal
+
+  # To use the China endpoint, set base_url to https://api.minimaxi.com/v1
+  # and export MINIMAX_REGION=cn so auto-routing detects the same region.
+  lao-tzu:
+    provider: minimax
+    model: MiniMax-M3
+    base_url: https://api.minimax.io/v1
+    api_key_env: MINIMAX_API_KEY
+    reasoning_mode: emergent
+
+  # Google for breadth on a third axis
+  torvalds:
+    provider: google
+    model: gemini-3-pro
+    reasoning_mode: pragmatic
+
+fallback:
+  provider: minimax
+  model: MiniMax-M3
+  base_url: https://api.minimax.io/v1
+  api_key_env: MINIMAX_API_KEY
