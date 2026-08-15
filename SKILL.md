@@ -107,6 +107,8 @@ Every later reference to a `~/.claude/...` council path means "the resolved asse
 - **Munger vs Aristotle** — Multi-model lattice vs single taxonomic system
 - **Taleb vs Karpathy** — Hidden catastrophic tails vs smooth empirical scaling curves
 - **Rams vs Ada** — What the user needs vs what computation can do
+- **Sutskever vs Machiavelli** — Safety ideals vs industry incentives
+- **Socrates vs Watts** — Destroys assumptions vs dissolves the frame
 
 ## Pre-defined Triads
 
