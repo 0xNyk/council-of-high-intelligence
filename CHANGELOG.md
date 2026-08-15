@@ -10,9 +10,14 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Roster validation drift guard** — `scripts/validate-roster.py`, wired into CI. Runs 166 structural checks that `SKILL.md` prose and `agents/*.md` frontmatter describe the same council: profile sizes and enumerated member lists against `profiles:` tags, polarity pairs resolvable/mutual/mirrored in the Polarity Pairs list, `reasoning_method` uniqueness (DMAD), triad references, and roster-table parity. Panel selection reads the frontmatter while the coordinator reads the prose, so drift silently seats the wrong members with no visible error. Complements `council-simulation-checklist.sh`, which greps for protocol features rather than checking roster consistency.
 
 ### Fixed
-- **Aristotle was tagged for the `exploration-orthogonal` profile**, which `SKILL.md` documents as a 12-member panel and enumerates without him — the tag made the actual panel 13. Removed the tag; the two prose statements agreed and the frontmatter was the outlier.
-- **Sutskever/Machiavelli polarity pair was one-directional** — `council-sutskever` declared `machiavelli` in `polarity_pairs` without reciprocation, so pair-separation routing and `--duo` selection saw the relationship from only one side. Reciprocated in `council-machiavelli`, and added to the Polarity Pairs list in `SKILL.md` and `SKILL.opencode.md`, where the duo table already carried it.
 - **Socrates/Watts polarity pair was missing from the Polarity Pairs list** — mutual in frontmatter and present in the duo table, but absent from the list the coordinator reads. Added to `SKILL.md` and `SKILL.opencode.md`.
+- **Sutskever/Machiavelli polarity pair was missing from the Polarity Pairs list** — the frontmatter reciprocation landed in #51 (@xiaolai); this adds the matching prose entry to `SKILL.md` and `SKILL.opencode.md`, where the duo table already carried it.
+
+The two frontmatter drifts this validator was written to catch — Aristotle's stray
+`exploration-orthogonal` tag (#50) and the one-directional Sutskever/Machiavelli pair
+(#51) — were found and fixed independently by @xiaolai on 2026-07-06, six weeks before
+the validator existed. Both are merged. The validator's value is preventing the next
+one, not having found these.
 
 ## [1.2.0] - 2026-07-04
 
