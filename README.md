@@ -50,6 +50,11 @@ cd council-of-high-intelligence
 ./install.sh --opencode-only
 ```
 
+The OpenCode installer requires Python 3 to convert agent frontmatter. It uses
+only the Python standard library; no `pip` packages are required. Converted
+subagents are installed under OpenCode's global `~/.config/opencode/agents/`
+directory.
+
 Restart the target client after installation. The command remains `/council` on every
 supported host.
 

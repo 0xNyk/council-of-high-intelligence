@@ -173,6 +173,22 @@ if [[ ${#agent_files[@]} -eq 0 ]]; then
   exit 1
 fi
 
+OPENCODE_CONVERTER="${SCRIPT_DIR}/scripts/convert-agents-opencode.py"
+if [[ "${INSTALL_OPENCODE}" == true ]]; then
+  if [[ ! -f "${OPENCODE_CONVERTER}" ]]; then
+    echo "Error: opencode agent converter not found at ${OPENCODE_CONVERTER}" >&2
+    exit 1
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: Python 3 is required to install opencode council agents" >&2
+    exit 1
+  fi
+  if ! python3 -S "${OPENCODE_CONVERTER}" --check "${SCRIPT_DIR}/agents" >/dev/null; then
+    echo "Error: opencode agent conversion preflight failed; no files were installed" >&2
+    exit 1
+  fi
+fi
+
 CONFIGS_SRC_DIR="${SCRIPT_DIR}/configs"
 
 echo "Installing Council of High Intelligence..."
@@ -346,7 +362,7 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
   echo
   OPENCODE_SKILL_DEST_DIR="${OPENCODE_DIR}/skills/council"
   OPENCODE_SKILL_DEST="${OPENCODE_SKILL_DEST_DIR}/SKILL.md"
-  OPENCODE_AGENTS_DEST_DIR="${OPENCODE_DIR}/agent"
+  OPENCODE_AGENTS_DEST_DIR="${OPENCODE_DIR}/agents"
   OPENCODE_SCRIPTS_DEST_DIR="${OPENCODE_SKILL_DEST_DIR}/scripts"
   OPENCODE_CONFIGS_DEST_DIR="${OPENCODE_SKILL_DEST_DIR}/configs"
 
@@ -359,10 +375,10 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
 
   echo "Converting and installing opencode council subagents..."
   if [[ "$DRY_RUN" == true ]]; then
-    echo "[dry-run] python3 ${SCRIPT_DIR}/scripts/convert-agents-opencode.py ${SCRIPT_DIR}/agents ${OPENCODE_AGENTS_DEST_DIR}"
+    echo "[dry-run] python3 -S ${OPENCODE_CONVERTER} ${SCRIPT_DIR}/agents ${OPENCODE_AGENTS_DEST_DIR}"
     opencode_agents_installed=${#agent_files[@]}
   else
-    opencode_agents_installed="$(python3 "${SCRIPT_DIR}/scripts/convert-agents-opencode.py" "${SCRIPT_DIR}/agents" "${OPENCODE_AGENTS_DEST_DIR}")"
+    opencode_agents_installed="$(python3 -S "${OPENCODE_CONVERTER}" "${SCRIPT_DIR}/agents" "${OPENCODE_AGENTS_DEST_DIR}")"
   fi
 
   echo "Installing opencode council scripts..."
