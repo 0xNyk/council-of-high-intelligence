@@ -140,7 +140,7 @@ If live seats drop below `hard_min_live_seats`, switch to fully simulated mode f
 
 ### Step 3.5: OpenAI-Compatible Seats (NIM and future)
 
-For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's `spawn_agent`:
+For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM and MiniMax today; Together / Fireworks / vLLM in the future), dispatch via HTTP rather than the host runtime's `spawn_agent`:
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.

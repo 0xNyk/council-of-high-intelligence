@@ -142,7 +142,7 @@ If live seats drop below `hard_min_live_seats`, switch to fully simulated mode f
 
 Some provider archetypes are dispatched outside the host runtime's `spawn_agent`. Anonymization (Step 4) and Chairman selection (Step 5) apply equally to these seats — no special-case logic.
 
-**`openai_compatible_api` (NVIDIA NIM today; Together / Fireworks / vLLM in the future)** — dispatch via HTTP:
+**`openai_compatible_api` (NVIDIA NIM and MiniMax today; Together / Fireworks / vLLM in the future)** — dispatch via HTTP:
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
@@ -210,7 +210,7 @@ Round execution reliability policy:
 
 Synthesis is performed by an explicit **Chairman** — a model that did NOT deliberate in Rounds 1–3. The Chairman is selected before Round 1 using this algorithm (first match wins):
 
-1. **Explicit override**: `--chairman <name>` was passed (provider tag — `anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `cursor_cli` — or a model alias).
+1. **Explicit override**: `--chairman <name>` was passed (provider tag — `anthropic`, `openai`, `google`, `ollama`, `nvidia_nim`, `minimax`, `cursor_cli` — or a model alias).
 2. **Auto-select**: highest-tier model among available providers, **preferring one not on the panel** when possible. Tie-breaker: provider listed first by the host runtime.
 3. **Single-provider fallback**: use that provider's highest tier and note the overlap in the verdict.
 

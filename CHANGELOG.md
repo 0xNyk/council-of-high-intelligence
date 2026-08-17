@@ -6,6 +6,9 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- MiniMax provider support — seventh dispatch path via the `openai_compatible_api` archetype. Auto-detected from `MINIMAX_API_KEY` in `scripts/detect-providers.sh`, with regional endpoint selection (`https://api.minimax.io/v1` globally, `https://api.minimaxi.com/v1` when `MINIMAX_REGION=cn`). `minimax` tiers in `configs/auto-route-defaults.yaml`, new `configs/provider-model-slots.minimax.example.yaml`, `minimax` as a valid `--chairman` tag, and a README provider-routing row.
+
 ## [1.2.0] - 2026-07-04
 
 ### Added
