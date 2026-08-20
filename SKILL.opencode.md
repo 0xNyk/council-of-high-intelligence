@@ -403,28 +403,31 @@ Limit: 300 words maximum. You MUST engage at least 2 other members by label.
 
 ### STEP 4: Post-Round Enforcement Scan
 
-Run all enforcement checks on Round 2 outputs in a single pass:
+Run all enforcement checks on Round 2 outputs in a single pass. **Track enforcement activity**: maintain a running count of enforcement dispatches (actual model calls made) and which conditions triggered them for the Session Metadata in STEP 8. Count each dispatch once even when it satisfies multiple conditions.
 
 **`[VERIFY]` Dissent quota**: At least 2 members must articulate a non-overlapping objection. If fewer than 2 → send the dissent prompt:
 ```
 Your Round 2 response agreed with the emerging consensus. The council requires dissent for quality.
 State your strongest objection to the majority position in 150 words. What are they getting wrong?
 ```
+Increment the enforcement dispatch count by the number of members receiving this prompt. Tag the condition as `dissent_quota`.
 
 **`[VERIFY]` Novelty gate**: Each response must contain at least 1 new claim, test, risk, or reframing not in that member's Round 1 output. If missing → send back:
 ```
 Your Round 2 response restated your Round 1 position without engaging the challenges raised.
 Address {specific member}'s challenge to your position directly. What changes?
 ```
+Increment the enforcement dispatch count by the number of members receiving this prompt. Tag the condition as `novelty_gate`.
 
 **`[VERIFY]` Agreement check**: If >70% agree on core position → trigger counterfactual prompt to 2 most likely dissenters:
 ```
 Assume the current consensus is wrong. What is the strongest alternative and what evidence would flip the decision?
 ```
+Increment the enforcement dispatch count by the number of members receiving this prompt (typically 2). Tag the condition as `agreement_check`.
 
 **`[VERIFY]` Evidence labels**: Confirm claims are tagged (`empirical | mechanistic | strategic | ethical | heuristic`). Note reasoning monoculture (>80% same type).
 
-**`[VERIFY]` Anti-recursion**: Socrates re-asks an answered question → hemlock rule, force 50-word position. Any member restates Round 1 without engaging challenges → send back. Exchange exceeds 2 messages between any pair → cut off.
+**`[VERIFY]` Anti-recursion**: Socrates re-asks an answered question → hemlock rule, force 50-word position. Any member restates Round 1 without engaging challenges → send back. Exchange exceeds 2 messages between any pair → cut off. Increment the enforcement dispatch count for each prompt sent. Tag the condition as `anti_recursion`.
 
 ### STEP 5: Round 3 — Final Crystallization (PARALLEL)
 
@@ -449,7 +452,7 @@ STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|n
   merely sub-optimal — surfaced in the Minority Report even if you're outvoted.
 ```
 
-`[CHECKPOINT]` Collect every member's `STANCE:` line. Normalize labels that mean the same thing to a single canonical option (e.g. "monorepo" / "single repo" → `monorepo`). If a member omitted the line or it's unparseable, re-prompt that one member for the stance line only — do not infer their stance from prose.
+`[CHECKPOINT]` Collect every member's `STANCE:` line. Normalize labels that mean the same thing to a single canonical option (e.g. "monorepo" / "single repo" → `monorepo`). If a member omitted the line or it's unparseable, re-prompt that one member for the stance line only — do not infer their stance from prose. Increment the enforcement dispatch count for each re-prompt sent. Tag the condition as `missing_stance`.
 
 `[CHECKPOINT]` Confirm all Round 3 outputs collected.
 
@@ -515,7 +518,9 @@ Required fields:
 - `schema_version: 1`
 - `mode`: full | quick | duo | triad
 - `panel_size`: integer
-- `rounds_run`: integer (actual, not target — count any rounds that were truncated)
+- `rounds_run`: integer (actual, not target — count any rounds that were truncated; this counts only deliberation rounds, not enforcement dispatches)
+- `enforcement_calls`: integer (total count of enforcement dispatches made in STEP 4, STEP 5, and any other enforcement points; write `0` if no enforcement was needed)
+- `enforcement_breakdown`: object with condition counts (e.g. `{dissent_quota: 1, novelty_gate: 2, agreement_check: 2, anti_recursion: 0, missing_stance: 1}`; write `none` if `enforcement_calls` is 0)
 - `tools_used`: yes if any subagent invoked Read/Grep/Glob/Bash/WebSearch/WebFetch; no otherwise
 - `provider_count`: from the detection JSON
 - `fallbacks_triggered`: list of `member→provider/model` lines, or `none`
@@ -595,7 +600,7 @@ Use the SAME label as peers where you agree; write STANCE: abstain if you back
 no option.
 ```
 
-`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries 1.5× in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose.
+`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries 1.5× in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose. Increment the enforcement dispatch count for each re-prompt sent. Tag the condition as `missing_stance`.
 
 ### QUICK STEP 3: Synthesize Quick Verdict (CHAIRMAN)
 
@@ -741,9 +746,11 @@ After acting on this verdict, revisit: Was this verdict useful? Was the recommen
 schema_version: 1
 mode: full | quick | duo | triad
 panel_size: <N>
-rounds_run: <N>
+rounds_run: <N>                 # deliberation rounds only, not enforcement dispatches
+enforcement_calls: <N>          # total enforcement dispatches (0 if none needed)
+enforcement_breakdown: <object> # {dissent_quota: N, novelty_gate: N, agreement_check: N, anti_recursion: N, missing_stance: N} or "none"
 chairman_failed_fallback: yes | no
-tools_used: yes | no   # did members read files, grep, fetch URLs, etc.
+tools_used: yes | no            # did members read files, grep, fetch URLs, etc.
 input_tokens_estimate: ~<N>k    # best-effort if available from the host runtime
 output_tokens_estimate: ~<N>k   # best-effort
 duration_seconds: ~<N>
@@ -801,7 +808,9 @@ After acting on this verdict, revisit: Was this useful? What happened?
 schema_version: 1
 mode: quick
 panel_size: <N>
-rounds_run: 2
+rounds_run: 2                   # deliberation rounds only, not enforcement dispatches
+enforcement_calls: <N>          # total enforcement dispatches (0 if none needed)
+enforcement_breakdown: <object> # {dissent_quota: N, novelty_gate: N, agreement_check: N, anti_recursion: N, missing_stance: N} or "none"
 tools_used: yes | no
 input_tokens_estimate: ~<N>k
 output_tokens_estimate: ~<N>k
@@ -856,7 +865,9 @@ After deciding, revisit: Which perspective proved more useful? What happened?
 schema_version: 1
 mode: duo
 panel_size: 2
-rounds_run: 3
+rounds_run: 3                   # deliberation rounds only, not enforcement dispatches
+enforcement_calls: <N>          # total enforcement dispatches (0 if none needed)
+enforcement_breakdown: <object> # {dissent_quota: N, novelty_gate: N, agreement_check: N, anti_recursion: N, missing_stance: N} or "none"
 tools_used: yes | no
 input_tokens_estimate: ~<N>k
 output_tokens_estimate: ~<N>k

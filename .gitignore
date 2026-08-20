@@ -7,7 +7,6 @@ Desktop.ini
 
 # Editors
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -28,8 +27,6 @@ node_modules/
 .pnpm-store/
 
 # Secrets and local environment
-.env
-.env.*
 !.env.example
 
 # Logs, caches, and coverage
@@ -58,3 +55,4 @@ temp/
 scratch/
 output/
 reports/
+config.bat

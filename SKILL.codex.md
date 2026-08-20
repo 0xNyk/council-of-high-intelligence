@@ -193,7 +193,7 @@ Duo mode:
 Structured stance & weighted tie-breaking (full + quick modes):
 
 1. **Designate the domain-weight seat at panel selection** (before any analysis): the single member whose domain most directly matches the problem carries **1.5×** weight; all others **1.0×**. Lock it up front — selecting it after seeing positions would let the coordinator nudge the outcome. If the match is ambiguous, designate none and tie-break on equal weights.
-2. The final round (full Round 3 / quick Round 2) MUST end each member's output with a structured stance line: `STANCE: <short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no`. Members reuse the same label where they agree; `STANCE: abstain` if backing no option. Re-prompt for a missing/unparseable line — never infer stance from prose.
+2. The final round (full Round 3 / quick Round 2) MUST end each member's output with a structured stance line: `STANCE: <short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no`. Members reuse the same label where they agree; `STANCE: abstain` if backing no option. Re-prompt for a missing/unparseable line — never infer stance from prose. Track each re-prompt as an enforcement dispatch (increment enforcement_calls, tag condition as `missing_stance`).
 3. Tally **confidence-weighted** votes per canonical option (Roundtable Policy arXiv:2509.16839; ConfMAD arXiv:2509.14034): vote weight = base weight (1.0, or 1.5 for the domain seat) × confidence factor (`high → 1.0`, `med → 0.75`, `low → 0.5`). Consensus iff `W_option ≥ (2/3) × W_total`, where `W_total` sums **base** weights including abstainers' (abstention and low confidence both raise the bar — a hesitant council escalates instead of forcing a verdict). Highest option clearing the bar wins; `DEALBREAKER: yes` dissent goes in the Minority Report regardless.
 4. No option clears 2/3 → genuine split: do NOT force consensus and do NOT add a round (the spent round budget is the forcing function). Present each option with its weighted tally to the user. Record the tally (`option → weight`, marking the 1.5× seat) in the verdict's Vote Tally field. Duo mode issues no tally — it is dialectic, not decision-issuing.
 
@@ -205,6 +205,8 @@ Round execution reliability policy:
 4. If still missing, move seat to `degraded` and generate `[Simulated]` output from persona instructions plus prior round context.
 5. Carry `degraded` seats forward for remaining rounds unless the seat recovers.
 6. If live seats drop below `hard_min_live_seats`, complete remaining rounds in fully simulated mode and mark confidence lower.
+
+**Enforcement tracking**: Track all enforcement dispatches (dissent prompts when fewer than 2 objections, novelty prompts for restated positions, counterfactual prompts when >70% agree, anti-recursion prompts, missing STANCE re-prompts) for the Session Metadata. Count each dispatch once and tag its triggering condition (`dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`).
 
 ### Step 5: Synthesis Output (CHAIRMAN)
 
@@ -247,4 +249,4 @@ If `spawn_agent` is unavailable or too many seats fail, run a local simulated co
 
 ### Step 7: Session Metadata (issue #7, Phase 1)
 
-After the verdict is emitted, append a `Session Metadata` block with `schema_version: 1` containing: `mode`, `panel_size`, `rounds_run`, `tools_used`, `provider_count`, `fallbacks_triggered`, and best-effort `input_tokens_estimate` / `output_tokens_estimate` / `duration_seconds` (write `~unknown` if not available from the host runtime). Block is delimited by `---` so it's grep-able and redirectable.
+After the verdict is emitted, append a `Session Metadata` block with `schema_version: 1` containing: `mode`, `panel_size`, `rounds_run` (deliberation rounds only, not enforcement dispatches), `enforcement_calls` (total enforcement dispatches; write `0` if none needed), `enforcement_breakdown` (object with condition counts: `dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`; write `none` if `enforcement_calls` is 0), `tools_used`, `provider_count`, `fallbacks_triggered`, and best-effort `input_tokens_estimate` / `output_tokens_estimate` / `duration_seconds` (write `~unknown` if not available from the host runtime). Block is delimited by `---` so it's grep-able and redirectable.
