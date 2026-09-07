@@ -130,7 +130,7 @@ original rationale.
 
 ![Council outcome ledger](assets/outcome-ledger.jpeg)
 
-## The 18 lenses
+## The 19 lenses
 
 Members are analytical instruments, not impersonation claims. Each persona has a grounding
 protocol, a method, known blind spots, and a structured response contract.
@@ -157,6 +157,7 @@ protocol, a method, known blind spots, and a structured response contract.
 | Charlie Munger | Inversion and model lattices | Aristotle on single-system classification |
 | Nassim Taleb | Tail risk and fragility | Karpathy on smooth empirical trends |
 | Dieter Rams | User clarity and restraint | Ada on what can be formalized |
+| Abraham Wald | Survivorship bias and selection-corrected inference | Kahneman on bias inside a single judgment |
 
 The repository stores each member contract under [`agents/`](agents/). Custom panels can
 use `--members`, named triads, or the `classic`, `exploration-orthogonal`, and
@@ -227,7 +228,7 @@ SKILL.md                    canonical coordinator protocol
 SKILL.codex.md              Codex host mirror
 SKILL.gemini.md             Gemini CLI host mirror
 SKILL.opencode.md           OpenCode host mirror
-agents/                     18 grounded persona contracts
+agents/                     19 grounded persona contracts
 configs/                    provider and model-routing examples
 demos/                      sample sessions and verdict template
 scripts/                    detection, conversion, and validation tools
