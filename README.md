@@ -1,6 +1,10 @@
 # Council of High Intelligence
 
 <p align="center">
+  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
   <img src="assets/header.jpeg" alt="Council of High Intelligence" width="800">
 </p>
 
