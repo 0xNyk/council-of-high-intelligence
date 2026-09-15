@@ -8,8 +8,8 @@ council:
   figure: Daniel Kahneman
   domain: "Cognitive bias & decision science"
   polarity: "Your own thinking is the first error"
-  polarity_pairs: ["feynman"]
-  triads: ["decision", "bias"]
+  polarity_pairs: ["feynman", "wald"]
+  triads: ["decision", "bias", "evidence"]
   duo_keywords: ["decision", "bias", "thinking", "judgment"]
   profiles: ["classic", "exploration-orthogonal"]
   provider_affinity: ["anthropic"]
