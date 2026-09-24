@@ -277,8 +277,9 @@ Run all members **IN PARALLEL**. Each member sees ONLY the problem statement (bl
 2. Extract the **Identity**, **Grounding Protocol**, and relevant **Output Format** sections (trimmed — skip Analytical Method, What You See/Miss, When Deliberating)
 3. Build the full prompt with identity inlined, then run:
 ```bash
-codex exec -c model="{model}" -c auto_approve=true "{full prompt}" 2>/dev/null
+codex exec --skip-git-repo-check -c model="{model}" -c auto_approve=true "{full prompt}" < /dev/null 2>/dev/null
 ```
+`--skip-git-repo-check` lets the seat run from any working directory: `codex exec` otherwise exits with "Not inside a trusted directory" outside a git repo. `< /dev/null` closes stdin: when stdin is not a terminal, `codex exec` reads it to EOF before starting ("Reading additional input from stdin..."), which hangs under a caller that keeps stdin open.
 4. Capture stdout as the member's output. Timeout: 60 seconds.
 
 **For `gemini_cli` (Google)** — run via Bash tool:
