@@ -146,9 +146,10 @@ Some provider archetypes are dispatched outside the host runtime's `spawn_agent`
 
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
-- POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens: 1200`).
+- POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens` from the seat config, default `1200`). Reasoning models need `max_tokens: 4096` or more, or they can return an empty or truncated answer.
 - Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and apply the standard fallback (anthropic per the agent's `model` frontmatter).
-- Per-seat timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+- Per-seat timeout: the seat's `timeout_seconds`, default 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+- If `finish_reason` is `length`, log `[TRUNCATED] {member} on {provider}/{model} hit max_tokens={max_tokens}`. Keep a non-empty answer but record the seat as `truncated` in the verdict metadata; an empty truncated answer is a failed call.
 
 **`cursor_cli` (Cursor)** — dispatch via subprocess. Cursor is a model aggregator: one binary (`cursor-agent`) serves GPT-5.x, Claude, Gemini, and Grok families.
 
@@ -249,4 +250,4 @@ If `spawn_agent` is unavailable or too many seats fail, run a local simulated co
 
 ### Step 7: Session Metadata (issue #7, Phase 1)
 
-After the verdict is emitted, append a `Session Metadata` block with `schema_version: 1` containing: `mode`, `panel_size`, `rounds_run` (deliberation rounds only, not enforcement dispatches), `enforcement_calls` (total enforcement dispatches; write `0` if none needed), `enforcement_breakdown` (object with condition counts: `dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`; write `none` if `enforcement_calls` is 0), `tools_used`, `provider_count`, `fallbacks_triggered`, and best-effort `input_tokens_estimate` / `output_tokens_estimate` / `duration_seconds` (write `~unknown` if not available from the host runtime). Block is delimited by `---` so it's grep-able and redirectable.
+After the verdict is emitted, append a `Session Metadata` block with `schema_version: 1` containing: `mode`, `panel_size`, `rounds_run` (deliberation rounds only, not enforcement dispatches), `enforcement_calls` (total enforcement dispatches; write `0` if none needed), `enforcement_breakdown` (object with condition counts: `dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`; write `none` if `enforcement_calls` is 0), `tools_used`, `provider_count`, `fallbacks_triggered`, `truncated_seats`, and best-effort `input_tokens_estimate` / `output_tokens_estimate` / `duration_seconds` (write `~unknown` if not available from the host runtime). Block is delimited by `---` so it's grep-able and redirectable.
