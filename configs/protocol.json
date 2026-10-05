@@ -1,0 +1,706 @@
+{
+  "version": "1.2.0",
+  "triads": [
+    {
+      "domain": "architecture",
+      "members": [
+        "aristotle",
+        "ada",
+        "feynman"
+      ],
+      "rationale": "Classify + formalize + simplicity-test"
+    },
+    {
+      "domain": "strategy",
+      "members": [
+        "sun-tzu",
+        "machiavelli",
+        "aurelius"
+      ],
+      "rationale": "Terrain + incentives + moral grounding"
+    },
+    {
+      "domain": "ethics",
+      "members": [
+        "aurelius",
+        "socrates",
+        "lao-tzu"
+      ],
+      "rationale": "Duty + questioning + natural order"
+    },
+    {
+      "domain": "debugging",
+      "members": [
+        "feynman",
+        "socrates",
+        "ada"
+      ],
+      "rationale": "Bottom-up + assumption testing + formal verification"
+    },
+    {
+      "domain": "innovation",
+      "members": [
+        "ada",
+        "lao-tzu",
+        "aristotle"
+      ],
+      "rationale": "Abstraction + emergence + classification"
+    },
+    {
+      "domain": "conflict",
+      "members": [
+        "socrates",
+        "machiavelli",
+        "aurelius"
+      ],
+      "rationale": "Expose + predict + ground"
+    },
+    {
+      "domain": "complexity",
+      "members": [
+        "lao-tzu",
+        "aristotle",
+        "ada"
+      ],
+      "rationale": "Emergence + categories + formalism"
+    },
+    {
+      "domain": "risk",
+      "members": [
+        "sun-tzu",
+        "aurelius",
+        "feynman"
+      ],
+      "rationale": "Threats + resilience + empirical verification"
+    },
+    {
+      "domain": "shipping",
+      "members": [
+        "torvalds",
+        "musashi",
+        "feynman"
+      ],
+      "rationale": "Pragmatism + timing + first-principles"
+    },
+    {
+      "domain": "product",
+      "members": [
+        "torvalds",
+        "machiavelli",
+        "watts"
+      ],
+      "rationale": "Ship it + incentives + reframing"
+    },
+    {
+      "domain": "founder",
+      "members": [
+        "musashi",
+        "sun-tzu",
+        "torvalds"
+      ],
+      "rationale": "Timing + terrain + engineering reality"
+    },
+    {
+      "domain": "ai",
+      "members": [
+        "karpathy",
+        "sutskever",
+        "ada"
+      ],
+      "rationale": "Empirical ML + scaling frontier + formal limits"
+    },
+    {
+      "domain": "ai-product",
+      "members": [
+        "karpathy",
+        "torvalds",
+        "machiavelli"
+      ],
+      "rationale": "ML capability + shipping pragmatism + incentives"
+    },
+    {
+      "domain": "ai-safety",
+      "members": [
+        "sutskever",
+        "aurelius",
+        "socrates"
+      ],
+      "rationale": "Safety frontier + moral clarity + assumption destruction"
+    },
+    {
+      "domain": "decision",
+      "members": [
+        "kahneman",
+        "munger",
+        "aurelius"
+      ],
+      "rationale": "Bias detection + inversion + moral clarity"
+    },
+    {
+      "domain": "systems",
+      "members": [
+        "meadows",
+        "lao-tzu",
+        "aristotle"
+      ],
+      "rationale": "Feedback loops + emergence + categories"
+    },
+    {
+      "domain": "uncertainty",
+      "members": [
+        "taleb",
+        "sun-tzu",
+        "sutskever"
+      ],
+      "rationale": "Tail risk + terrain + scaling frontier"
+    },
+    {
+      "domain": "design",
+      "members": [
+        "rams",
+        "torvalds",
+        "watts"
+      ],
+      "rationale": "User clarity + maintainability + reframing"
+    },
+    {
+      "domain": "economics",
+      "members": [
+        "munger",
+        "machiavelli",
+        "sun-tzu"
+      ],
+      "rationale": "Models + incentives + competition"
+    },
+    {
+      "domain": "bias",
+      "members": [
+        "kahneman",
+        "socrates",
+        "watts"
+      ],
+      "rationale": "Cognitive bias + assumption destruction + frame audit"
+    }
+  ],
+  "duo_pairs": [
+    {
+      "domain_keywords": [
+        "architecture",
+        "structure",
+        "categories"
+      ],
+      "member_a": "aristotle",
+      "member_b": "lao-tzu",
+      "tension": "Classification vs emergence"
+    },
+    {
+      "domain_keywords": [
+        "shipping",
+        "execution",
+        "release"
+      ],
+      "member_a": "torvalds",
+      "member_b": "musashi",
+      "tension": "Ship now vs wait for timing"
+    },
+    {
+      "domain_keywords": [
+        "strategy",
+        "competition",
+        "market"
+      ],
+      "member_a": "sun-tzu",
+      "member_b": "aurelius",
+      "tension": "External victory vs internal governance"
+    },
+    {
+      "domain_keywords": [
+        "formalization",
+        "systems",
+        "abstraction"
+      ],
+      "member_a": "ada",
+      "member_b": "machiavelli",
+      "tension": "Formal purity vs human messiness"
+    },
+    {
+      "domain_keywords": [
+        "framing",
+        "purpose",
+        "meaning"
+      ],
+      "member_a": "socrates",
+      "member_b": "watts",
+      "tension": "Destroy assumptions vs dissolve the frame"
+    },
+    {
+      "domain_keywords": [
+        "engineering",
+        "theory",
+        "pragmatism"
+      ],
+      "member_a": "torvalds",
+      "member_b": "watts",
+      "tension": "Build it vs question if it should exist"
+    },
+    {
+      "domain_keywords": [
+        "ai",
+        "ml",
+        "neural",
+        "model",
+        "training"
+      ],
+      "member_a": "karpathy",
+      "member_b": "sutskever",
+      "tension": "Build and iterate vs pause and ensure safety"
+    },
+    {
+      "domain_keywords": [
+        "ai-safety",
+        "alignment",
+        "risk"
+      ],
+      "member_a": "sutskever",
+      "member_b": "machiavelli",
+      "tension": "Safety ideals vs industry incentives"
+    },
+    {
+      "domain_keywords": [
+        "decision",
+        "bias",
+        "thinking",
+        "judgment"
+      ],
+      "member_a": "kahneman",
+      "member_b": "feynman",
+      "tension": "Your cognition is the error vs trust first-principles"
+    },
+    {
+      "domain_keywords": [
+        "systems",
+        "feedback",
+        "complexity",
+        "loops"
+      ],
+      "member_a": "meadows",
+      "member_b": "torvalds",
+      "tension": "Redesign the system vs fix the symptom"
+    },
+    {
+      "domain_keywords": [
+        "economics",
+        "investment",
+        "models",
+        "moat"
+      ],
+      "member_a": "munger",
+      "member_b": "aristotle",
+      "tension": "Multi-model lattice vs single taxonomy"
+    },
+    {
+      "domain_keywords": [
+        "risk",
+        "uncertainty",
+        "fragility",
+        "tail"
+      ],
+      "member_a": "taleb",
+      "member_b": "karpathy",
+      "tension": "Hidden tails vs smooth empirical curves"
+    },
+    {
+      "domain_keywords": [
+        "design",
+        "user",
+        "usability",
+        "ux"
+      ],
+      "member_a": "rams",
+      "member_b": "ada",
+      "tension": "What the user needs vs what computation can do"
+    }
+  ],
+  "default_duo": {
+    "domain_keywords": [],
+    "member_a": "socrates",
+    "member_b": "feynman",
+    "tension": "Top-down questioning vs bottom-up rebuilding"
+  },
+  "profiles": {
+    "classic": {
+      "name": "classic",
+      "description": "All 18 members with the domain triads above. Best for broad deliberation.",
+      "members": [
+        "aristotle",
+        "socrates",
+        "sun-tzu",
+        "ada",
+        "aurelius",
+        "machiavelli",
+        "lao-tzu",
+        "feynman",
+        "torvalds",
+        "musashi",
+        "watts",
+        "karpathy",
+        "sutskever",
+        "kahneman",
+        "meadows",
+        "munger",
+        "taleb",
+        "rams"
+      ],
+      "triads": {
+        "architecture": {
+          "domain": "architecture",
+          "members": [
+            "aristotle",
+            "ada",
+            "feynman"
+          ],
+          "rationale": "Classify + formalize + simplicity-test"
+        },
+        "strategy": {
+          "domain": "strategy",
+          "members": [
+            "sun-tzu",
+            "machiavelli",
+            "aurelius"
+          ],
+          "rationale": "Terrain + incentives + moral grounding"
+        },
+        "ethics": {
+          "domain": "ethics",
+          "members": [
+            "aurelius",
+            "socrates",
+            "lao-tzu"
+          ],
+          "rationale": "Duty + questioning + natural order"
+        },
+        "debugging": {
+          "domain": "debugging",
+          "members": [
+            "feynman",
+            "socrates",
+            "ada"
+          ],
+          "rationale": "Bottom-up + assumption testing + formal verification"
+        },
+        "innovation": {
+          "domain": "innovation",
+          "members": [
+            "ada",
+            "lao-tzu",
+            "aristotle"
+          ],
+          "rationale": "Abstraction + emergence + classification"
+        },
+        "conflict": {
+          "domain": "conflict",
+          "members": [
+            "socrates",
+            "machiavelli",
+            "aurelius"
+          ],
+          "rationale": "Expose + predict + ground"
+        },
+        "complexity": {
+          "domain": "complexity",
+          "members": [
+            "lao-tzu",
+            "aristotle",
+            "ada"
+          ],
+          "rationale": "Emergence + categories + formalism"
+        },
+        "risk": {
+          "domain": "risk",
+          "members": [
+            "sun-tzu",
+            "aurelius",
+            "feynman"
+          ],
+          "rationale": "Threats + resilience + empirical verification"
+        },
+        "shipping": {
+          "domain": "shipping",
+          "members": [
+            "torvalds",
+            "musashi",
+            "feynman"
+          ],
+          "rationale": "Pragmatism + timing + first-principles"
+        },
+        "product": {
+          "domain": "product",
+          "members": [
+            "torvalds",
+            "machiavelli",
+            "watts"
+          ],
+          "rationale": "Ship it + incentives + reframing"
+        },
+        "founder": {
+          "domain": "founder",
+          "members": [
+            "musashi",
+            "sun-tzu",
+            "torvalds"
+          ],
+          "rationale": "Timing + terrain + engineering reality"
+        },
+        "ai": {
+          "domain": "ai",
+          "members": [
+            "karpathy",
+            "sutskever",
+            "ada"
+          ],
+          "rationale": "Empirical ML + scaling frontier + formal limits"
+        },
+        "ai-product": {
+          "domain": "ai-product",
+          "members": [
+            "karpathy",
+            "torvalds",
+            "machiavelli"
+          ],
+          "rationale": "ML capability + shipping pragmatism + incentives"
+        },
+        "ai-safety": {
+          "domain": "ai-safety",
+          "members": [
+            "sutskever",
+            "aurelius",
+            "socrates"
+          ],
+          "rationale": "Safety frontier + moral clarity + assumption destruction"
+        },
+        "decision": {
+          "domain": "decision",
+          "members": [
+            "kahneman",
+            "munger",
+            "aurelius"
+          ],
+          "rationale": "Bias detection + inversion + moral clarity"
+        },
+        "systems": {
+          "domain": "systems",
+          "members": [
+            "meadows",
+            "lao-tzu",
+            "aristotle"
+          ],
+          "rationale": "Feedback loops + emergence + categories"
+        },
+        "uncertainty": {
+          "domain": "uncertainty",
+          "members": [
+            "taleb",
+            "sun-tzu",
+            "sutskever"
+          ],
+          "rationale": "Tail risk + terrain + scaling frontier"
+        },
+        "design": {
+          "domain": "design",
+          "members": [
+            "rams",
+            "torvalds",
+            "watts"
+          ],
+          "rationale": "User clarity + maintainability + reframing"
+        },
+        "economics": {
+          "domain": "economics",
+          "members": [
+            "munger",
+            "machiavelli",
+            "sun-tzu"
+          ],
+          "rationale": "Models + incentives + competition"
+        },
+        "bias": {
+          "domain": "bias",
+          "members": [
+            "kahneman",
+            "socrates",
+            "watts"
+          ],
+          "rationale": "Cognitive bias + assumption destruction + frame audit"
+        }
+      }
+    },
+    "exploration-orthogonal": {
+      "name": "exploration-orthogonal",
+      "description": "12-member panel for discovery and 'unknown unknowns' reduction.",
+      "members": [
+        "socrates",
+        "feynman",
+        "sun-tzu",
+        "machiavelli",
+        "ada",
+        "lao-tzu",
+        "aurelius",
+        "torvalds",
+        "karpathy",
+        "sutskever",
+        "kahneman",
+        "meadows"
+      ],
+      "triads": {
+        "unknowns": {
+          "domain": "unknowns",
+          "members": [
+            "socrates",
+            "lao-tzu",
+            "feynman"
+          ],
+          "rationale": "Assumption destruction + emergence + first-principles"
+        },
+        "market-entry": {
+          "domain": "market-entry",
+          "members": [
+            "sun-tzu",
+            "machiavelli",
+            "aurelius"
+          ],
+          "rationale": "Terrain + incentives + moral grounding"
+        },
+        "system-design": {
+          "domain": "system-design",
+          "members": [
+            "ada",
+            "feynman",
+            "torvalds"
+          ],
+          "rationale": "Formalize + simplify + ship"
+        },
+        "reframing": {
+          "domain": "reframing",
+          "members": [
+            "socrates",
+            "lao-tzu",
+            "ada"
+          ],
+          "rationale": "Destroy assumptions + emergence + formalize"
+        },
+        "ai-frontier": {
+          "domain": "ai-frontier",
+          "members": [
+            "karpathy",
+            "sutskever",
+            "ada"
+          ],
+          "rationale": "Empirical ML + scaling frontier + formal limits"
+        },
+        "blind-spots": {
+          "domain": "blind-spots",
+          "members": [
+            "kahneman",
+            "meadows",
+            "socrates"
+          ],
+          "rationale": "Cognitive bias + systems feedback + assumption testing"
+        }
+      }
+    },
+    "execution-lean": {
+      "name": "execution-lean",
+      "description": "5-member panel for fast decision-to-action loops.",
+      "members": [
+        "torvalds",
+        "feynman",
+        "sun-tzu",
+        "aurelius",
+        "ada"
+      ],
+      "triads": {
+        "ship-now": {
+          "domain": "ship-now",
+          "members": [
+            "torvalds",
+            "feynman",
+            "aurelius"
+          ],
+          "rationale": "Pragmatism + first-principles + moral clarity"
+        },
+        "launch-strategy": {
+          "domain": "launch-strategy",
+          "members": [
+            "sun-tzu",
+            "torvalds",
+            "ada"
+          ],
+          "rationale": "Terrain + engineering reality + formalism"
+        },
+        "stability": {
+          "domain": "stability",
+          "members": [
+            "ada",
+            "feynman",
+            "aurelius"
+          ],
+          "rationale": "Formal verification + empirical testing + resilience"
+        }
+      }
+    }
+  },
+  "polarity_pairs": [
+    [
+      "socrates",
+      "feynman"
+    ],
+    [
+      "aristotle",
+      "lao-tzu"
+    ],
+    [
+      "sun-tzu",
+      "aurelius"
+    ],
+    [
+      "ada",
+      "machiavelli"
+    ],
+    [
+      "torvalds",
+      "watts"
+    ],
+    [
+      "musashi",
+      "torvalds"
+    ],
+    [
+      "karpathy",
+      "sutskever"
+    ],
+    [
+      "karpathy",
+      "ada"
+    ],
+    [
+      "kahneman",
+      "feynman"
+    ],
+    [
+      "meadows",
+      "torvalds"
+    ],
+    [
+      "munger",
+      "aristotle"
+    ],
+    [
+      "taleb",
+      "karpathy"
+    ],
+    [
+      "rams",
+      "ada"
+    ]
+  ]
+}

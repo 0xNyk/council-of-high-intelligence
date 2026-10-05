@@ -1,0 +1,134 @@
+"""
+Council of High Intelligence — Provider Detection.
+
+Wraps the existing ``scripts/detect-providers.sh`` shell script and
+returns structured ``ProviderInfo`` objects.  Also provides a pure-Python
+fallback when the shell script is unavailable.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+from pathlib import Path
+from typing import Optional
+
+from .config_loader import resolve_scripts_dir
+from .models import ExecMethod, ProviderInfo
+
+# Mapping from legacy exec_method names to current names.
+_EXEC_METHOD_ALIASES: dict[str, str] = {
+    "gemini_cli": ExecMethod.AGY.value,
+}
+
+
+def _normalise_exec_method(raw: str) -> str:
+    """Map legacy exec_method names (e.g. ``gemini_cli``) to ``agy``."""
+    return _EXEC_METHOD_ALIASES.get(raw, raw)
+
+
+def detect_providers(
+    script_path: str | Path | None = None,
+    timeout: int = 15,
+    fallback: bool = False,
+) -> list[ProviderInfo]:
+    """
+    Run the provider detection script and parse its JSON output.
+
+    Args:
+        script_path: Explicit path to ``detect-providers.sh``.
+                     If *None*, resolved from the project's ``scripts/`` dir.
+        timeout: Maximum seconds to wait for the script.
+        fallback: If *True*, return Anthropic-only fallback when detection fails.
+
+    Returns:
+        List of ``ProviderInfo`` objects (one per provider, including
+        unavailable ones).
+
+    Raises:
+        FileNotFoundError: If the detection script cannot be found and fallback=False.
+        RuntimeError: If the script fails or produces invalid JSON and fallback=False.
+    """
+    if script_path is None:
+        script_path = resolve_scripts_dir() / "detect-providers.sh"
+
+    script_path = Path(script_path).resolve()
+    if not script_path.is_file():
+        if fallback:
+            return fallback_anthropic_only()
+        raise FileNotFoundError(
+            f"Provider detection script not found: {script_path}"
+        )
+
+    try:
+        result = subprocess.run(
+            ["bash", str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Provider detection failed (exit {result.returncode}): "
+                f"{result.stderr.strip()}"
+            )
+        data = json.loads(result.stdout)
+    except Exception as exc:
+        if fallback:
+            return fallback_anthropic_only()
+        if isinstance(exc, (FileNotFoundError, RuntimeError)):
+            raise
+        if isinstance(exc, subprocess.TimeoutExpired):
+            raise RuntimeError(f"Provider detection timed out after {timeout}s.") from exc
+        if isinstance(exc, json.JSONDecodeError):
+            raise RuntimeError(f"Provider detection produced invalid JSON: {exc}") from exc
+        raise RuntimeError(f"Provider detection error: {exc}") from exc
+
+    providers: list[ProviderInfo] = []
+    for entry in data.get("providers", []):
+        providers.append(
+            ProviderInfo(
+                name=entry.get("name", ""),
+                available=entry.get("available", False),
+                exec_method=_normalise_exec_method(
+                    entry.get("exec_method", "")
+                ),
+                binary=entry.get("binary", ""),
+                models=entry.get("models", []),
+            )
+        )
+    return providers
+
+
+def get_available_providers(
+    script_path: str | Path | None = None,
+    fallback: bool = True,
+) -> list[ProviderInfo]:
+    """Return only the providers that are currently available."""
+    return [p for p in detect_providers(script_path, fallback=fallback) if p.available]
+
+
+def get_provider_count(
+    script_path: str | Path | None = None,
+    fallback: bool = True,
+) -> int:
+    """Return the number of available providers."""
+    return len(get_available_providers(script_path, fallback=fallback))
+
+
+def fallback_anthropic_only() -> list[ProviderInfo]:
+    """
+    Return a single-provider list with only Anthropic available.
+
+    Used as a safe fallback when the detection script is missing or
+    the system has no other providers.
+    """
+    return [
+        ProviderInfo(
+            name="anthropic",
+            available=True,
+            exec_method=ExecMethod.SUBAGENT.value,
+            binary="native",
+            models=["opus", "sonnet", "haiku"],
+        ),
+    ]
