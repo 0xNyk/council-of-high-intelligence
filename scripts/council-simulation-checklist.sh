@@ -218,7 +218,7 @@ fi
 
 # --- Triad member validation ---
 
-for member_name in aristotle socrates feynman ada sun-tzu machiavelli aurelius lao-tzu torvalds musashi watts karpathy sutskever kahneman meadows munger taleb rams; do
+for member_name in aristotle socrates feynman ada sun-tzu machiavelli aurelius lao-tzu torvalds musashi watts karpathy sutskever kahneman meadows munger taleb rams wald; do
   if [[ ! -f "agents/council-${member_name}.md" ]]; then
     fail "Missing agent file for triad member: council-${member_name}.md"
   fi
