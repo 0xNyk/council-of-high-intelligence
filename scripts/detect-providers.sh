@@ -6,13 +6,31 @@ set -euo pipefail
 # Usage: ./scripts/detect-providers.sh
 
 TIMEOUT_SECONDS=5
+# Longer bound for real model-call health checks: a generation round-trip is
+# far slower than a `--version` probe, so it needs its own timeout.
+PROBE_TIMEOUT_SECONDS=25
 
 # --- Helper functions ---
 
 json_provider() {
-  local name="$1" available="$2" exec_method="$3" binary="$4" models="$5"
-  printf '{"name":"%s","available":%s,"exec_method":"%s","binary":"%s","models":[%s]}' \
-    "$name" "$available" "$exec_method" "$binary" "$models"
+  local name="$1" available="$2" exec_method="$3" binary="$4" models="$5" extra="${6:-}"
+  # Optional 6th arg = extra raw JSON fields (comma-joined, no leading comma).
+  if [[ -n "$extra" ]]; then extra=",${extra}"; fi
+  printf '{"name":"%s","available":%s,"exec_method":"%s","binary":"%s","models":[%s]%s}' \
+    "$name" "$available" "$exec_method" "$binary" "$models" "$extra"
+}
+
+# JSON-escape a string for safe embedding in a JSON value (backslash, quote,
+# and control chars). Keeps secrets out is the caller's job — this only makes
+# arbitrary diagnostic text safe to place inside a JSON string.
+json_escape() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/ }"
+  s="${s//$'\r'/ }"
+  s="${s//$'\t'/ }"
+  printf '%s' "$s"
 }
 
 check_command() {
@@ -54,12 +72,56 @@ else
 fi
 
 # Google via Gemini CLI
+# Detection uses a real, non-interactive health check instead of `--version`.
+# `--version` only proves the binary exists; it says nothing about whether a
+# model call will actually succeed. A tiny `gemini -p` probe exercises auth
+# end-to-end and is transparent to HOW the key is supplied — OAuth
+# (~/.gemini/oauth_creds.json), GEMINI_API_KEY / GOOGLE_API_KEY env vars, or
+# the macOS Keychain all make the probe succeed, and we never read the secret.
 gemini_bin="$(check_command gemini)"
-if [[ -n "$gemini_bin" ]] && run_with_timeout gemini --version >/dev/null 2>&1; then
-  providers+=("$(json_provider "google" "true" "gemini_cli" "$gemini_bin" '"gemini-3-pro"')")
+gemini_available=false
+gemini_auth="unknown"
+gemini_diag=""
+if [[ -z "$gemini_bin" ]]; then
+  gemini_diag="gemini CLI not found on PATH"
 else
-  providers+=("$(json_provider "google" "false" "gemini_cli" "${gemini_bin:-not_found}" '')")
+  # Best-effort, non-secret auth hint (presence only — values are never read).
+  if [[ -n "${GEMINI_API_KEY:-}" ]]; then
+    gemini_auth="env:GEMINI_API_KEY"
+  elif [[ -n "${GOOGLE_API_KEY:-}" ]]; then
+    gemini_auth="env:GOOGLE_API_KEY"
+  elif [[ -f "${HOME}/.gemini/oauth_creds.json" ]]; then
+    gemini_auth="oauth"
+  else
+    gemini_auth="cli-managed"   # e.g. macOS Keychain: the CLI holds it, we don't
+  fi
+
+  # Non-interactive model probe. stdin from /dev/null so it can never block on
+  # input; errexit disabled locally so we can capture the true exit code; a
+  # dedicated longer timeout because this is a real generation call.
+  _saved_to="$TIMEOUT_SECONDS"; TIMEOUT_SECONDS="$PROBE_TIMEOUT_SECONDS"
+  set +e
+  gemini_probe="$(run_with_timeout gemini -p "Reply exactly: OK" </dev/null 2>/dev/null)"
+  gemini_rc=$?
+  set -e
+  TIMEOUT_SECONDS="$_saved_to"
+  gemini_probe="$(printf '%s' "$gemini_probe" | tr -d '\r\n' | head -c 120)"
+
+  if [[ "$gemini_rc" -eq 0 && -n "$gemini_probe" ]]; then
+    gemini_available=true
+    gemini_diag="health check passed (auth: ${gemini_auth})"
+  elif [[ "$gemini_rc" -eq 124 ]]; then
+    gemini_diag="health check timed out after ${PROBE_TIMEOUT_SECONDS}s (auth: ${gemini_auth}); try: gemini -p 'hi'"
+  else
+    gemini_diag="health check failed rc=${gemini_rc} (auth: ${gemini_auth}); try: gemini -p 'hi'"
+  fi
 fi
+# Human-readable diagnostic to stderr so stdout stays valid JSON.
+printf 'gemini detection: %s\n' "$gemini_diag" >&2
+gemini_models=""
+if [[ "$gemini_available" == true ]]; then gemini_models='"gemini-3-pro"'; fi
+gemini_extra="$(printf '"auth":"%s","diagnostic":"%s"' "$(json_escape "$gemini_auth")" "$(json_escape "$gemini_diag")")"
+providers+=("$(json_provider "google" "$gemini_available" "gemini_cli" "${gemini_bin:-not_found}" "$gemini_models" "$gemini_extra")")
 
 # Ollama (local models)
 ollama_bin="$(check_command ollama)"
