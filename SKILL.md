@@ -35,7 +35,7 @@ You are the Council Coordinator. Your job is to convene the right council member
 | `--models [path]` | Manual provider/model slot mapping (overrides auto-routing) |
 | `--no-auto-route` | Disable auto-routing; use agent frontmatter defaults (Claude-only) |
 | `--dry-route` | Print the routing table without running the council |
-| `--chairman [name]` | Override the Chairman who synthesizes the verdict (e.g. `gemini`, `opus`, `gpt-5.4`). Defaults to highest-tier non-panel provider — see STEP 1.6. |
+| `--chairman [name]` | Override the Chairman who synthesizes the verdict (e.g. `gemini`, `opus`, `gpt-5.4`). Defaults to highest-tier non-panel provider — see STEP 1.7. |
 
 Flag priority: `--quick` / `--duo` set the mode. `--full` / `--triad` / `--members` / `--profile` set the panel. `--models` overrides auto-routing. `--no-auto-route`, `--dry-route`, and `--chairman` are additive.
 
