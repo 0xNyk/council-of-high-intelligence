@@ -12,6 +12,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - **`configs/provider-model-slots.example.yaml` pinned a seat to an undispatchable provider** — `machiavelli` was routed to `provider: xai`, which appears nowhere in `detect-providers.sh`, the dispatch table, or `auto-route-defaults.yaml`, so copying the README example silently dropped that seat to the fallback path. It now runs `grok-4` through `cursor_cli`, matching `configs/provider-model-slots.cursor.example.yaml`.
+- **`--chairman` flag cross-reference** — the flags table in `SKILL.md` and `SKILL.opencode.md` pointed at "STEP 1.6"; Chairman selection is STEP 1.7.
 - **Socrates/Watts polarity pair was missing from the Polarity Pairs list** — mutual in frontmatter and present in the duo table, but absent from the list the coordinator reads. Added to `SKILL.md` and `SKILL.opencode.md`.
 - **Sutskever/Machiavelli polarity pair was missing from the Polarity Pairs list** — the frontmatter reciprocation landed in #51 (@xiaolai); this adds the matching prose entry to `SKILL.md` and `SKILL.opencode.md`, where the duo table already carried it.
 
