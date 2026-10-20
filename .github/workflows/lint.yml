@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -13,13 +16,14 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update -q
           sudo apt-get install -y shellcheck
           npm install -g markdownlint-cli
+          python3 -m pip install --user pyyaml
 
       - name: Shellcheck
         run: |
@@ -35,9 +39,16 @@ jobs:
         run: |
           markdownlint --config .markdownlint.json \
             README.md CONTRIBUTING.md CHANGELOG.md CLAUDE.md \
-            SKILL.md SKILL.codex.md SKILL.gemini.md \
+            SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md \
             "agents/**/*.md" \
             "demos/**/*.md"
+
+      - name: Roster validation (prose vs frontmatter)
+        # The checklist below greps for protocol features; this checks that the
+        # roster prose and the agent frontmatter describe the same council.
+        # Panel selection reads one and the coordinator reads the other, so
+        # drift seats the wrong members without any visible error.
+        run: ./scripts/validate-roster.py
 
       - name: Council simulation checklist (drift guard)
         run: ./scripts/council-simulation-checklist.sh

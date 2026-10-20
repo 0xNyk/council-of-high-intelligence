@@ -4,16 +4,17 @@
 
 ## Protocol parity
 
-Protocol features live in three coordinator files that must not drift:
+Protocol features live in four coordinator files that must not drift:
 
 - [ ] Change applied to `SKILL.md` (or N/A)
 - [ ] Mirrored in `SKILL.codex.md` (or N/A / host-exempt with reason)
 - [ ] Mirrored in `SKILL.gemini.md` (or N/A / host-exempt with reason)
+- [ ] Mirrored in `SKILL.opencode.md` (or N/A / host-exempt with reason)
 
 ## Validation
 
 - [ ] `./scripts/council-simulation-checklist.sh` passes
-- [ ] `./install.sh --dry-run` passes (plus `--codex` / `--gemini` if installer changed)
+- [ ] `./install.sh --dry-run` passes (plus `--codex` / `--gemini` / `--opencode` if installer changed)
 - [ ] Tested at least one mode (full/quick/duo) if protocol behavior changed
 
 ## Evidence

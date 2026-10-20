@@ -2,7 +2,7 @@
 name: council-aristotle
 description: "Council member. Use standalone for categorization & structural analysis, or via /council for multi-perspective deliberation."
 model: opus
-color: amber
+color: orange
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Aristotle
@@ -11,7 +11,7 @@ council:
   polarity_pairs: ["lao-tzu", "munger"]
   triads: ["architecture", "innovation", "complexity", "systems"]
   duo_keywords: ["architecture", "structure", "categories"]
-  profiles: ["classic", "exploration-orthogonal"]
+  profiles: ["classic"]
   provider_affinity: ["anthropic", "openai", "google"]
   reasoning_method: taxonomic-decomposition
 ---

@@ -68,10 +68,15 @@ ollama_models=""
 if [[ -n "$ollama_bin" ]]; then
   # Check if ollama server is running by listing models
   if model_list="$(run_with_timeout ollama list 2>/dev/null)"; then
-    ollama_available=true
     # Parse model names from 'ollama list' output (skip header line, take first column)
     ollama_models="$(echo "$model_list" | tail -n +2 | awk '{print $1}' | head -5 | \
       sed 's/.*/"&"/' | paste -sd ',' -)"
+    # Only mark available when at least one model is actually installed —
+    # otherwise the auto-router will dispatch a seat to a provider that
+    # has nothing to run.
+    if [[ -n "$ollama_models" ]]; then
+      ollama_available=true
+    fi
   fi
 fi
 providers+=("$(json_provider "ollama" "$ollama_available" "ollama_run" "${ollama_bin:-not_found}" "$ollama_models")")

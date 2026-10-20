@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Project version — derived from the latest released entry in CHANGELOG.md so
 # generated manifests never carry a stale hardcoded version.
-PROJECT_VERSION="$(sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' "${SCRIPT_DIR}/CHANGELOG.md" 2>/dev/null | head -1)"
+PROJECT_VERSION="$(sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' "${SCRIPT_DIR}/CHANGELOG.md" 2>/dev/null | head -1 || true)"
 PROJECT_VERSION="${PROJECT_VERSION:-0.0.0}"
 CLAUDE_DIR="${HOME}/.claude"
 CODEX_DIR="${HOME}/.codex"

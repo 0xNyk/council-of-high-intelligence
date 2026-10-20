@@ -8,6 +8,17 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - MiniMax provider support — seventh dispatch path via the `openai_compatible_api` archetype. Auto-detected from `MINIMAX_API_KEY` in `scripts/detect-providers.sh`, with regional endpoint selection (`https://api.minimax.io/v1` globally, `https://api.minimaxi.com/v1` when `MINIMAX_REGION=cn`). `minimax` tiers in `configs/auto-route-defaults.yaml`, new `configs/provider-model-slots.minimax.example.yaml`, `minimax` as a valid `--chairman` tag, and a README provider-routing row.
+- **Roster validation drift guard** — `scripts/validate-roster.py`, wired into CI. Runs 166 structural checks that `SKILL.md` prose and `agents/*.md` frontmatter describe the same council: profile sizes and enumerated member lists against `profiles:` tags, polarity pairs resolvable/mutual/mirrored in the Polarity Pairs list, `reasoning_method` uniqueness (DMAD), triad references, and roster-table parity. Panel selection reads the frontmatter while the coordinator reads the prose, so drift silently seats the wrong members with no visible error. Complements `council-simulation-checklist.sh`, which greps for protocol features rather than checking roster consistency.
+
+### Fixed
+- **Socrates/Watts polarity pair was missing from the Polarity Pairs list** — mutual in frontmatter and present in the duo table, but absent from the list the coordinator reads. Added to `SKILL.md` and `SKILL.opencode.md`.
+- **Sutskever/Machiavelli polarity pair was missing from the Polarity Pairs list** — the frontmatter reciprocation landed in #51 (@xiaolai); this adds the matching prose entry to `SKILL.md` and `SKILL.opencode.md`, where the duo table already carried it.
+
+The two frontmatter drifts this validator was written to catch — Aristotle's stray
+`exploration-orthogonal` tag (#50) and the one-directional Sutskever/Machiavelli pair
+(#51) — were found and fixed independently by @xiaolai on 2026-07-06, six weeks before
+the validator existed. Both are merged. The validator's value is preventing the next
+one, not having found these.
 
 ## [1.2.0] - 2026-07-04
 

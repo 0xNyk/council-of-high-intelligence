@@ -2,7 +2,7 @@
 name: council-aurelius
 description: "Council member. Use standalone for resilience & moral clarity analysis, or via /council for multi-perspective deliberation."
 model: opus
-color: silver
+color: blue
 tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
 council:
   figure: Marcus Aurelius
