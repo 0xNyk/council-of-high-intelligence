@@ -38,25 +38,25 @@ seats:
   # MiniMax seats — M-series chat models via OpenAI-compatible API
   feynman:
     provider: minimax
-    model: MiniMax-M3
+    model: MiniMax-M3.1-Flash
     base_url: https://api.minimax.io/v1
     api_key_env: MINIMAX_API_KEY
     reasoning_mode: mechanistic
   sun-tzu:
     provider: minimax
-    model: MiniMax-M2.7
+    model: MiniMax-M3
     base_url: https://api.minimax.io/v1
     api_key_env: MINIMAX_API_KEY
     reasoning_mode: strategic
   machiavelli:
     provider: minimax
-    model: MiniMax-M3
+    model: MiniMax-M3.1-Flash
     base_url: https://api.minimax.io/v1
     api_key_env: MINIMAX_API_KEY
     reasoning_mode: adversarial
   ada:
     provider: minimax
-    model: MiniMax-M2.7
+    model: MiniMax-M3
     base_url: https://api.minimax.io/v1
     api_key_env: MINIMAX_API_KEY
     reasoning_mode: formal
@@ -65,7 +65,7 @@ seats:
   # and export MINIMAX_REGION=cn so auto-routing detects the same region.
   lao-tzu:
     provider: minimax
-    model: MiniMax-M3
+    model: MiniMax-M3.1-Flash
     base_url: https://api.minimax.io/v1
     api_key_env: MINIMAX_API_KEY
     reasoning_mode: emergent
@@ -78,6 +78,6 @@ seats:
 
 fallback:
   provider: minimax
-  model: MiniMax-M3
+  model: MiniMax-M3.1-Flash
   base_url: https://api.minimax.io/v1
   api_key_env: MINIMAX_API_KEY

@@ -114,7 +114,7 @@ if [[ -n "${NVIDIA_API_KEY:-}" ]]; then
       nim_available=true
     fi
     # Default model suggestions (verify live IDs at build.nvidia.com/models).
-    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
+    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
   fi
 fi
 providers+=("$(json_provider "nvidia_nim" "$nim_available" "openai_compatible_api" "$nim_endpoint" "$nim_models")")
@@ -135,7 +135,9 @@ if [[ -n "${MINIMAX_API_KEY:-}" ]]; then
   # The auth header is passed via process substitution so the key never
   # appears in curl's argv (visible to other local users via `ps`).
   if command -v curl >/dev/null 2>&1; then
-    if run_with_timeout curl -sf -o /dev/null         -H @<(printf 'Authorization: Bearer %s\n' "${MINIMAX_API_KEY}")         "${mm_endpoint}/models" 2>/dev/null; then
+    if run_with_timeout curl -sf -o /dev/null \
+        -H @<(printf 'Authorization: Bearer %s\n' "${MINIMAX_API_KEY}") \
+        "${mm_endpoint}/models" 2>/dev/null; then
       mm_available=true
     fi
   else
@@ -143,7 +145,7 @@ if [[ -n "${MINIMAX_API_KEY:-}" ]]; then
     mm_available=true
   fi
   # Current routing models (verify live IDs at platform.minimax.io/docs).
-  mm_models='"MiniMax-M3","MiniMax-M2.7"'
+  mm_models='"MiniMax-M3.1-Flash","MiniMax-M3"'
 fi
 providers+=("$(json_provider "minimax" "$mm_available" "openai_compatible_api" "$mm_endpoint" "$mm_models")")
 

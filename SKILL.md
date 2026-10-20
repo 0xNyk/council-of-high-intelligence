@@ -282,7 +282,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 | google | `gemini-3-pro` |
 | ollama | first available local model |
 | nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
-| minimax | `MiniMax-M3` |
+| minimax | `MiniMax-M3.1-Flash` |
 | cursor_cli | `gpt-5.4-high` |
 
 **Constraints:**
@@ -383,7 +383,7 @@ curl -sS -X POST "{base_url}/chat/completions" \
 
 For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
 
-For auto-detection of MiniMax, the same script emits a `minimax` entry with `exec_method: "openai_compatible_api"` when `MINIMAX_API_KEY` is set. `binary` is the regional endpoint URL (`https://api.minimax.io/v1` globally, or `https://api.minimaxi.com/v1` when `MINIMAX_REGION=cn`); the coordinator resolves the key from `MINIMAX_API_KEY` at routing time. Default routing models are `MiniMax-M3` (high) and `MiniMax-M2.7` (mid).
+For auto-detection of MiniMax, the same script emits a `minimax` entry with `exec_method: "openai_compatible_api"` when `MINIMAX_API_KEY` is set. `binary` is the regional endpoint URL (`https://api.minimax.io/v1` globally, or `https://api.minimaxi.com/v1` when `MINIMAX_REGION=cn`); the coordinator resolves the key from `MINIMAX_API_KEY` at routing time. Default routing models are `MiniMax-M3.1-Flash` (high, Chairman default) and `MiniMax-M3` (mid). These defaults only apply to auto-routing: preserve explicit model IDs in `--models` and project configuration, including legacy or custom routes. Direct Flash uses adaptive thinking by default; omit thinking/effort overrides in the standard request (do not send disabled thinking, `reasoning_effort: none`, `service_tier`, or `reasoning_split: false`).
 
 **Fallback**: If any external provider call fails or times out, log `[FALLBACK] {member} failed on {provider}/{model}. Falling back to anthropic/{frontmatter_model}.` and re-run as a Claude subagent. Skip the failed provider for remaining rounds.
 

@@ -147,6 +147,7 @@ Some provider archetypes are dispatched outside the host runtime's `spawn_agent`
 - Read `base_url` and `api_key_env` from the seat config (or detection JSON for auto-routing).
 - Resolve the API key from the env var at routing time. Never inline.
 - POST to `{base_url}/chat/completions` with an OpenAI-compatible payload (system+user messages, `temperature: 0.7`, `max_tokens: 1200`).
+- MiniMax auto-routing uses `MiniMax-M3.1-Flash` first (high/Chairman) and `MiniMax-M3` (mid), with global/CN endpoints from detection. Preserve explicit legacy/custom model IDs. For direct Flash, leave thinking/effort unset to use adaptive defaults; do not send disabled thinking, `reasoning_effort: none`, `service_tier`, or `reasoning_split: false`.
 - Extract `.choices[0].message.content`. If empty or non-2xx, mark the seat `degraded` and apply the standard fallback (anthropic per the agent's `model` frontmatter).
 - Per-seat timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
 
