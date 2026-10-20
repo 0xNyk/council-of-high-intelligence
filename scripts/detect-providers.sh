@@ -114,10 +114,40 @@ if [[ -n "${NVIDIA_API_KEY:-}" ]]; then
       nim_available=true
     fi
     # Default model suggestions (verify live IDs at build.nvidia.com/models).
-    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","minimaxai/minimax-m2.7","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
+    nim_models='"deepseek-ai/deepseek-v4-pro","moonshotai/kimi-k2.6","z-ai/glm-5.1","qwen/qwen3.5-397b-a17b"'
   fi
 fi
 providers+=("$(json_provider "nvidia_nim" "$nim_available" "openai_compatible_api" "$nim_endpoint" "$nim_models")")
+
+# MiniMax (OpenAI-compatible hosted endpoint). Two regional roots:
+# global at api.minimax.io and China at api.minimaxi.com.
+# Detection: MINIMAX_API_KEY env var + optional reachability check.
+# Select the China endpoint with MINIMAX_REGION=cn.
+mm_available=false
+mm_models=""
+mm_region="${MINIMAX_REGION:-global}"
+case "$mm_region" in
+  cn|cn_zh|CN) mm_endpoint="https://api.minimaxi.com/v1" ;;
+  *) mm_endpoint="https://api.minimax.io/v1" ;;
+esac
+if [[ -n "${MINIMAX_API_KEY:-}" ]]; then
+  # Optional: confirm catalog reachability. Skip if curl missing or offline.
+  # The auth header is passed via process substitution so the key never
+  # appears in curl's argv (visible to other local users via `ps`).
+  if command -v curl >/dev/null 2>&1; then
+    if run_with_timeout curl -sf -o /dev/null \
+        -H @<(printf 'Authorization: Bearer %s\n' "${MINIMAX_API_KEY}") \
+        "${mm_endpoint}/models" 2>/dev/null; then
+      mm_available=true
+    fi
+  else
+    # Curl unavailable; trust env var presence as availability signal.
+    mm_available=true
+  fi
+  # Current routing models (verify live IDs at platform.minimax.io/docs).
+  mm_models='"MiniMax-M3.1-Flash","MiniMax-M3"'
+fi
+providers+=("$(json_provider "minimax" "$mm_available" "openai_compatible_api" "$mm_endpoint" "$mm_models")")
 
 # --- Build JSON output ---
 
