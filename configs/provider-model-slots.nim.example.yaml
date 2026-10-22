@@ -11,6 +11,11 @@
 #   3. Verify live model IDs: curl -H "Authorization: Bearer $NVIDIA_API_KEY" \
 #         https://integrate.api.nvidia.com/v1/models | jq '.data[].id'
 #
+# Call budget (optional, per openai_compatible_api seat):
+#   max_tokens       default 1200. Reasoning models spend tokens on reasoning before the
+#                    visible answer; below ~4096 they often return empty or truncated text.
+#   timeout_seconds  default 90.
+#
 # Why mix providers: spreading seats across model families reduces shared
 # training-data bias and amplifies dissent. NIM gives access to non-Anthropic,
 # non-OpenAI, non-Google open-weight models (DeepSeek, Kimi, MiniMax, GLM, Qwen)
@@ -40,6 +45,7 @@ seats:
     model: deepseek-ai/deepseek-v4-pro
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
+    max_tokens: 4096
     reasoning_mode: mechanistic
 
   sun-tzu:
