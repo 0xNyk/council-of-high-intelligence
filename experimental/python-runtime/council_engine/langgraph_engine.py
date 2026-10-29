@@ -15,8 +15,8 @@ class CouncilState(TypedDict):
     labels: Dict[str, str]
     verdict: str
 
-def call_model(model_name, system_prompt, user_prompt):
-    """Utility to make a reasoning-enabled call to the LLM."""
+def call_model(system_prompt, user_prompt):
+    """Utility to make a reasoning-enabled call to the configured COUNCIL_MODEL."""
     from council_engine.core import get_config
     cfg = get_config()
     
@@ -26,15 +26,10 @@ def call_model(model_name, system_prompt, user_prompt):
         api_key=cfg["api_key"]
     )
     
-    # Override default deepseek model with env configuration if applicable
-    actual_model = model_name
-    if model_name == "deepseek/deepseek-v4-flash":
-        actual_model = cfg["model"]
-        
     extra_body = {"reasoning": {"enabled": True}} if cfg["reasoning_enabled"] else None
     
     response = client.chat.completions.create(
-        model=actual_model,
+        model=cfg["model"],
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -43,7 +38,7 @@ def call_model(model_name, system_prompt, user_prompt):
     )
     content = response.choices[0].message.content
     if not content:
-        raise ValueError(f"[ERROR] LLM returned empty response for model '{actual_model}'. Please verify your billing balance, API key, or rate limits.")
+        raise ValueError(f"[ERROR] LLM returned empty response for model '{cfg['model']}'. Please verify your billing balance, API key, or rate limits.")
     return content
 
 # 1. Round 1 Node: Parallel blind analysis
@@ -61,7 +56,7 @@ Please evaluate this problem independently from your specific domain expertise a
 You do not know what other members have said. 
 Use a maximum of 300 words.
 """
-        r1_outputs[m] = call_model("deepseek/deepseek-v4-flash", parsed["instructions"], prompt)
+        r1_outputs[m] = call_model(parsed["instructions"], prompt)
         time.sleep(2)  # Pacing delay
     return {"r1_outputs": r1_outputs}
 
@@ -87,7 +82,7 @@ Based on these analyses:
 3. Restate your position in light of this exchange, noting any changes and reasons.
 Use a maximum of 200 words.
 """
-        r2_outputs[m] = call_model("deepseek/deepseek-v4-flash", parsed["instructions"], r2_prompt)
+        r2_outputs[m] = call_model(parsed["instructions"], r2_prompt)
         time.sleep(2)  # Pacing delay
         
     return {"r2_outputs": r2_outputs, "anonymized_r1": anonymized_r1, "labels": labels}
@@ -109,7 +104,7 @@ Deliberations are complete. Here is your full history in this session:
 
 Identities are now revealed. Please state your final stance on this decision in 75 words or less, clearly and decisively.
 """
-        final_positions[m] = call_model("deepseek/deepseek-v4-flash", parsed["instructions"], r3_prompt)
+        final_positions[m] = call_model(parsed["instructions"], r3_prompt)
         time.sleep(2)  # Pacing delay
         
     return {"r3_outputs": final_positions}
@@ -143,7 +138,7 @@ Please synthesize the final 'Council of High Intelligence Verdict' report in Eng
 4. **Concrete Next Step:** Exactly one owner-assigned, artifact-producing action to be executed within 15 days.
 5. **Kill Criteria:** Measurable thresholds or events that would invalidate this verdict.
 """
-    verdict = call_model("deepseek/deepseek-v4-flash", chairman_system, synthesis_prompt)
+    verdict = call_model(chairman_system, synthesis_prompt)
     return {"verdict": verdict}
 
 # Compile state graph workflow

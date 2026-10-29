@@ -44,11 +44,8 @@ def main():
     except ImportError as e:
         print(f"\n[ERROR] Failed to import the backend dependencies for {args.framework.upper()}:")
         print(e)
-        print("\nPlease install the required libraries:")
-        if args.framework == "agno":
-            print("  pip install agno pyyaml openai")
-        elif args.framework == "langgraph":
-            print("  pip install langgraph pyyaml openai")
+        print("\nPlease install the locked dependencies from experimental/python-runtime/ (see README.md):")
+        print(f"  uv sync --extra {args.framework}")
         sys.exit(1)
     except Exception as e:
         print(f"\n[ERROR] An error occurred during deliberation:")

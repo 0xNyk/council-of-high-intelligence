@@ -233,7 +233,13 @@ demos/                      sample sessions and verdict template
 scripts/                    detection, conversion, and validation tools
 assets/                     brand system and README visuals
 install.sh                  multi-host installer
+experimental/python-runtime/  opt-in Agno/LangGraph runtime (experimental)
 ```
+
+`experimental/python-runtime/` is an **experimental**, opt-in Python runtime. It is not
+installed by `install.sh` and bypasses the multi-provider routing above: every seat runs
+on the single endpoint in `COUNCIL_BASE_URL`. See its
+[README](experimental/python-runtime/README.md) for where requests go.
 
 Protocol changes start in `SKILL.md` and must remain behaviorally aligned with each host
 mirror. See [CONTRIBUTING.md](CONTRIBUTING.md) for the required checks and review contract.

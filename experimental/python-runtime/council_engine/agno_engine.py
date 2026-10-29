@@ -3,17 +3,16 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from council_engine.core import parse_agent_file, anonymize_responses
 
-def create_agno_member(agent_name, model_name=None):
+def create_agno_member(agent_name):
     parsed = parse_agent_file(agent_name)
     from council_engine.core import get_config
     cfg = get_config()
     
-    m_name = model_name or cfg["model"]
     extra_body = {"reasoning": {"enabled": True}} if cfg["reasoning_enabled"] else None
     
     # Configure model using env-driven settings
     model = OpenAIChat(
-        id=m_name,
+        id=cfg["model"],
         base_url=cfg["base_url"],
         api_key=cfg["api_key"],
         extra_body=extra_body,
@@ -57,7 +56,7 @@ Use a maximum of 300 words.
 """
         response = agent.run(prompt)
         if not response or not response.content:
-            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 1. Check your OpenRouter credentials, quota, or upstream rate limits.")
+            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 1. Check your credentials, quota, or rate limits at COUNCIL_BASE_URL.")
         r1_outputs[m] = response.content
         time.sleep(2)  # Pacing delay to avoid rate limit spikes
 
@@ -82,7 +81,7 @@ Use a maximum of 200 words.
 """
         response = agent.run(r2_prompt)
         if not response or not response.content:
-            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 2. Check your OpenRouter credentials, quota, or upstream rate limits.")
+            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 2. Check your credentials, quota, or rate limits at COUNCIL_BASE_URL.")
         r2_outputs[m] = response.content
         time.sleep(2)  # Pacing delay
 
@@ -102,7 +101,7 @@ Identities are now revealed. Please state your final stance on this decision in 
 """
         response = agent.run(r3_prompt)
         if not response or not response.content:
-            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 3. Check your OpenRouter credentials, quota, or upstream rate limits.")
+            raise ValueError(f"[ERROR] Agent '{agent.name}' returned empty or None response in Round 3. Check your credentials, quota, or rate limits at COUNCIL_BASE_URL.")
         final_positions[m] = response.content
         time.sleep(2)  # Pacing delay
 
@@ -159,7 +158,7 @@ Please synthesize the final 'Council of High Intelligence Verdict' report in Eng
     
     verdict_response = chairman.run(synthesis_prompt)
     if not verdict_response or not verdict_response.content:
-        raise ValueError(f"[ERROR] Chairman returned empty or None verdict. Check your OpenRouter credentials, quota, or upstream rate limits.")
+        raise ValueError(f"[ERROR] Chairman returned empty or None verdict. Check your credentials, quota, or rate limits at COUNCIL_BASE_URL.")
     
     print("\n" + "=" * 60)
     print(" FINAL COUNCIL OF HIGH INTELLIGENCE VERDICT (AGNO) ")

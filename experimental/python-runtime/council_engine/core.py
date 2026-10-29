@@ -1,17 +1,32 @@
 import os
 import re
+from pathlib import Path
+
 import yaml
 
+# experimental/python-runtime/council_engine/core.py -> repository root
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+def _require_env(name, hint):
+    value = (os.getenv(name) or "").strip()
+    if not value or value == "your_api_key_here":
+        raise ValueError(f"[ERROR] {name} is not set. {hint}")
+    return value
+
+
 def get_config():
-    """Returns the unified config values from environment variables with sensible defaults."""
-    api_key = os.getenv("COUNCIL_API_KEY")
-    if not api_key or api_key.strip() in ("", "your_api_key_here"):
-        raise ValueError("[ERROR] No API key found. Please set COUNCIL_API_KEY in your environment.")
-        
-    base_url = os.getenv("COUNCIL_BASE_URL")
-    model = os.getenv("COUNCIL_MODEL")
+    """
+    Returns the unified config values from environment variables.
+
+    Every request (persona prompts, the user's problem and the API key) is sent to
+    COUNCIL_BASE_URL. There is no default endpoint: if the base URL or model is
+    missing, this fails before any request is made.
+    """
+    api_key = _require_env("COUNCIL_API_KEY", "Set it to the key for the endpoint in COUNCIL_BASE_URL.")
+    base_url = _require_env("COUNCIL_BASE_URL", "Set it to an OpenAI-compatible endpoint, e.g. https://openrouter.ai/api/v1 or http://localhost:11434/v1.")
+    model = _require_env("COUNCIL_MODEL", "Set it to a model id served by COUNCIL_BASE_URL.")
     reasoning_enabled = (os.getenv("COUNCIL_REASONING") or "true").lower() == "true"
-    
+
     return {
         "api_key": api_key,
         "base_url": base_url,
@@ -27,7 +42,7 @@ def parse_agent_file(agent_name):
     """
     # Look up in standard paths
     paths = [
-        f"agents/council-{agent_name}.md",
+        str(REPO_ROOT / "agents" / f"council-{agent_name}.md"),
         f"~/.claude/agents/council-{agent_name}.md",
         f"~/.codex/skills/council/agents/council-{agent_name}.md"
     ]
@@ -99,7 +114,7 @@ def anonymize_responses(r1_outputs, members_list):
     anonymized_r1 = ""
     for m, output in r1_outputs.items():
         if not output:
-            raise ValueError(f"Round 1 output for agent '{m.capitalize()}' is empty or None. This indicates that the LLM API call failed, possibly due to invalid OpenRouter credentials, insufficient credits, or rate limits.")
+            raise ValueError(f"Round 1 output for agent '{m.capitalize()}' is empty or None. This indicates that the LLM API call failed, possibly due to invalid credentials, insufficient credits, or rate limits at COUNCIL_BASE_URL.")
         masked_output = output
         # Replace real figures' names in the output with their anonymized labels
         for real_name, label in labels.items():
