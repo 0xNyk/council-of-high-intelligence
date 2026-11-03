@@ -50,5 +50,8 @@ jobs:
         # drift seats the wrong members without any visible error.
         run: ./scripts/validate-roster.py
 
+      - name: MiniMax routing and offline HTTP boundary
+        run: python3 scripts/test-minimax-routing.py
+
       - name: Council simulation checklist (drift guard)
         run: ./scripts/council-simulation-checklist.sh

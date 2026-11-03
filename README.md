@@ -177,6 +177,7 @@ family does not play both sides of a disagreement.
 | Google | `gemini` executable |
 | Ollama | `ollama` executable |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
+| MiniMax | `MINIMAX_API_KEY`; each detection run sends it as a Bearer token to the regional `/models` endpoint. `MINIMAX_REGION=cn` uses `api.minimaxi.com` for discovery and sends council prompts there instead of the global `api.minimax.io` endpoint. |
 | Cursor | `cursor-agent` executable or configured login |
 
 Preview routing without running a council:
