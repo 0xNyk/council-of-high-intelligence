@@ -25,9 +25,13 @@ seats:
     provider: google
     model: gemini-3-pro
     reasoning_mode: strategic
+  # grok-4 through the Cursor CLI: `xai` is not a detected provider and has no
+  # dispatch path, so a seat pinned to it can only fall back. See
+  # scripts/validate-provider-configs.py.
   machiavelli:
-    provider: xai
+    provider: cursor_cli
     model: grok-4
+    exec_method: cursor_cli
     reasoning_mode: adversarial
   ada:
     provider: openai
