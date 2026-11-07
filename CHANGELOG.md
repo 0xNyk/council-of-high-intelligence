@@ -7,6 +7,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **19th council member: Abraham Wald** (`council-wald`) — survivorship bias & selection-corrected inference. New `evidence` triad (Wald + Kahneman + Feynman) and `Wald vs Kahneman` polarity/duo pair (missing-data bias vs cognitive bias). Mirrored across `SKILL.md`, `SKILL.codex.md`, `SKILL.gemini.md`, `SKILL.opencode.md`.
 - **Roster validation drift guard** — `scripts/validate-roster.py`, wired into CI. Runs 166 structural checks that `SKILL.md` prose and `agents/*.md` frontmatter describe the same council: profile sizes and enumerated member lists against `profiles:` tags, polarity pairs resolvable/mutual/mirrored in the Polarity Pairs list, `reasoning_method` uniqueness (DMAD), triad references, and roster-table parity. Panel selection reads the frontmatter while the coordinator reads the prose, so drift silently seats the wrong members with no visible error. Complements `council-simulation-checklist.sh`, which greps for protocol features rather than checking roster consistency.
 
 ### Fixed

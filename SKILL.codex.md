@@ -22,7 +22,7 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 
 | Flag | Effect |
 |------|--------|
-| `--full` | Use all 18 members |
+| `--full` | Use all 19 members |
 | `--quick` | 2-round fast mode |
 | `--duo` | 2-member polarity dialectic |
 | `--triad [domain]` | Use predefined 3-member panel |
@@ -33,7 +33,7 @@ If no panel flag is present, auto-select the best triad from problem context.
 
 ## Member Roster
 
-`aristotle, socrates, sun-tzu, ada, aurelius, machiavelli, lao-tzu, feynman, torvalds, musashi, watts, karpathy, sutskever, kahneman, meadows, munger, taleb, rams`
+`aristotle, socrates, sun-tzu, ada, aurelius, machiavelli, lao-tzu, feynman, torvalds, musashi, watts, karpathy, sutskever, kahneman, meadows, munger, taleb, rams, wald`
 
 ## Triads
 
@@ -59,10 +59,11 @@ If no panel flag is present, auto-select the best triad from problem context.
 | `design` | rams, torvalds, watts |
 | `economics` | munger, machiavelli, sun-tzu |
 | `bias` | kahneman, socrates, watts |
+| `evidence` | wald, kahneman, feynman |
 
 ## Profiles
 
-- `classic`: all 18 members
+- `classic`: all 19 members
 - `exploration-orthogonal`: socrates, feynman, sun-tzu, machiavelli, ada, lao-tzu, aurelius, torvalds, karpathy, sutskever, kahneman, meadows
 - `execution-lean`: torvalds, feynman, sun-tzu, aurelius, ada
 
@@ -94,6 +95,7 @@ For `--duo` without explicit members, choose a polarity pair from keywords:
 - strategy/competition: `sun-tzu` + `aurelius`
 - ai/ml/model: `karpathy` + `sutskever`
 - decision/bias: `kahneman` + `feynman`
+- survivorship/selection bias/missing data: `wald` + `kahneman`
 - default fallback: `socrates` + `feynman`
 
 ### Step 2.5: Runtime Reliability Defaults
