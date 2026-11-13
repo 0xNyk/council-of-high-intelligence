@@ -50,5 +50,11 @@ jobs:
         # drift seats the wrong members without any visible error.
         run: ./scripts/validate-roster.py
 
+      - name: Provider config validation (dispatchable seats)
+        # Example seat maps are copy/paste templates. A seat pinned to a
+        # provider detection never reports has no exec_method to dispatch, so
+        # the coordinator silently falls back. Catch that here, not mid-session.
+        run: ./scripts/validate-provider-configs.py
+
       - name: Council simulation checklist (drift guard)
         run: ./scripts/council-simulation-checklist.sh
