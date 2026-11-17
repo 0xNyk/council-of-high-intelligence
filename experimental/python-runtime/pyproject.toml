@@ -1,0 +1,17 @@
+[project]
+name = "council-python-runtime"
+version = "0.1.0"
+description = "Experimental Python runtime for the Council of High Intelligence (Agno / LangGraph backends)"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=3.41.0,<4",
+    "pyyaml>=6.0.3,<7",
+]
+
+[project.optional-dependencies]
+agno = ["agno>=3.1.11,<4"]
+langgraph = ["langgraph>=1.2.18,<2"]
+
+[tool.uv]
+# Scripts are run in place; this directory is not an installable package.
+package = false
