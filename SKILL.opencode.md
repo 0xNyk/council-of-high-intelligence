@@ -250,6 +250,7 @@ The Chairman is the synthesizer — a named, audited role distinct from the deli
 | google | `gemini-2.5-pro` |
 | ollama | first available local model |
 | nvidia_nim | `deepseek-ai/deepseek-v4-pro` |
+| minimax | `MiniMax-M3.1-Flash` |
 | cursor_cli | `gpt-5.4-high` |
 
 **Constraints:**
@@ -327,6 +328,8 @@ curl -sS -X POST "{base_url}/chat/completions" \
 ```
 5. Capture stdout as the member's output. Timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
 6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
+
+For MiniMax auto-routing, detection supplies the global/CN endpoint. Use `MiniMax-M3.1-Flash` first (high/Chairman) and `MiniMax-M3` (mid). Preserve explicit legacy/custom model IDs in `--models` and project configuration. For direct Flash, leave thinking/effort unset to use adaptive defaults; do not send disabled thinking, `reasoning_effort: none`, `service_tier`, or `reasoning_split: false`.
 
 For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
 
