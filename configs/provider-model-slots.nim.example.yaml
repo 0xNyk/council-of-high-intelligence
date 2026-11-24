@@ -13,7 +13,7 @@
 #
 # Why mix providers: spreading seats across model families reduces shared
 # training-data bias and amplifies dissent. NIM gives access to non-Anthropic,
-# non-OpenAI, non-Google open-weight models (DeepSeek, Kimi, MiniMax, GLM, Qwen)
+# non-OpenAI, non-Google open-weight models (DeepSeek, Kimi, GLM, Qwen)
 # without separate provider accounts.
 
 profile: exploration-orthogonal
@@ -63,11 +63,11 @@ seats:
     api_key_env: NVIDIA_API_KEY
     reasoning_mode: adversarial
 
+  # No verified current MiniMax route in the public NIM catalog.
+  # Keep this role on the native provider; custom --models files remain supported.
   lao-tzu:
-    provider: nvidia_nim
-    model: minimaxai/minimax-m2.7
-    base_url: https://integrate.api.nvidia.com/v1
-    api_key_env: NVIDIA_API_KEY
+    provider: anthropic
+    model: claude-sonnet-4
     reasoning_mode: emergent
 
   # Google for breadth on a third axis
