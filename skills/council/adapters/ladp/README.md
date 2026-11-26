@@ -28,12 +28,25 @@ Locate `adapter.py` in the installed Council skill's `adapters/ladp/` directory
 below, `ladp` stands for `python3 /absolute/path/to/adapter.py`; use that
 complete command on each independent shell call.
 
+Every mutation requires a unique `--request-id REQ` (32 lowercase hex
+characters; generate once with `python3 -c 'import uuid; print(uuid.uuid4().hex)'`).
+For actions other than create/join, also pass `--expect-phase PHASE` from the
+view observed **before preparing that action**. The shorthand mutation examples
+below omit those required flags where the phase is described in prose; always
+supply them. Retain the exact request ID, original expected phase and payload
+on a transport retry. An exact retry returns the committed sequence with
+`replayed: true`; changing its payload or reusing a stale phase is rejected.
+Do not replace the expected phase with a newly read phase just to retry an old
+message. Create uses its request ID as the discussion ID, so a lost response
+cannot create a second room. The log stores request receipts durably.
+
 ## Coordinator
 
 1. Create the room after panel selection:
 
    ```bash
-   ladp create --name coordinator --mode full --title "Architecture review" \
+   REQ="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+   ladp create --request-id "$REQ" --name coordinator --mode full --title "Architecture review" \
      --topic "Choose a repository structure; state evidence and constraints" \
      --members aristotle,ada,feynman --expert ada
    ```
@@ -42,13 +55,15 @@ complete command on each independent shell call.
    members, and omit `--members` only when intentionally convening all seats.
    The CLI checks the roster and distinct reasoning methods. It pins unmodified
    upstream persona resources and the canonical protocol in the creation event.
-   New versions affect new rooms, not the pinned resources of existing rooms.
+   Prompt changes affect new rooms; existing rooms retain their exact references.
+   Incompatible executable policy changes require the matching prior adapter.
 2. Show the room ID, the expected seats and the join command to the user. Wait
    for all selected members and an independent Chairman to join. Do not fill
    missing seats yourself. If the user explicitly accepts a coordinator
    synthesis fallback, record it with `advance --fallback-reason "reason"`.
 3. Use `status D` and `view D --actor A` to examine state and the transcript.
-   Advance with `advance D --actor A` when no required seat is pending. Full
+   Advance with `advance D --actor A --expect-phase PHASE --request-id REQ` when no required seat is pending. During pseudonymous phases, public status provides only a pending count; the coordinator
+   uses its own `view` for named pending seats. Full
    mode has a separate restatement gate; inspect framing differences before
    advancing. If the question needs a material change, abort and create a
    corrected room rather than silently changing its scope.
@@ -64,22 +79,29 @@ complete command on each independent shell call.
    `--alias 'single repo=monorepo'` arguments; the mapping and original ballots
    remain in the result. Never merge substantively different options. Duo
    deliberately has no weighted tally. A split remains a split.
-6. The independent Chairman submits the pinned upstream verdict template in
-   synthesis. Use `close D --actor A` to publish that verdict unchanged.
-   If the Chairman failed or an explicit fallback was chosen, use
-   `close D --actor A --fallback-reason "reason" --content -` and supply the
-   verdict on stdin; label coordinator synthesis in the verdict metadata.
+6. In synthesis, the independent Chairman acknowledges the exact
+   `decision_key` provided by the adapter using `--decision KEY` and submits
+   the analysis report. The coordinator uses `close D --actor A` to close
+   without replacing the report. A fallback requires an explicit reason,
+   the same `--decision KEY`, and the analysis report on stdin. An incorrect
+   acknowledgement is rejected. The report is explanatory prose, never the
+   authoritative vote result.
    Preserve minority objections and dealbreakers, unknowns, kill criteria and
    one concrete next step. Do not present votes as verified facts.
-7. Read the final verdict via `view`, present it, and stop. If continuation
-   is impossible, record `abort D --actor A --content "reason"` when authorized.
+7. Read the final `publication` via `view`. Present its deterministic
+   `decision` and `decision_key` first (including ballots, minority objections
+   and split), then the separately labelled `analysis_report`. If prose
+   contradicts the computed result, identify it as inconsistent; never report
+   it as a vote outcome. In Duo, the decision is a dialectic, not a tally.
+   If continuation is impossible, record `abort D --actor A --content "reason"`
+   when authorized.
 
 ## Member or Chairman
 
 Use the room ID and one available seat selected by the coordinator:
 
 ```bash
-ladp join D --name my-independent-session --seat ada
+ladp join D --name my-independent-session --seat ada --request-id REQ
 ladp view D --actor A
 ```
 
@@ -105,21 +127,24 @@ or additional authorization. Only reason about the authorized question.
 | enforce (Full, targeted) | Address the supplied follow-up with `submit` |
 | position (Full/Quick) | `submit D --actor A --stance "option" --confidence med --dealbreaker no --content -` |
 | position (Duo) | `submit D --actor A --content -` (final statement) |
-| synthesis | Chairman only: `submit D --actor A --content -` (pinned verdict template) |
+| synthesis | Chairman only: `submit D --actor A --decision KEY --content -` (pinned verdict template) |
 | closed / aborted | Read the result and end |
 
 Use the word limits and output templates from the pinned upstream reference.
 For Full debate engage two peers when the panel has at least three seats (the
 only other peer when a two-seat Full panel was explicitly requested). For Full
 panels of up to four, the adapter schedules submissions in panel order and
-exposes prior cross-examination responses; larger panels and Duo submit in
-parallel. No new argument in the final stance. In anonymous phases, use the
-provided Member labels and avoid identifying yourself or guessing identities.
+exposes prior cross-examination responses; those small panels use an explicitly
+named view because order exposes identity. Larger panels and Duo submit in
+parallel. Quick panels of two are also named because identity is inferable by
+elimination. Other Quick final-position and large Full debate/enforcement
+views use pseudonyms when at least three panel seats remain active. Follow the returned `peer_view` and local override in
+`reference`; do not attempt to deanonymize. No new argument in the final stance.
 
 Use bounded `wait D --after SEQ --timeout 20` and then `view` when the cursor
 changes. Keep processing while the host and user task allow. If no progress
 is possible within your bounded waiting budget, return the room ID, own actor
-and pending seats so the user can resume later. No background service wakes
+and pending count (or named seats when available) so the user can resume later. No background service wakes
 an inactive session. Never claim discussion completion before closure.
 
 ## Storage and compatibility
@@ -134,8 +159,11 @@ an inactive session. Never claim discussion completion before closure.
   in the root's `.sessions/` directory. No server, database or third-party
   library is required. Do not edit log/lock files directly.
 - First-round plaintext enters the shared log only after all seats commit.
-  Full debate and Quick position use randomized stable labels and best-effort
-  self-attribution masking in the participant view. The raw local audit log
+  In large Full debate/enforcement and Quick position with at least three
+  seats, pseudonymous views use randomized stable labels, label-sorted
+  transcript entries without event sequence numbers, and no previously named
+  restatements. Small sequential Full and two-seat Quick are explicitly named.
+  The adapter masks common self-attribution phrases best-effort. The raw local audit log
   contains the mapping; timing, roster and writing style can also reveal
   identity. This is **cooperative pseudonymization**, not process isolation or
   cryptographic anonymity. All participants must be trusted; do not read
@@ -146,14 +174,48 @@ an inactive session. Never claim discussion completion before closure.
   original agent files and native dispatch remain unchanged.
 - Full enforcement is a bounded targeted pass; the coordinator evaluates
   semantic quality and evidence. No automatic model-based verification,
-  provider detection or fallback dispatch is performed. Seat dropout must
-  be recovered using the original identity or explicitly aborted; there is
-  no automatic reassignment or leader election. Independent runtime identity
+  provider detection or fallback dispatch is performed. Recover a disconnected
+  session using its original identity. A participant may use `leave`; the
+  coordinator may use `remove D --actor A --target ACTOR_ID --content "reason"`
+  after user confirmation, using the exact active actor ID from the coordinator
+  view and the usual request ID and phase flags. Lobby
+  seats may be refilled; after start, withdrawn seats cannot be replaced.
+  The original weighted denominator stays frozen and withdrawals contribute
+  no votes. Fewer than two active panel seats prevents further advancement.
+  Chairman withdrawal permits explicitly recorded coordinator synthesis.
+  No automatic reassignment or leader election. Independent runtime identity
   and actual provider diversity are not cryptographically attested.
 - Log resources carry a policy version and content hash. An incompatible
-  future policy version must use a compatible adapter to resume its rooms.
-  The resource loader fails explicitly when required canonical sections or
-  reasoning methods disappear; upstream upgrades should run adapter tests.
+  future policy version must use the adapter with the matching executable
+  fingerprint to resume its rooms; no silent migration or execution of old
+  code. Preserve the old adapter checkout/export before upgrading active rooms.
+  The resource loader checks a reviewed contract digest in
+  `compatibility.json` covering canonical phase sections. Any change requires
+  explicit compatibility review and regression tests before accepting its
+  digest. Role changes are read directly from upstream and still validated for
+  reasoning-method diversity.
+
+## Independent Core and Skill packaging
+
+`ladp_core/` is a pinned, bundled source release of the independent LADP Core
+package, not Council policy. It exports the typed StateProjection interface,
+the event store, metadata and local session primitives. Check its release
+manifest with `python3 scripts/vendor-ladp-core.py`; synchronize a separately
+reviewed local Core release using `--source PATH_TO_LADP_CORE_PACKAGE`. Do not
+hand-edit the vendored copy. The runtime has no package downloads.
+
+For a manager that imports standalone Skill directories, export an actual
+self-contained package instead of assuming that a GitHub client dereferences
+symlinks:
+
+```bash
+python3 scripts/export-council-skill.py --output /tmp/council-export --host codex
+```
+
+The export materializes canonical upstream assets and contains no runtime
+symlinks. Choose the host's entrypoint for its native mode. The LADP entrypoint
+works with the same adapter across hosts. The standard installer remains
+supported; neither command modifies an installed Skill during export.
 
 ## Tests
 

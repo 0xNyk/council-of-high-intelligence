@@ -323,5 +323,18 @@ pass "install.sh --dry-run --opencode completed"
 grep -q "Installed opencode skill to" "${TMP_LOG_DIR}/dry-run-opencode.log" || fail "opencode dry-run output missing opencode skill summary"
 pass "opencode install summary output present"
 
+# --- Optional local transport compatibility checks (no provider calls) ---
+
+for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
+  grep -q -- '--transport ladp' "${skill_file}" || fail "Local transport entry missing in ${skill_file}"
+done
+pass "Local transport entry present in all host skills"
+
+python3 scripts/vendor-ladp-core.py
+pass "Bundled LADP Core release verified"
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s skills/council/adapters/ladp/tests -v
+pass "Local transport regression suite passed"
+
 echo
 echo "Checklist complete."

@@ -13,11 +13,12 @@ from pathlib import Path
 
 import policy
 import resources
-from core.metadata import DiscussionStore, checksum
-from core.sessions import SessionStore
-from core.storage import LockTimeout, ProtocolError, require
+from ladp_core import API_VERSION
+from ladp_core.metadata import CommittedRequest, DiscussionStore, checksum
+from ladp_core.sessions import SessionStore
+from ladp_core.storage import ID_RE, LockTimeout, ProtocolError, require
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MAX_CONTENT = 256 * 1024
 
 
@@ -40,14 +41,59 @@ def authenticate(state, actor, session, discussion):
     return member
 
 
-def status(state, discussion):
-    return {"discussion": discussion, **{k: state[k] for k in
+def pseudonymous_phase(state):
+    if len(policy.active_panel(state)) < 3:
+        return False
+    return ((state["mode"] == "full" and len(state["panel"]) > 4
+             and state["phase"] in ("debate", "enforce"))
+            or (state["mode"] == "quick" and len(state["panel"]) >= 3
+                and state["phase"] == "position"))
+
+
+def status(state, discussion, public=True):
+    result = {"discussion": discussion, **{k: state[k] for k in
             ("title", "topic", "mode", "panel", "expert", "phase", "policy_hash",
              "last_seq", "updated_at", "fallback", "result", "verdict_seq",
-             "enforcement_checks")},
+             "enforcement_checks", "withdrawals")},
             "members": [{k: m[k] for k in ("seat", "name", "active")}
                         for m in state["members"].values()],
-            "pending": policy.pending_seats(state)}
+            "pending": policy.pending_seats(state),
+            "chairman_joined": "chairman" in policy.occupied(state),
+            "decision_key": decision_key(state["result"])}
+    if public and pseudonymous_phase(state):
+        result["pending_count"] = len(result.pop("pending"))
+        result.pop("enforcement_checks", None)
+        result.pop("withdrawals", None)
+    return result
+
+
+def decision_key(result):
+    if result is None:
+        return None
+    if result["kind"] == "dialectic":
+        return "dialectic"
+    return ("consensus:" + result["consensus"] if result["consensus"] is not None
+            else "no-consensus")
+
+
+def request_hash(args, content=None):
+    fields = {k: v for k, v in vars(args).items() if k not in ("request_id", "content")}
+    return checksum({"arguments": fields, "content": content})
+
+
+def receipt(state, args, fingerprint, actor=None):
+    prior = state["requests"].get(args.request_id)
+    if prior is None:
+        return None
+    require(prior["hash"] == fingerprint and (actor is None or prior["actor"] == actor),
+            "request ID already used for a different operation")
+    return CommittedRequest({"seq": prior["seq"], "type": prior["type"],
+                             "actor": prior["actor"]})
+
+
+def with_request(mutation, args, fingerprint):
+    kind, actor, data = mutation
+    return kind, actor, dict(data, _request={"id": args.request_id, "hash": fingerprint})
 
 
 def read_content(content):
@@ -66,28 +112,44 @@ def view(records, actor, sessions, discussion):
     resource = config["resources"]
     require(checksum(resource) == state["policy_hash"], "pinned policy checksum mismatch")
     chair, host = seat == "chairman", seat == "coordinator"
-    result = status(state, discussion)
+    sequential = mode == "full" and len(state["panel"]) <= 4
+    anonymous = not (host or chair) and pseudonymous_phase(state)
+    named_peer_phase = not pseudonymous_phase(state) and (
+        (mode == "full" and phase in ("debate", "enforce"))
+        or (mode == "quick" and phase == "position"))
+    result = status(state, discussion, public=False)
+    reference = resources.rules_for(resource, mode, phase, host)
+    if named_peer_phase:
+        reference = ("LOCAL TRANSPORT OVERRIDE: this panel is NAMED because its order or size reveals identity. "
+                     "Use seat names, not Member labels; ignore the upstream anonymity instructions. "
+                     "All other analytical and anti-conformity rules remain in force.\n\n" + reference)
+    if phase == "synthesis":
+        reference = ("LOCAL TRANSPORT OVERRIDE: report the authoritative decision_key and result separately; "
+                     "submit the same decision_key using --decision. The report is non-authoritative analysis. "
+                     "Do not replace the computed outcome or votes.\n\n" + reference)
     result.update({"self": {"actor": actor, "seat": seat, "name": member["name"]},
-                   "persona": resource["personas"].get(seat),
-                   "reference": resources.rules_for(resource, mode, phase, host),
-                   "eligible": seat in policy.pending_seats(state)})
-    if phase == "debate" and mode == "full" and len(state["panel"]) <= 4:
-        result["eligible"] = bool(result["eligible"] and
-                                  seat == policy.pending_seats(state)[0])
+                   "persona": resource["personas"].get(seat), "reference": reference,
+                   "eligible": seat in policy.pending_seats(state),
+                   "peer_view": "pseudonymous" if anonymous else "named"})
+    if host:
+        result["members"] = [dict(actor=mid, seat=m["seat"], name=m["name"], active=m["active"])
+                             for mid, m in state["members"].items()]
+    if sequential and phase == "debate":
+        pending = policy.pending_seats(state)
+        result["eligible"] = bool(result["eligible"] and seat == pending[0])
     if seat in state["followups"] and phase == "enforce":
         result["followup"] = state["followups"][seat]
-    # Participants never receive peer analysis before the reveal barrier.
-    # During anonymous phases the adapter returns only stable randomized labels,
-    # not author IDs. The raw file is an audit log, not an access-control boundary.
     permitted = set()
     if phase in ("commit", "reveal"):
         permitted.add("restate")
     elif phase == "debate":
         permitted.update(("restate", "reveal"))
-        if mode == "full" and len(state["panel"]) <= 4:
+        if sequential:
             permitted.add("debate")
     elif phase == "enforce":
-        permitted.update(("restate", "reveal", "debate", "enforce"))
+        permitted.update(("restate", "reveal", "debate"))
+        if sequential:
+            permitted.add("enforce")
     elif phase == "position":
         permitted.update(("restate", "reveal", "debate", "enforce"))
     elif phase in ("synthesis", "closed", "aborted"):
@@ -96,9 +158,13 @@ def view(records, actor, sessions, discussion):
         permitted.update(("restate", "reveal", "debate", "enforce", "position", "synthesis"))
     if chair and phase not in ("synthesis", "closed", "aborted"):
         permitted.clear()
-    anonymous = not (host or chair) and (
-        (mode == "full" and phase in ("debate", "enforce")) or
-        (mode == "quick" and phase == "position"))
+    if anonymous:
+        # Restatements were previously named. Re-publishing them with labels,
+        # log sequence numbers or arrival order would reveal the mapping.
+        permitted.discard("restate")
+        result["pending_count"] = len(result.pop("pending"))
+        result.pop("enforcement_checks", None)
+        result.pop("withdrawals", None)
     transcript = []
     for record in records:
         if record["type"] != "submission":
@@ -107,29 +173,37 @@ def view(records, actor, sessions, discussion):
         if data["phase"] not in permitted:
             continue
         author = state["members"][record["actor"]]["seat"]
-        content = data["content"]
-        label = author
+        content, label = data["content"], author
         if anonymous and author in config["labels"]:
             label = config["labels"][author]
             content = resources.anonymize(content, author, resource["personas"][author], label)
-        item = {"seq": record["seq"], "phase": data["phase"], "member": label,
-                "content": content}
-        if not anonymous and "stance" in data:
-            item.update({k: data[k] for k in ("stance", "confidence", "dealbreaker")})
+        item = {"phase": data["phase"], "member": label, "content": content}
+        if not anonymous:
+            item["seq"] = record["seq"]
+            if "stance" in data:
+                item.update({k: data[k] for k in ("stance", "confidence", "dealbreaker")})
         transcript.append(item)
+    if anonymous:
+        transcript.sort(key=lambda item: (item["phase"], item["member"]))
     result["transcript"] = transcript
     if state["phase"] == "closed":
         closed = records[-1]["data"]
         if "fallback_verdict" in closed:
-            result["verdict"] = closed["fallback_verdict"]
+            report = closed["fallback_verdict"]
         else:
-            result["verdict"] = records[state["verdict_seq"] - 1]["data"]["content"]
+            report = records[state["verdict_seq"] - 1]["data"]["content"]
+        # Never return the LLM prose as the authoritative decision.
+        result["publication"] = {
+            "decision": state["result"], "decision_key": decision_key(state["result"]),
+            "analysis_report": report, "synthesizer": "coordinator" if state["fallback"] else "chairman",
+            "fallback_reason": state["fallback"]}
     if state["phase"] == "aborted":
         result["abort_reason"] = records[-1]["data"]["reason"]
     return result
 
 
 def run(args):
+    require(API_VERSION == 1, "incompatible LADP Core API")
     root = Path(os.environ.get("COUNCIL_LADP_HOME", str(Path.home() / ".ladp" /
                                                         "council" / "discussions"))).expanduser()
     store = DiscussionStore(root, policy)
@@ -138,38 +212,65 @@ def run(args):
     if command == "roster":
         return resources.roster()
     if command == "create":
+        require(ID_RE.fullmatch(args.request_id), "request ID must be 32 lowercase hex characters")
+        discussion = args.request_id
+        fingerprint = request_hash(args)
+
+        def existing():
+            state = store.state(discussion)
+            previous = receipt(state, args, fingerprint)
+            require(previous is not None and previous.receipt["type"] == "created",
+                    "discussion ID already exists")
+            actor = previous.receipt["actor"]
+            authenticate(state, actor, sessions, discussion)
+            return {"discussion": discussion, "actor": actor, "seat": "coordinator",
+                    "phase": state["phase"], "policy_hash": state["policy_hash"], "replayed": True}
+
+        if store.path(discussion).exists():
+            return existing()
         seats = [s.strip() for s in args.members.split(",")] if args.members else resources.roster()
         require(2 <= len(seats) <= len(resources.roster()), "select at least two distinct members")
         require(args.mode != "duo" or len(seats) == 2, "duo requires exactly two seats")
         require(not args.expert or args.expert in seats, "expert must be a panel seat")
         require(args.mode != "duo" or not args.expert, "duo has no weighted seat")
         require(args.title.strip() and args.topic.strip(), "title and topic required")
-        resource = resources.pin(seats)
+        resource = resources.pin(seats, policy.VERSION)
         labels = ["Member " + chr(ord("A") + i) for i in range(len(seats))]
         secrets.SystemRandom().shuffle(labels)
-        discussion = uuid.uuid4().hex
         actor, token, member = identity(args.name, "coordinator")
         sessions.save_identity(discussion, actor, token)
-        store.create(discussion, actor, {"policy_version": policy.VERSION,
-            "title": args.title, "topic": args.topic, "mode": args.mode, "panel": seats,
-            "expert": args.expert, "policy_hash": checksum(resource), "resources": resource,
-            "labels": dict(zip(seats, labels)), "member": member})
+        try:
+            store.create(discussion, actor, {"policy_version": policy.VERSION,
+                "implementation_hash": policy.implementation_hash(),
+                "title": args.title, "topic": args.topic, "mode": args.mode, "panel": seats,
+                "expert": args.expert, "policy_hash": checksum(resource), "resources": resource,
+                "labels": dict(zip(seats, labels)), "member": member,
+                "_request": {"id": args.request_id, "hash": fingerprint}})
+        except FileExistsError:
+            # Another exact retry published the room atomically.
+            return existing()
         return {"discussion": discussion, "actor": actor, "seat": "coordinator",
-                "phase": "lobby", "policy_hash": checksum(resource)}
+                "phase": "lobby", "policy_hash": checksum(resource), "replayed": False}
     if command in ("list", "sessions"):
         rows = []
         for d in ([args.discussion] if command == "sessions" and args.discussion else store.ids()):
-            state = store.state(d)
-            if command == "list":
-                if args.all or state["phase"] not in policy.TERMINAL:
-                    rows.append(status(state, d))
-            else:
-                for actor in sessions.actors(d):
-                    member = state["members"].get(actor)
-                    token = sessions.token(d, actor)
-                    if member and token and hmac.compare_digest(member["token_hash"], token_hash(token)):
-                        rows.append({"discussion": d, "actor": actor, "seat": member["seat"],
-                                     "name": member["name"], "phase": state["phase"]})
+            try:
+                state = store.state(d)
+                if command == "list":
+                    if args.all or state["phase"] not in policy.TERMINAL:
+                        rows.append(status(state, d))
+                else:
+                    for actor in sessions.actors(d):
+                        try:
+                            member = state["members"].get(actor)
+                            token = sessions.token(d, actor)
+                            if member and member["active"] and token and hmac.compare_digest(member["token_hash"], token_hash(token)):
+                                rows.append({"discussion": d, "actor": actor, "seat": member["seat"],
+                                             "name": member["name"], "phase": state["phase"]})
+                        except (ProtocolError, OSError, ValueError, KeyError, TypeError) as exc:
+                            rows.append({"discussion": d, "actor": actor, "error": str(exc)})
+            except (ProtocolError, OSError, ValueError, KeyError, TypeError) as exc:
+                rows.append({"discussion": d, "error": str(exc)})
         return rows
 
     discussion = args.discussion
@@ -192,31 +293,49 @@ def run(args):
             require(args.after <= state["last_seq"], "cursor exceeds history")
             if state["last_seq"] > args.after or state["phase"] in policy.TERMINAL:
                 return {"cursor": state["last_seq"], "timed_out": False,
-                        "phase": state["phase"], "pending": policy.pending_seats(state)}
+                        "phase": state["phase"], "pending_count": len(policy.pending_seats(state))}
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return {"cursor": args.after, "timed_out": True, "phase": state["phase"]}
             time.sleep(min(interval, remaining))
             interval = min(1, interval * 1.5)
     if command == "join":
+        require(ID_RE.fullmatch(args.request_id), "request ID must be 32 lowercase hex characters")
+        fingerprint = request_hash(args)
         actor, token, member = identity(args.name, args.seat)
         def join(state):
+            previous = receipt(state, args, fingerprint)
+            if previous:
+                return previous
             require(state["phase"] == "lobby", "enrollment closed; resume existing identity")
             require(args.seat in state["panel"] or args.seat == "chairman", "seat is not selected")
             require(args.seat not in policy.occupied(state), "seat is occupied")
-            require(all(m["name"] != args.name for m in state["members"].values()),
+            require(all(m["name"] != args.name or not m["active"] for m in state["members"].values()),
                     "session name is already in use")
             sessions.save_identity(discussion, actor, token)
-            return "joined", actor, {"member": member}
-        store.append(discussion, join)
-        return {"discussion": discussion, "actor": actor, "seat": args.seat}
+            return with_request(("joined", actor, {"member": member}), args, fingerprint)
+        record = store.append(discussion, join)
+        return {"discussion": discussion, "actor": record["actor"], "seat": args.seat,
+                "seq": record["seq"], "replayed": record.get("replayed", False)}
     content = read_content(args.content) if getattr(args, "content", None) is not None else None
 
-    def mutate(state):
+    require(ID_RE.fullmatch(args.request_id), "request ID must be 32 lowercase hex characters")
+    fingerprint = request_hash(args, content)
+
+    def perform(state, member):
         actor = args.actor
-        member = authenticate(state, actor, sessions, discussion)
         require(state["phase"] not in policy.TERMINAL, "discussion ended")
         phase = state["phase"]
+        require(args.expect_phase == phase, "stale phase: expected " + args.expect_phase + ", actual " + phase)
+        if command in ("leave", "remove"):
+            require(command == "leave" or member["seat"] == "coordinator", "coordinator operation")
+            target = actor if command == "leave" else args.target
+            selected = state["members"].get(target)
+            require(selected and selected["active"] and selected["seat"] != "coordinator",
+                    "target must be an active non-coordinator member")
+            require(phase != "synthesis" or selected["seat"] == "chairman",
+                    "panel is frozen after final tally")
+            return "withdrawn", actor, {"target": target, "reason": content}
         if command in ("advance", "close", "abort"):
             require(member["seat"] == "coordinator", "coordinator operation")
             if command == "advance":
@@ -225,11 +344,13 @@ def run(args):
                 return "aborted", actor, {"reason": content}
             require(phase == "synthesis", "finish deliberation before closing")
             if state["verdict_seq"] is not None:
-                require(not content and not args.fallback_reason, "cannot replace chairman verdict")
+                require(not content and not args.fallback_reason and not args.decision, "cannot replace chairman verdict")
                 return "closed", actor, {"verdict_seq": state["verdict_seq"]}
             reason = args.fallback_reason or state["fallback"]
             require(reason and reason.strip() and content, "chairman pending; explicit fallback required")
-            return "closed", actor, {"fallback": reason, "fallback_verdict": content}
+            require(args.decision == decision_key(state["result"]), "decision does not match authoritative result")
+            return "closed", actor, {"fallback": reason, "fallback_verdict": content,
+                                     "decision_ack": args.decision}
         seat = policy.can_submit(state, actor)
         if command == "commit":
             require(phase == "commit", "not in blind analysis")
@@ -246,6 +367,11 @@ def run(args):
         require(command == "submit" and phase not in ("commit", "reveal"),
                 "use commit/reveal for independent analysis")
         data = {"phase": phase, "content": content}
+        if phase == "synthesis":
+            require(args.decision == decision_key(state["result"]), "decision does not match authoritative result")
+            data["decision_ack"] = args.decision
+        else:
+            require(args.decision is None, "decision acknowledgement belongs in synthesis")
         if phase == "position" and state["mode"] != "duo":
             require(args.stance and policy.normalize(args.stance) and
                     len(args.stance) <= 200 and args.confidence and args.dealbreaker,
@@ -256,8 +382,22 @@ def run(args):
                     "structured votes only in full/quick final positions")
         return "submission", actor, data
 
+    def mutate(state):
+        # An identical retry returns its original receipt, even after a phase change.
+        # Authentication still uses the caller's own saved local identity.
+        member = state["members"].get(args.actor)
+        token = sessions.token(discussion, args.actor) if member else None
+        require(member and token and hmac.compare_digest(member["token_hash"], token_hash(token)),
+                "unknown local identity")
+        previous = receipt(state, args, fingerprint, args.actor)
+        if previous:
+            return previous
+        require(member["active"], "inactive local identity")
+        return with_request(perform(state, member), args, fingerprint)
+
     record = store.append(discussion, mutate)
-    return {"discussion": discussion, "seq": record["seq"], "type": record["type"]}
+    return {"discussion": discussion, "seq": record["seq"], "type": record["type"],
+            "replayed": record.get("replayed", False)}
 
 
 def parser():
@@ -266,6 +406,7 @@ def parser():
     commands = p.add_subparsers(dest="command", required=True)
     commands.add_parser("roster")
     create = commands.add_parser("create")
+    create.add_argument("--request-id", required=True, help="stable 32-hex ID for the new discussion")
     create.add_argument("--title", required=True)
     create.add_argument("--topic", required=True)
     create.add_argument("--name", required=True)
@@ -275,7 +416,7 @@ def parser():
     commands.add_parser("list").add_argument("--all", action="store_true")
     commands.add_parser("sessions").add_argument("discussion", nargs="?")
     for action in ("join", "status", "view", "wait", "advance", "commit",
-                   "reveal", "submit", "close", "abort"):
+                   "reveal", "submit", "close", "abort", "leave", "remove"):
         c = commands.add_parser(action)
         c.add_argument("discussion")
         if action == "join":
@@ -286,7 +427,15 @@ def parser():
         if action == "wait":
             c.add_argument("--after", type=int, required=True)
             c.add_argument("--timeout", type=float, default=20)
-        if action in ("submit", "commit", "abort", "close"):
+        if action not in ("status", "view", "wait"):
+            c.add_argument("--request-id", required=True, help="unique 32-hex ID; reuse only for exact retries")
+        if action not in ("status", "view", "wait", "join"):
+            c.add_argument("--expect-phase", required=True, help="phase observed before preparing this action")
+        if action in ("submit", "close"):
+            c.add_argument("--decision", help="acknowledge the authoritative decision_key during synthesis")
+        if action == "remove":
+            c.add_argument("--target", required=True, help="exact active actor ID from coordinator view")
+        if action in ("submit", "commit", "abort", "close", "leave", "remove"):
             c.add_argument("--content", required=action != "close")
         if action in ("advance", "close"):
             c.add_argument("--fallback-reason")

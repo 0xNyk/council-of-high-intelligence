@@ -205,7 +205,10 @@ another, forwarding prompts, or using provider APIs for communication.
 Each seat is an independent session on the same machine. The opt-in adapter
 uses Python 3.9+ (macOS/Linux), a shared append-only log, a rebuildable state
 snapshot and OS file locks. The canonical persona resources and rules are
-pinned at room creation. Native provider routing stays unchanged. See the
+pinned at room creation. Native provider routing stays unchanged. For standalone
+Skill managers, export a self-contained directory with
+`python3 scripts/export-council-skill.py --output /tmp/council-export --host codex`.
+See the
 [local transport runbook](skills/council/adapters/ladp/README.md) for usage,
 recovery, cooperative anonymity limitations and test commands.
 

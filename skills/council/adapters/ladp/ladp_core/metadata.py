@@ -10,10 +10,33 @@ import os
 import sys
 import tempfile
 import time
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Protocol, Tuple, Union
 
 from .storage import FileStore, LockTimeout, append_record, decode, event, locked_log, require
 
 SCHEMA_VERSION = 1
+
+
+State = Dict[str, Any]
+Event = Dict[str, Any]
+
+
+class StateProjection(Protocol):
+    """Stable, application-neutral event projection contract."""
+    def reconstruct(self, records: List[Event]) -> State: ...
+    def apply(self, state: State, record: Event) -> None: ...
+    def export_state(self, state: State) -> State: ...
+    def import_state(self, data: State) -> State: ...
+
+
+@dataclass(frozen=True)
+class CommittedRequest:
+    """Return a prior committed mutation without appending another event."""
+    receipt: Event
+
+
+Mutation = Union[Tuple[str, str, Dict[str, Any]], CommittedRequest]
 
 
 def fingerprint(handle):
@@ -148,7 +171,7 @@ class DiscussionMetadata:
 class DiscussionStore(FileStore):
     """Transport plus a rebuildable projection for status and write validation."""
 
-    def __init__(self, root, projection):
+    def __init__(self, root, projection: StateProjection):
         super().__init__(root)
         self.projection = projection
 
@@ -182,13 +205,16 @@ class DiscussionStore(FileStore):
             pass
         return snapshot.state
 
-    def append(self, discussion, build):
+    def append(self, discussion, build: Callable[[State], Mutation]):
         deadline = time.monotonic() + 5
         path = self.path(discussion)
         meta = self.meta_path(discussion)
         with locked_log(path, fcntl.LOCK_EX, deadline) as handle:
             snapshot, _ = DiscussionMetadata.recover(handle, meta, discussion, self.projection)
-            kind, actor, payload = build(snapshot.state)
+            mutation = build(snapshot.state)
+            if isinstance(mutation, CommittedRequest):
+                return dict(mutation.receipt, replayed=True)
+            kind, actor, payload = mutation
             record = event(snapshot.state["last_seq"] + 1, kind, actor, payload)
             snapshot.append(handle, record)
             snapshot.publish(meta)

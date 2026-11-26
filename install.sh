@@ -179,12 +179,12 @@ install_ladp_adapter() {
   local destination="$1/adapters/ladp"
   local source="${SCRIPT_DIR}/skills/council/adapters/ladp"
   local file
-  run_cmd mkdir -p "${destination}/core" "${destination}/resources/agents"
-  for file in README.md adapter.py policy.py resources.py; do
+  run_cmd mkdir -p "${destination}/ladp_core" "${destination}/resources/agents"
+  for file in README.md adapter.py policy.py resources.py compatibility.json; do
     run_cmd install -m 0644 "${source}/${file}" "${destination}/${file}"
   done
-  for file in __init__.py storage.py sessions.py metadata.py; do
-    run_cmd install -m 0644 "${source}/core/${file}" "${destination}/core/${file}"
+  for file in __init__.py storage.py sessions.py metadata.py release.json LICENSE; do
+    run_cmd install -m 0644 "${source}/ladp_core/${file}" "${destination}/ladp_core/${file}"
   done
   # Copy the canonical source resources, not a separately maintained mirror.
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${destination}/resources/SKILL.md"
