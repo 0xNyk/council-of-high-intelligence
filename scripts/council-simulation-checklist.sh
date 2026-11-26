@@ -156,17 +156,15 @@ grep -q "Session Metadata\|session metadata\|session_metadata" SKILL.gemini.md |
 pass "Session Metadata referenced in SKILL.gemini.md"
 
 # --- Structured stance / weighted tally parity (PR #36) ---
-# All three coordinator files must carry the STANCE line, the Vote Tally
-# verdict field, and the 1.5x domain-weight seat. This is the check that
-# would have caught the Gemini regression.
+# All host coordinators must consume the same rule keys and keep structured stances.
 
-for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md; do
+for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
   grep -q "STANCE:" "${skill_file}" || fail "Structured STANCE line missing in ${skill_file} (PR #36)"
   grep -q "Vote Tally" "${skill_file}" || fail "Vote Tally verdict field missing in ${skill_file} (PR #36)"
-  grep -q "1\.5" "${skill_file}" || fail "1.5x domain-weight seat missing in ${skill_file} (PR #36)"
-  grep -q "2/3" "${skill_file}" || fail "2/3 consensus threshold missing in ${skill_file} (PR #36)"
+  grep -q "voting.expert_weight" "${skill_file}" || fail "Configured domain-weight seat missing in ${skill_file}"
+  grep -q "voting.consensus_threshold" "${skill_file}" || fail "Configured consensus threshold missing in ${skill_file}"
 done
-pass "Structured stance + weighted tally present in all three SKILL files"
+pass "Structured stance + shared voting rules present in all host Skills"
 
 # NOTE: SKILL.opencode.md is existence/lint/install-guarded only for now. It was
 # authored from a pre-v1.2.0 base and still lacks E3 (reasoning_method), E9
@@ -322,6 +320,19 @@ pass "install.sh --dry-run --opencode completed"
 
 grep -q "Installed opencode skill to" "${TMP_LOG_DIR}/dry-run-opencode.log" || fail "opencode dry-run output missing opencode skill summary"
 pass "opencode install summary output present"
+
+# --- Optional local transport compatibility checks (no provider calls) ---
+
+for skill_file in SKILL.md SKILL.codex.md SKILL.gemini.md SKILL.opencode.md; do
+  grep -q -- '--transport ladp' "${skill_file}" || fail "Local transport entry missing in ${skill_file}"
+done
+pass "Local transport entry present in all host skills"
+
+python3 skills/council/adapters/ladp/adapter.py protocol >/dev/null
+pass "Shared discussion protocol validated"
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s skills/council/adapters/ladp/tests -v
+pass "Local transport regression suite passed"
 
 echo
 echo "Checklist complete."

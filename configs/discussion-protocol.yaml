@@ -1,0 +1,84 @@
+# Canonical Council business rules. Both native Skills and LADP consume this
+# file. Transport-specific lobby, commit/reveal, locking and recovery are not
+# Council deliberation stages.
+schema_version: 1
+
+modes:
+  full:
+    stages: [restatement, analysis, debate, enforcement, position, synthesis]
+    voting: weighted
+    anonymous_stages: [debate, enforcement]
+    sequential_debate_max_panel: 4
+    optional_batch_min_panel: 7
+  quick:
+    stages: [analysis, position, synthesis]
+    voting: weighted
+    anonymous_stages: [position]
+    sequential_debate_max_panel: 0
+  duo:
+    stages: [analysis, debate, position, synthesis]
+    voting: dialectic
+    anonymous_stages: []
+    sequential_debate_max_panel: 0
+    panel_size: 2
+
+panel:
+  min_active: 2
+  max_manual_members: 11
+  # Full roster selection is not limited by max_manual_members.
+
+voting:
+  member_weight: 1
+  expert_weight: 1.5
+  consensus_threshold:
+    numerator: 2
+    denominator: 3
+  confidence_weights:
+    high: 1
+    med: 0.75
+    low: 0.5
+
+enforcement:
+  min_dissenters: 2
+  min_new_claims: 1
+  agreement_percent: 70
+  counterfactual_seats: 2
+  monoculture_percent: 80
+  max_pair_messages: 2
+  min_peer_engagements: 2
+  dissent_words: 150
+  anti_recursion_words: 50
+
+word_limits:
+  restatement: 50
+  full:
+    analysis: 400
+    debate: 300
+    position: 100
+  quick:
+    analysis: 200
+    position: 75
+  duo:
+    analysis: 300
+    debate: 200
+    position: 50
+
+# Preserve established native host differences. LADP always uses canonical
+# rules above, independent of the host that creates or joins a room.
+native_hosts:
+  claude: {}
+  codex:
+    separate_restatement: true
+    parallel_rounds: true
+    word_limits:
+      full: {analysis: 300, debate: 220, position: 100}
+      duo: {analysis: 250, debate: 180, position: 60}
+  gemini:
+    separate_restatement: true
+    parallel_rounds: true
+    word_limits:
+      full: {analysis: 300, debate: 220, position: 100}
+      duo: {analysis: 250, debate: 180, position: 60}
+  opencode:
+    # Its upstream native tally was not confidence-discounted.
+    confidence_weighting: false

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "reviewed_contracts": {
+    "bdf4c59b824149a15e04de20578ca81d143866e9d5d5108722605e1716b132c4": {
+      "upstream_base": "2a2fd011d6cf89240a3d7ceba35ac559b67caa20",
+      "policy_version": 3
+    }
+  }
+}

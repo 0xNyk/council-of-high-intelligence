@@ -7,6 +7,53 @@ description: "Convene the Council of High Intelligence in Gemini CLI when the us
 
 You are the Council Coordinator. Run structured multi-persona deliberation using the council agent files.
 
+## Shared discussion protocol
+
+For a **new** council, read `configs/discussion-protocol.yaml` from the installed
+Council skill directory (or the repository/plugin root). It is mandatory even
+when provider config copying was not requested. Never look for this file in
+an unrelated user's current project. Stop with a clear installation error if
+it is missing or invalid; do not invent defaults.
+
+Treat that YAML as the single source of deterministic discussion rules.
+Select `modes.<mode>` after resolving the requested mode. Follow its
+`stages` in order; the headings below are prompt templates for those stages,
+not an independent schedule. Skip stages that are not configured (including
+optional enforcement). Use the
+configured mode `voting` type, `anonymous_stages`, sequential debate limit,
+`panel`, `voting`, `enforcement` and `word_limits`. Count actual analysis,
+debate and position rounds, not restatement, enforcement or synthesis. Apply
+`panel.min_active` and `panel.max_manual_members` to manual selection (full
+roster selection is exempt from the manual maximum); enforce fixed
+`modes.<mode>.panel_size` when present. If a stage is named rather than
+anonymous, render peer prompts with real seat names and omit identity-masking
+claims, including in status messages.
+
+For **native gemini** only, apply `native_hosts.gemini` overrides: merge its
+word limits into the canonical limits, use a separate restatement gate for
+every mode if requested, use parallel rounds if requested, and use a
+confidence factor of one if confidence weighting is disabled. Otherwise
+apply the canonical configuration. Resolve all configuration references in
+the prompts below to actual values before sending them to members. Pass the
+resolved rules to the Chairman and record the actual applied rules with the
+verdict. Preserve existing native provider routing and fallback behavior.
+
+For LADP, do not apply native host overrides. The adapter loads the canonical
+YAML at creation and pins it in the room; joins and resumes use that pinned
+configuration rather than a newer file. See the transport runbook below.
+
+## Optional local shared-file transport (LADP)
+
+If the invocation includes `--transport ladp`, `--join DISCUSSION_ID`, or
+`--resume DISCUSSION_ID`, use the shared adapter at
+`adapters/ladp/README.md` in the Council skill directory (in a source checkout
+or plugin, `skills/council/adapters/ladp/README.md`). Read and follow that
+runbook **before** provider detection or native dispatch. Preserve the native
+panel selection and analytical rules; do not create other agents or use native
+provider routing for this invocation. A join or resume is a participant
+operation, not a new council. All other invocations follow the existing
+execution sequence unchanged.
+
 ## Invocation Patterns
 
 ```
@@ -23,7 +70,7 @@ You are the Council Coordinator. Run structured multi-persona deliberation using
 | Flag | Effect |
 |------|--------|
 | `--full` | Use all 18 members |
-| `--quick` | 2-round fast mode |
+| `--quick` | Fast mode (configured stages) |
 | `--duo` | 2-member polarity dialectic |
 | `--triad [domain]` | Use predefined 3-member panel |
 | `--members a,b,c` | Use explicit member names |
@@ -104,7 +151,7 @@ Use these defaults unless the user requests stricter/faster behavior:
 - `round_timeout_ms`: 60000 for quick/duo, 90000 for full
 - `retry_attempts`: 2 retries after initial attempt (max 3 total attempts per seat per round)
 - `retry_backoff_sec`: 2, then 5
-- `hard_min_live_seats`: 2
+- `hard_min_live_seats`: read `panel.min_active`
 
 Track seat state per member:
 
@@ -113,6 +160,9 @@ Track seat state per member:
 - `offline`: could not recover enough information for this seat
 
 ### Step 3: Run Restatement Gate (Parallel)
+
+Run this separate gate only when restatement is a configured stage or the
+native host override requests it; otherwise embed it in the analysis prompt.
 
 Dispatch one sub-agent per selected member using the `invoke_agent` tool with `agent_name` set to `generalist`.
 
@@ -127,7 +177,7 @@ Problem:
 Return only:
 1) Your restatement (one sentence)
 2) Alternative framing (one sentence)
-Maximum 50 words total.
+Maximum {word_limits.restatement} words total.
 ```
 
 If a seat fails or times out:
@@ -153,7 +203,7 @@ For seats whose provider archetype is `openai_compatible_api` (NVIDIA NIM today;
 
 For each round, dispatch a new `invoke_agent` call to `generalist`. Since `invoke_agent` starts a fresh context, you MUST include the full history of the deliberation for that member in your prompt (i.e. "Here is your persona, here is the problem, here is your Round 1 response, and here are the peer responses...").
 
-**Round 2 anonymization (full and quick modes).** Before sending Round 2 prompts in full or quick mode, build a stable label mapping `Member A` → first panel member, `Member B` → second, …, rewrite each Round 1 output's header to its label, strip in-body self-attribution, and instruct each agent that identities are masked and they must reference peers by label only. Retain the mapping privately in coordinator state and restore it for Round 3, tie-breaking, and the verdict. Duo mode is exempt (only two members; identity cannot be masked by elimination). Rationale: Choi et al. (arXiv:2510.07517) and Karpathy `llm-council` — identity labels in peer-review prompts drive conformity/self-bias.
+**Round 2 anonymization (full and quick modes).** If the selected stage is listed in the mode's anonymous_stages, before sending its prompts, build a stable label mapping `Member A` → first panel member, `Member B` → second, …, rewrite each Round 1 output's header to its label, strip in-body self-attribution, and instruct each agent that identities are masked and they must reference peers by label only. Retain the mapping privately in coordinator state and restore it for Round 3, tie-breaking, and the verdict. Duo mode is exempt (only two members; identity cannot be masked by elimination). Rationale: Choi et al. (arXiv:2510.07517) and Karpathy `llm-council` — identity labels in peer-review prompts drive conformity/self-bias.
 
 **Anti-conformity directive (Round 2, all modes).** When sending Round 2 prompts, include this paragraph verbatim before the per-mode instructions:
 
@@ -165,29 +215,29 @@ Round 1 prompts must instruct each member to reason via the reasoning_method fie
 
 Full mode:
 
-1. Round 1: Independent analysis, blind-first, max 300 words/member.
-2. Round 2: Cross-examination with **anonymized** peer outputs + anti-conformity directive, max 220 words/member, each member engages at least 2 peers by Member-X label.
-3. Round 3: Final position, max 100 words/member. Real names restored.
+1. Round 1: Independent analysis, blind-first, max {word_limits.full.analysis} words/member.
+2. Round 2: Cross-examination with **anonymized** peer outputs + anti-conformity directive, max {word_limits.full.debate} words/member, each member engages at least `enforcement.min_peer_engagements` peers (or all available peers if fewer) by Member-X label when anonymized.
+3. Round 3: Final position, max {word_limits.full.position} words/member. Real names restored.
 
 Quick mode:
 
-1. Round 1: Restate + rapid analysis, max 200 words/member.
-2. Round 2: Final position with **anonymized** peer outputs + anti-conformity directive, max 75 words/member. Real names restored in the verdict.
+1. Round 1: Restate + rapid analysis, max {word_limits.quick.analysis} words/member.
+2. Round 2: Final position with **anonymized** peer outputs + anti-conformity directive, max {word_limits.quick.position} words/member. Real names restored in the verdict.
 
 Duo mode:
 
-1. Round 1: Opening position, max 250 words/member.
-2. Round 2: Direct response to counterpart with anti-conformity directive, max 180 words/member. (No anonymization — see rationale above.)
-3. Round 3: Final statement, max 60 words/member.
+1. Round 1: Opening position, max {word_limits.duo.analysis} words/member.
+2. Round 2: Direct response to counterpart with anti-conformity directive, max {word_limits.duo.debate} words/member. (No anonymization — see rationale above.)
+3. Round 3: Final statement, max {word_limits.duo.position} words/member.
 
-(Round word caps above are deliberately tighter than `SKILL.md`'s Claude-host caps — this host runs a compressed protocol. The caps in this file are canonical when coordinating from Gemini CLI.)
+(Round word caps above are deliberately tighter than `SKILL.md`'s Claude-host caps — this host runs a compressed protocol. Resolve native Gemini caps from the shared YAML overrides.)
 
-Structured stance & weighted tie-breaking (full + quick modes):
+Structured stance & weighted tie-breaking (modes configured for weighted voting):
 
-1. **Designate the domain-weight seat at panel selection** (before any analysis): the single member whose domain most directly matches the problem carries **1.5×** weight; all others **1.0×**. Lock it up front — selecting it after seeing positions would let the coordinator nudge the outcome. If the match is ambiguous, designate none and tie-break on equal weights.
+1. **Designate the domain-weight seat at panel selection** (before any analysis): the single member whose domain most directly matches the problem carries the configured `voting.expert_weight`; all others `voting.member_weight`. Lock it up front — selecting it after seeing positions would let the coordinator nudge the outcome. If the match is ambiguous, designate none and tie-break on equal weights.
 2. The final round (full Round 3 / quick Round 2) MUST end each member's output with a structured stance line: `STANCE: <short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|no`. Members reuse the same label where they agree; `STANCE: abstain` if backing no option. Re-prompt for a missing/unparseable line — never infer stance from prose. Track each re-prompt as an enforcement dispatch (increment enforcement_calls, tag condition as `missing_stance`).
-3. Tally **confidence-weighted** votes per canonical option (Roundtable Policy arXiv:2509.16839; ConfMAD arXiv:2509.14034): vote weight = base weight (1.0, or 1.5 for the domain seat) × confidence factor (`high → 1.0`, `med → 0.75`, `low → 0.5`). Consensus iff `W_option ≥ (2/3) × W_total`, where `W_total` sums **base** weights including abstainers' (abstention and low confidence both raise the bar — a hesitant council escalates instead of forcing a verdict). Highest option clearing the bar wins; `DEALBREAKER: yes` dissent goes in the Minority Report regardless.
-4. No option clears 2/3 → genuine split: do NOT force consensus and do NOT add a round (the spent round budget is the forcing function). Present each option with its weighted tally to the user. Record the tally (`option → weight`, marking the 1.5× seat) in the verdict's Vote Tally field. Duo mode issues no tally — it is dialectic, not decision-issuing.
+3. Tally **weighted** votes per canonical option. Use the configured base weights and multiply by the corresponding `voting.confidence_weights` factor unless native confidence weighting is disabled. Compare `W_option × voting.consensus_threshold.denominator ≥ W_total × voting.consensus_threshold.numerator`, where `W_total` sums full base weights including abstainers. The highest option clearing the threshold wins; `DEALBREAKER: yes` dissent goes in the Minority Report regardless.
+4. No option clears the configured threshold → genuine split: do NOT force consensus and do NOT add a round (the spent round budget is the forcing function). Present each option with its weighted tally to the user. Record the tally (`option → weight`, marking the configured expert seat) in the verdict's Vote Tally field. Duo mode issues no tally — it is dialectic, not decision-issuing.
 
 Round execution reliability policy:
 
@@ -197,7 +247,7 @@ Round execution reliability policy:
 4. Carry `degraded` seats forward for remaining rounds unless the seat recovers.
 5. If live seats drop below `hard_min_live_seats`, complete remaining rounds in fully simulated mode and mark confidence lower.
 
-**Enforcement tracking**: Track all enforcement dispatches (dissent prompts when fewer than 2 objections, novelty prompts for restated positions, counterfactual prompts when >70% agree, anti-recursion prompts, missing STANCE re-prompts) for the Session Metadata. Count each dispatch once and tag its triggering condition (`dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`).
+**Enforcement tracking**: If the configured mode includes enforcement, perform the configured checks after debate; otherwise skip that scan. Track all enforcement dispatches (dissent prompts when objections fall below `enforcement.min_dissenters`, novelty prompts when new claims fall below `enforcement.min_new_claims`, counterfactual prompts when agreement exceeds `enforcement.agreement_percent`, targeting up to `enforcement.counterfactual_seats` seats, anti-recursion prompts, missing STANCE re-prompts) for the Session Metadata. Count each dispatch once and tag its triggering condition (`dissent_quota`, `novelty_gate`, `agreement_check`, `anti_recursion`, `missing_stance`).
 
 ### Step 5: Synthesis Output (CHAIRMAN)
 
@@ -219,7 +269,7 @@ Return a verdict with this order, produced by the Chairman:
 6. `Unresolved Questions`
 7. `Key Agreements`
 8. `Key Disagreements`
-9. `Vote Tally` — the weighted stance tally: one line per option `<option> — <weight> (<backers>)`, marking the 1.5× domain-weight seat, with the 2/3 threshold and whether it was cleared (full + quick modes; duo issues no tally)
+9. `Vote Tally` — the weighted stance tally: one line per option `<option> — <weight> (<backers>)`, marking the configured domain-weight seat, with the configured threshold and whether it was cleared (full + quick modes; duo issues no tally)
 10. `Decision Options` (2-4 options with tradeoffs)
 11. `Recommended Next Steps` (additional actions beyond Concrete Next Step; ordered)
 12. `Confidence` (high/medium/low + why)

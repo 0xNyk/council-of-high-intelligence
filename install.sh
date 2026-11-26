@@ -173,6 +173,29 @@ if [[ ${#agent_files[@]} -eq 0 ]]; then
   exit 1
 fi
 
+# Install the optional local adapter as data/scripts only. No dependency
+# installation or provider calls are performed for native Council users.
+install_ladp_adapter() {
+  local destination="$1/adapters/ladp"
+  local source="${SCRIPT_DIR}/skills/council/adapters/ladp"
+  local file
+  local core="${SCRIPT_DIR}/skills/council/core/ladp_core"
+  run_cmd mkdir -p "$1/core/ladp_core" "$1/configs" "${destination}/resources/agents"
+  # Protocol rules are mandatory for native and LADP, unlike provider configs.
+  run_cmd install -m 0644 "${SCRIPT_DIR}/configs/discussion-protocol.yaml" "$1/configs/discussion-protocol.yaml"
+  for file in README.md adapter.py policy.py resources.py protocol.py compatibility.json requirements.txt; do
+    run_cmd install -m 0644 "${source}/${file}" "${destination}/${file}"
+  done
+  for file in __init__.py storage.py sessions.py metadata.py LICENSE; do
+    run_cmd install -m 0644 "${core}/${file}" "$1/core/ladp_core/${file}"
+  done
+  # Copy the canonical source resources, not a separately maintained mirror.
+  run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${destination}/resources/SKILL.md"
+  for file in "${agent_files[@]}"; do
+    run_cmd install -m 0644 "${file}" "${destination}/resources/agents/"
+  done
+}
+
 CONFIGS_SRC_DIR="${SCRIPT_DIR}/configs"
 
 echo "Installing Council of High Intelligence..."
@@ -196,6 +219,7 @@ if [[ "${INSTALL_CLAUDE}" == true ]]; then
 
   echo "Installing Claude council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${CLAUDE_SKILL_DEST}"
+  install_ladp_adapter "${CLAUDE_SKILL_DEST_DIR}"
 
   echo "Installing Claude council scripts..."
   run_cmd mkdir -p "${CLAUDE_SCRIPTS_DEST_DIR}"
@@ -240,6 +264,7 @@ if [[ "${INSTALL_CODEX}" == true ]]; then
 
   echo "Installing Codex council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.codex.md" "${CODEX_SKILL_DEST}"
+  install_ladp_adapter "${CODEX_SKILL_DEST_DIR}"
 
   echo "Installing Codex council agents..."
   codex_agents_installed=0
@@ -305,6 +330,7 @@ EOF
 
   echo "Installing Gemini council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.gemini.md" "${GEMINI_SKILL_DEST}"
+  install_ladp_adapter "${GEMINI_EXT_DEST_DIR}"
 
   echo "Installing Gemini council agents..."
   gemini_agents_installed=0
@@ -356,6 +382,7 @@ if [[ "${INSTALL_OPENCODE}" == true ]]; then
 
   echo "Installing opencode council skill..."
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.opencode.md" "${OPENCODE_SKILL_DEST}"
+  install_ladp_adapter "${OPENCODE_SKILL_DEST_DIR}"
 
   echo "Converting and installing opencode council subagents..."
   if [[ "$DRY_RUN" == true ]]; then

@@ -7,6 +7,53 @@ description: "Convene the Council of High Intelligence — multi-persona deliber
 
 You are the Council Coordinator. Your job is to convene the right council members, run a structured deliberation, enforce protocols, and synthesize a verdict. Follow the execution sequence below step-by-step.
 
+## Shared discussion protocol
+
+For a **new** council, read `configs/discussion-protocol.yaml` from the installed
+Council skill directory (or the repository/plugin root). It is mandatory even
+when provider config copying was not requested. Never look for this file in
+an unrelated user's current project. Stop with a clear installation error if
+it is missing or invalid; do not invent defaults.
+
+Treat that YAML as the single source of deterministic discussion rules.
+Select `modes.<mode>` after resolving the requested mode. Follow its
+`stages` in order; the headings below are prompt templates for those stages,
+not an independent schedule. Skip stages that are not configured (including
+optional enforcement). Use the
+configured mode `voting` type, `anonymous_stages`, sequential debate limit,
+`panel`, `voting`, `enforcement` and `word_limits`. Count actual analysis,
+debate and position rounds, not restatement, enforcement or synthesis. Apply
+`panel.min_active` and `panel.max_manual_members` to manual selection (full
+roster selection is exempt from the manual maximum); enforce fixed
+`modes.<mode>.panel_size` when present. If a stage is named rather than
+anonymous, render peer prompts with real seat names and omit identity-masking
+claims, including in status messages.
+
+For **native claude** only, apply `native_hosts.claude` overrides: merge its
+word limits into the canonical limits, use a separate restatement gate for
+every mode if requested, use parallel rounds if requested, and use a
+confidence factor of one if confidence weighting is disabled. Otherwise
+apply the canonical configuration. Resolve all configuration references in
+the prompts below to actual values before sending them to members. Pass the
+resolved rules to the Chairman and record the actual applied rules with the
+verdict. Preserve existing native provider routing and fallback behavior.
+
+For LADP, do not apply native host overrides. The adapter loads the canonical
+YAML at creation and pins it in the room; joins and resumes use that pinned
+configuration rather than a newer file. See the transport runbook below.
+
+## Optional local shared-file transport (LADP)
+
+If the invocation includes `--transport ladp`, `--join DISCUSSION_ID`, or
+`--resume DISCUSSION_ID`, use the shared adapter at
+`adapters/ladp/README.md` in the Council skill directory (in a source checkout
+or plugin, `skills/council/adapters/ladp/README.md`). Read and follow that
+runbook **before** provider detection or native dispatch. Preserve the native
+panel selection and analytical rules; do not create other agents or use native
+provider routing for this invocation. A join or resume is a participant
+operation, not a new council. All other invocations follow the existing
+execution sequence unchanged.
+
 ## Invocation
 
 ```
@@ -28,9 +75,9 @@ You are the Council Coordinator. Your job is to convene the right council member
 |------|--------|
 | `--full` | All 18 members |
 | `--triad [domain]` | Predefined 3-member combination |
-| `--members name1,name2,...` | Manual selection (2-11) |
+| `--members name1,name2,...` | Manual selection (configured panel limits) |
 | `--profile [name]` | Panel profile: `classic`, `exploration-orthogonal`, `execution-lean` |
-| `--quick` | Fast 2-round mode (200-word analysis → 75-word position, no cross-examination) |
+| `--quick` | Fast mode (configured stages and word limits) |
 | `--duo` | 2-member dialectic using polarity pairs |
 | `--models [path]` | Manual provider/model slot mapping (overrides auto-routing) |
 | `--no-auto-route` | Disable auto-routing; use agent frontmatter defaults (Claude-only) |
@@ -204,11 +251,11 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
 4. If `--profile [name]` → use that profile's panel, optionally with `--triad` from profile-specific triads
 5. If none of the above → **Auto-Triad Selection**: read the problem statement, match against triad domain keywords and rationales, select the best-fitting triad. State your selection and reasoning before proceeding.
 
-**Designate the domain-weight seat (do this NOW, before any analysis).** Identify the single member whose domain most directly matches the problem — this member receives a **1.5× weight** at tie-breaking (STEP 6). Lock it here, at panel selection, *before* any positions exist. Selecting the heavyweight after seeing votes would let the coordinator nudge the outcome; selecting it up front keeps tie-breaking honest. If two members are equally on-domain, pick neither — record "no domain-weight seat (ambiguous match)" and tie-break on equal weights.
+**Designate the domain-weight seat (do this NOW, before any analysis).** Identify the single member whose domain most directly matches the problem — this member receives the configured **expert_weight** at tie-breaking (STEP 6). Lock it here, at panel selection, *before* any positions exist. Selecting the heavyweight after seeing votes would let the coordinator nudge the outcome; selecting it up front keeps tie-breaking honest. If two members are equally on-domain, pick neither — record "no domain-weight seat (ambiguous match)" and tie-break on equal weights.
 
 **Method diversity (DMAD, arXiv:2410.12853).** Every member carries a distinct `reasoning_method` in its frontmatter `council:` block — an explicit reasoning method, not just a persona. When substituting or swapping members (fallbacks, `--members` overrides, seat changes), the coordinator must preserve method diversity: never assemble a panel where two seats share the same `reasoning_method`.
 
-`[CHECKPOINT]` State the selected members, mode, and the designated domain-weight seat (member + 1.5× + one-line rationale, or "none — ambiguous match") before proceeding.
+`[CHECKPOINT]` State the selected members, mode, and the designated domain-weight seat (member + configured expert weight + one-line rationale, or "none — ambiguous match") before proceeding.
 
 ### STEP 1: Provider Detection and Model Routing
 
@@ -255,7 +302,7 @@ Before you begin analysis, restate this problem in TWO parts:
 1. **Your restatement**: One sentence capturing the core question through your analytical lens.
 2. **Alternative framing**: One sentence reframing the problem in a way the original statement may have missed.
 
-Do NOT begin your analysis yet. Just the restatement and alternative framing. 50 words maximum total.
+Do NOT begin your analysis yet. Just the restatement and alternative framing. {word_limits.restatement} words maximum total.
 ```
 
 `[CHECKPOINT]` Review all restatements. If any member's restatement diverges significantly from the original problem, flag this to the user — it may reveal a framing issue worth addressing before deliberation. Include the restatements in the Round 1 prompt so members see each other's framings.
@@ -399,27 +446,27 @@ Here is how each member reframed the problem:
 Reason via your designated method: {reasoning_method from your frontmatter}. Do not imitate other members' methods — method diversity is the point (DMAD, arXiv:2410.12853).
 Produce your independent analysis using your Output Format (Standalone).
 Do NOT try to anticipate what other members will say.
-Limit: 400 words maximum.
+Limit: {word_limits.full.analysis} words maximum.
 ```
 
 **Note**: The same dispatch logic applies to all subsequent rounds (Steps 3 and 5). Use the routing table from Step 1 consistently. If a provider failed and fell back in an earlier round, use the fallback provider for all remaining rounds.
 
-`[CHECKPOINT]` Confirm all Round 1 outputs collected. Verify each is ≤400 words and follows the member's Output Format.
+`[CHECKPOINT]` Confirm all Round 1 outputs collected. Verify each is within the configured analysis word limit and follows the member's Output Format.
 
 ### STEP 3: Round 2 — Cross-Examination (ANONYMIZED)
 
 Emit to user:
 > **Round 1 complete** ({N} analyses collected). Beginning Round 2 — cross-examination (anonymized).
 
-**Identity anonymization** (evidence-based — see Choi et al., arXiv:2510.07517, ICLR 2026; Karpathy `llm-council`). Round 2 is conducted with member identities masked to prevent conformity bias from social signal. Before sending Round 2 prompts:
+**Identity anonymization** (evidence-based — see Choi et al., arXiv:2510.07517, ICLR 2026; Karpathy `llm-council`). When debate is listed in the mode's anonymous_stages, Round 2 is conducted with member identities masked to prevent conformity bias from social signal. Before sending Round 2 prompts when anonymization is enabled:
 
 1. Build a stable label mapping for this session: `Member A` → first member, `Member B` → second, …, in the order they appear in the panel. The labels are stable across the entire Round 2 (and any Batch B follow-ups) so members can reference each other consistently within the round.
 2. Rewrite each Round 1 output's header from `{name}` (or the member's self-attribution line) to its assigned label. Strip any in-body self-references that would re-disclose identity (e.g., "As Socrates, I…" → "As Member B, I…"). Keep all other content unchanged.
 3. Retain the mapping privately in the coordinator's working state. **Do NOT** expose it to deliberating members during Round 2. The mapping is restored for Round 3 (Final Crystallization), tie-breaking, and the verdict transcript.
 
 **Execution strategy:**
-- If panel size ≤ 4: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses, still with anonymized labels)
-- If panel size ≥ 5: run all members in **PARALLEL** (each sees all anonymized Round 1 outputs). For panels of 7+, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs with the same labels) if cross-contamination would meaningfully improve quality.
+- If native parallel rounds are requested, use parallel execution. Otherwise, if panel size is at most `modes.full.sequential_debate_max_panel`: run fully **SEQUENTIAL** (each member sees all prior Round 2 responses, still with anonymized labels)
+- Otherwise: run all members in **PARALLEL** (each sees all anonymized Round 1 outputs). For panels of at least `modes.full.optional_batch_min_panel`, if configured, optionally use **Batch A** (parallel) + **Batch B** (sequential, sees Batch A outputs with the same labels) if cross-contamination would meaningfully improve quality.
 
 Prompt template for each member (the **Anti-conformity directive** below is evidence-based — see Choi et al., arXiv:2510.07517; Cui et al., Free-MAD arXiv:2509.11035; controlled-study arXiv:2511.07784):
 ```
@@ -451,38 +498,38 @@ Now respond using your Output Format (Council Round 2):
 3. Restate your position in light of this exchange, noting any changes.
 4. Label your key claims: empirical | mechanistic | strategic | ethical | heuristic
 
-Limit: 300 words maximum. You MUST engage at least 2 other members by label.
+Limit: {word_limits.full.debate} words maximum. You MUST engage at least the configured `enforcement.min_peer_engagements` other members (or all available peers if fewer) by label when anonymized.
 ```
 
 `[CHECKPOINT]` Confirm all Round 2 outputs collected. Before proceeding to STEP 4, the coordinator restores the label → real-name mapping in its working state. The Round 2 transcript is kept in BOTH forms: anonymized (what members saw) and de-anonymized (for STEP 7 audit).
 
 ### STEP 4: Post-Round Enforcement Scan
 
-Run all enforcement checks on Round 2 outputs in a single pass. **Track enforcement activity**: maintain a running count of enforcement dispatches (actual model calls made) and which conditions triggered them for the Session Metadata in STEP 8. Count each dispatch once even when it satisfies multiple conditions.
+Run all enforcement checks on Round 2 outputs in a single pass if enforcement is in the selected mode's stages; otherwise skip this stage. **Track enforcement activity**: maintain a running count of enforcement dispatches (actual model calls made) and which conditions triggered them for the Session Metadata in STEP 8. Count each dispatch once even when it satisfies multiple conditions.
 
-**`[VERIFY]` Dissent quota**: At least 2 members must articulate a non-overlapping objection. If fewer than 2 → send the dissent prompt:
+**`[VERIFY]` Dissent quota**: At least `enforcement.min_dissenters` members must articulate a non-overlapping objection. If fewer → send the dissent prompt:
 ```
 Your Round 2 response agreed with the emerging consensus. The council requires dissent for quality.
-State your strongest objection to the majority position in 150 words. What are they getting wrong?
+State your strongest objection to the majority position in {enforcement.dissent_words} words. What are they getting wrong?
 ```
 Increment the enforcement dispatch count by the number of members receiving this prompt. Tag the condition as `dissent_quota`.
 
-**`[VERIFY]` Novelty gate**: Each response must contain at least 1 new claim, test, risk, or reframing not in that member's Round 1 output. If missing → send back:
+**`[VERIFY]` Novelty gate**: Each response must contain at least `enforcement.min_new_claims` new claims, tests, risks, or reframings not in that member's Round 1 output. If missing → send back:
 ```
 Your Round 2 response restated your Round 1 position without engaging the challenges raised.
 Address {specific member}'s challenge to your position directly. What changes?
 ```
 Increment the enforcement dispatch count by the number of members receiving this prompt. Tag the condition as `novelty_gate`.
 
-**`[VERIFY]` Agreement check**: If >70% agree on core position → trigger counterfactual prompt to 2 most likely dissenters:
+**`[VERIFY]` Agreement check**: If the percentage agreeing on the core position exceeds `enforcement.agreement_percent` → trigger a counterfactual prompt to the `enforcement.counterfactual_seats` most likely dissenters (up to the number available):
 ```
 Assume the current consensus is wrong. What is the strongest alternative and what evidence would flip the decision?
 ```
 Increment the enforcement dispatch count by the number of members receiving this prompt (typically 2). Tag the condition as `agreement_check`.
 
-**`[VERIFY]` Evidence labels**: Confirm claims are tagged (`empirical | mechanistic | strategic | ethical | heuristic`). Note reasoning monoculture (>80% same type).
+**`[VERIFY]` Evidence labels**: Confirm claims are tagged (`empirical | mechanistic | strategic | ethical | heuristic`). Note reasoning monoculture (more than `enforcement.monoculture_percent` percent of the same type).
 
-**`[VERIFY]` Anti-recursion**: Socrates re-asks an answered question → hemlock rule, force 50-word position. Any member restates Round 1 without engaging challenges → send back. Exchange exceeds 2 messages between any pair → cut off. Increment the enforcement dispatch count for each prompt sent. Tag the condition as `anti_recursion`.
+**`[VERIFY]` Anti-recursion**: Socrates re-asks an answered question → hemlock rule, force a position limited by `enforcement.anti_recursion_words`. Any member restates Round 1 without engaging challenges → send back. Exchange exceeds `enforcement.max_pair_messages` messages between any pair → cut off. Increment the enforcement dispatch count for each prompt sent. Tag the condition as `anti_recursion`.
 
 ### STEP 5: Round 3 — Final Crystallization (PARALLEL)
 
@@ -491,7 +538,7 @@ Emit to user:
 
 Send each member their final prompt (run in parallel):
 ```
-Final round. State your position declaratively in 100 words or less.
+Final round. State your position declaratively in {word_limits.full.position} words or less.
 Socrates: you get exactly ONE question. Make it count. Then state your position.
 No new arguments — only crystallization of your stance.
 
@@ -515,15 +562,21 @@ STANCE: <one short option label> | CONFIDENCE: high|med|low | DEALBREAKER: yes|n
 
 Tie-breaking operates on the **structured `STANCE:` lines** collected in STEP 5 — a counted tally, not a prose impression. Run the steps in order:
 
-1. **Tally confidence-weighted votes per canonical option** (evidence-based — confidence-weighted aggregation beats uniform voting: Roundtable Policy arXiv:2509.16839; ConfMAD arXiv:2509.14034). Each member's **base weight** is **1.0**, except the domain-weight seat designated in STEP 0, which is **1.5**. Each member's **vote weight** is their base weight × a confidence factor from their `CONFIDENCE:` field: `high → 1.0`, `med → 0.75`, `low → 0.5`. `abstain` stances contribute to no option but still count toward total weight at full base weight (they raise the consensus bar — abstention is not a free pass). Compute:
-   - `W_total` = sum of all members' **base** weights (e.g. a 3-member triad with one 1.5× seat → `1.5 + 1.0 + 1.0 = 3.5`). Base weights — not confidence-discounted — so a low-confidence panel cannot manufacture consensus by shrinking the denominator; hesitant councils escalate to the user instead of forcing a verdict.
-   - `W_option` = summed **vote** weight of members backing each option.
-2. **Consensus test.** An option reaches consensus iff `W_option ≥ (2/3) × W_total`. (For the 3.5-weight triad: threshold = `2.333`, so the option needs the 1.5× seat **plus** one 1.0 seat at high confidence, or all three backers with enough confidence.) The highest-weight option that clears the bar is the verdict.
+1. **Tally weighted votes per canonical option.** Use the pinned shared `voting` rules (confidence-weighted aggregation: Roundtable Policy arXiv:2509.16839; ConfMAD arXiv:2509.14034).
+   Each member's base weight is `voting.member_weight`, except the domain-weight
+   seat designated in STEP 0, which uses `voting.expert_weight`. Multiply
+   by the configured `voting.confidence_weights` factor for their `CONFIDENCE:`
+   unless the native host disables confidence weighting. Abstentions add no
+   option weight but retain their full base weight in the denominator.
+   - `W_total` = sum of all members' base weights, not confidence-discounted.
+   - `W_option` = sum of the effective vote weights backing each canonical option.
+2. **Consensus test.** Compare exactly: `W_option × voting.consensus_threshold.denominator ≥ W_total × voting.consensus_threshold.numerator`.
+   The highest-weight option clearing the configured threshold wins.
    - On consensus → record the surviving option. Any `DEALBREAKER: yes` dissent goes in the **Minority Report** even when outvoted.
-3. **No option clears 2/3 → genuine split.** Do NOT force consensus, do NOT run another round (the round budget is spent — that bound is the forcing function). Present the dilemma to the user with each option, its weighted tally, and the strongest argument for each. The verdict's Consensus section reads "No consensus reached" and the split is handed to the user to decide.
-4. **Exact tie between two options** (equal weight, both below 2/3): report both as a live split — the domain-weight seat has already been applied, so there is no further mechanical breaker by design. Surfacing the unresolved tension honestly beats inventing a winner.
+3. **No option clears the configured threshold → genuine split.** Do NOT force consensus, do NOT run another round (the round budget is spent — that bound is the forcing function). Present the dilemma to the user with each option, its weighted tally, and the strongest argument for each. The verdict's Consensus section reads "No consensus reached" and the split is handed to the user to decide.
+4. **Exact tie between two options** (equal weight, both below the configured threshold): report both as a live split — the domain-weight seat has already been applied, so there is no further mechanical breaker by design. Surfacing the unresolved tension honestly beats inventing a winner.
 
-**Always record the tally** (`option → weight`, which seat carried 1.5×, and each backer's confidence factor) in the verdict's Vote Tally field, so the decision is auditable without re-reading the transcript.
+**Always record the tally** (`option → weight`, which seat carried the configured expert weight, and each backer's confidence factor) in the verdict's Vote Tally field, so the decision is auditable without re-reading the transcript.
 
 ### STEP 7: Synthesize Verdict (CHAIRMAN)
 
@@ -590,7 +643,7 @@ This block is intentionally not a sub-section of the verdict — it's session te
 
 ## Quick Mode Sequence (`--quick`)
 
-Fast 2-round deliberation for simpler questions. No cross-examination.
+Fast deliberation for simpler questions. Follow the quick stages in the shared protocol.
 
 ### QUICK STEP 0: Select Panel
 
@@ -621,7 +674,7 @@ First, in ONE sentence, restate this problem through your analytical lens. Then 
 - Verdict (direct recommendation)
 - Confidence (High/Medium/Low)
 
-Limit: 200 words maximum. Be decisive.
+Limit: {word_limits.quick.analysis} words maximum. Be decisive.
 ```
 
 `[CHECKPOINT]` Confirm all outputs collected.
@@ -631,7 +684,7 @@ Limit: 200 words maximum. Be decisive.
 Emit to user:
 > **Round 1 complete**. Final positions (anonymized).
 
-Anonymize peer Round 1 outputs the same way as STEP 3 of full mode: assign stable labels `Member A`, `Member B`, …, strip self-attribution, retain the mapping in coordinator state. Quick mode is more conformity-prone than full mode (only one cross-look), so anonymization here is non-optional.
+If position is in the quick mode's anonymous_stages, anonymize peer Round 1 outputs the same way as STEP 3 of full mode: assign stable labels `Member A`, `Member B`, …, strip self-attribution, retain the mapping in coordinator state. Quick mode is more conformity-prone than full mode (only one cross-look), so enforce the configured anonymization rule.
 
 Send each member:
 ```
@@ -646,7 +699,7 @@ Do not update merely because peers disagree or because consensus is forming.
 Update only when presented with sound reasoning that exposes a specific flaw
 in your earlier argument; if you cannot name the flaw, do not update.
 
-State your final position in 75 words or less. Note any key disagreement
+State your final position in {word_limits.quick.position} words or less. Note any key disagreement
 (call out the specific Member whose position you push back on). Be direct.
 
 Then, on the LAST line, emit your structured stance EXACTLY in this format:
@@ -655,7 +708,7 @@ Use the SAME label as peers where you agree; write STANCE: abstain if you back
 no option.
 ```
 
-`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries 1.5× in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose. Increment the enforcement dispatch count for each re-prompt sent. Tag the condition as `missing_stance`.
+`[CHECKPOINT]` Collect every `STANCE:` line and apply the STEP 6 weighted tally (the STEP 0 domain-weight seat carries the configured expert weight in quick mode too). Re-prompt any member who omitted the line rather than inferring from prose. Increment the enforcement dispatch count for each re-prompt sent. Tag the condition as `missing_stance`.
 
 ### QUICK STEP 3: Synthesize Quick Verdict (CHAIRMAN)
 
@@ -693,12 +746,12 @@ The problem under deliberation:
 {problem}
 
 First, in ONE sentence, restate this problem through your analytical lens. Then state your position using your Output Format (Standalone).
-Limit: 300 words maximum.
+Limit: {word_limits.duo.analysis} words maximum.
 ```
 
 ### DUO STEP 2: Round 2 — Direct Response (PARALLEL)
 
-**Anonymization is not applied in duo mode.** With only two members and an explicitly named opponent, identity cannot be meaningfully masked (each side knows who the other is by elimination), and the dialectic depends on each member knowing their opponent's specific analytical lens. The conformity failure mode that motivates Round-2 anonymization in larger panels does not arise in a 2-member exchange.
+**Duo uses the configured named peer view.** With only two members and an explicitly named opponent, identity cannot be meaningfully masked (each side knows who the other is by elimination), and the dialectic depends on each member knowing their opponent's specific analytical lens. The conformity failure mode that motivates Round-2 anonymization in larger panels does not arise in a 2-member exchange.
 
 Send each member the other's Round 1 output:
 ```
@@ -716,13 +769,13 @@ Respond directly:
 2. Where are they right? Concede what deserves conceding.
 3. Restate your position, strengthened by this exchange.
 
-Limit: 200 words maximum.
+Limit: {word_limits.duo.debate} words maximum.
 ```
 
 ### DUO STEP 3: Round 3 — Final Statements (PARALLEL)
 
 ```
-Final statement. 50 words maximum. State your position. No new arguments.
+Final statement. {word_limits.duo.position} words maximum. State your position. No new arguments.
 ```
 
 ### DUO STEP 4: Synthesize Duo Verdict (CHAIRMAN)
@@ -769,11 +822,7 @@ Dispatch synthesis to the Chairman selected via STEP 1.7. In duo mode the Chairm
 {The position that survived deliberation and what members converged on — or "No consensus reached" with explanation}
 
 ### Vote Tally
-{The STEP 6 confidence-weighted tally. One line per option: `<option> — <weight> (<backers with confidence>)`. Mark the 1.5× domain-weight seat. State the threshold and whether it was cleared. Example:
-- `monorepo — 2.25 (Ada [1.5× domain, high], Feynman [med → 0.75])` — did not clear 2.333 threshold
-- `polyrepo — 1.0 (Torvalds [high])`
-- W_total 3.5 · threshold 2.333 · **no option carries → escalated to user**
-If no seat carried 1.5× (ambiguous match), say so. If split, show both options and "no option cleared threshold → escalated to user".}
+{The STEP 6 weighted tally. One line per option: `<option> — <weight> (<backers and confidence factors>)`. Mark the configured domain-weight seat, actual total base weight, threshold fraction and whether it was cleared. If there is no designated seat, say so. If split, show every option and report "no option cleared the configured threshold → escalated to user".}
 
 ### Key Insights by Member
 - **{Name}**: {Their most valuable contribution in 1-2 sentences}
@@ -848,7 +897,7 @@ fallbacks_triggered: <list of "member→provider/model" entries, or "none">
 {Majority position or "Split" with explanation}
 
 ### Vote Tally
-{Confidence-weighted STEP 6 tally: one line per option `<option> — <weight> (<backers with confidence>)`, mark the 1.5× domain-weight seat, state threshold and whether cleared. If split: "no option cleared 2/3 → escalated to user".}
+{Confidence-weighted STEP 6 tally: one line per option `<option> — <weight> (<backers with confidence>)`, mark the configured domain-weight seat, state threshold and whether cleared. If split: "no option cleared the configured threshold → escalated to user".}
 
 ### Key Disagreement
 {The most important point of divergence}
@@ -863,7 +912,7 @@ After acting on this verdict, revisit: Was this useful? What happened?
 schema_version: 1
 mode: quick
 panel_size: <N>
-rounds_run: 2                   # deliberation rounds only, not enforcement dispatches
+rounds_run: <N>                 # deliberation rounds only, not enforcement dispatches
 enforcement_calls: <N>          # total enforcement dispatches (0 if none needed)
 enforcement_breakdown: <object> # {dissent_quota: N, novelty_gate: N, agreement_check: N, anti_recursion: N, missing_stance: N} or "none"
 tools_used: yes | no
@@ -920,7 +969,7 @@ After deciding, revisit: Which perspective proved more useful? What happened?
 schema_version: 1
 mode: duo
 panel_size: 2
-rounds_run: 3                   # deliberation rounds only, not enforcement dispatches
+rounds_run: <N>                 # deliberation rounds only, not enforcement dispatches
 enforcement_calls: <N>          # total enforcement dispatches (0 if none needed)
 enforcement_breakdown: <object> # {dissent_quota: N, novelty_gate: N, agreement_check: N, anti_recursion: N, missing_stance: N} or "none"
 tools_used: yes | no
@@ -938,15 +987,15 @@ fallbacks_triggered: <list or "none">
 
 **Full mode:**
 `/council --triad strategy Should we open-source our agent framework?`
-→ Convenes Sun Tzu + Machiavelli + Aurelius, runs 3-round deliberation, produces Council Verdict.
+→ Convenes Sun Tzu + Machiavelli + Aurelius, runs the configured full deliberation, produces Council Verdict.
 
 **Quick mode:**
 `/council --quick Should we add Redis caching to the auth flow?`
-→ Auto-selects architecture triad, runs 2-round rapid analysis, produces Quick Verdict.
+→ Auto-selects architecture triad, runs the configured quick deliberation, produces Quick Verdict.
 
 **Duo mode:**
 `/council --duo Should we rewrite the monolith as microservices?`
-→ Selects Aristotle vs Lao Tzu (architecture domain), runs 3-round dialectic, produces Duo Verdict.
+→ Selects Aristotle vs Lao Tzu (architecture domain), runs the configured duo dialectic, produces Duo Verdict.
 
 **Auto-triad:**
 `/council What's the best pricing model for our API?`
