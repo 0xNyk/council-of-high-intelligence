@@ -190,6 +190,25 @@ Use `--no-auto-route` to keep native-host defaults. Use `--models <path>` with a
 for an explicit seat map. Provider failure is reported before the seat falls back to the
 native host.
 
+## Optional local shared-file transport
+
+Already running agents can join the same local council without starting one
+another, forwarding prompts, or using provider APIs for communication.
+
+```text
+/council --transport ladp --triad architecture Should we use a monorepo?
+/council --join DISCUSSION_ID --seat ada
+/council --join DISCUSSION_ID --seat chairman
+/council --resume DISCUSSION_ID --actor ACTOR_ID
+```
+
+Each seat is an independent session on the same machine. The opt-in adapter
+uses Python 3.9+ (macOS/Linux), a shared append-only log, a rebuildable state
+snapshot and OS file locks. The canonical persona resources and rules are
+pinned at room creation. Native provider routing stays unchanged. See the
+[local transport runbook](skills/council/adapters/ladp/README.md) for usage,
+recovery, cooperative anonymity limitations and test commands.
+
 ## Installation reference
 
 ```bash

@@ -7,6 +7,18 @@ description: "Convene the Council of High Intelligence — multi-persona deliber
 
 You are the Council Coordinator. Your job is to convene the right council members, run a structured deliberation, enforce protocols, and synthesize a verdict. Follow the execution sequence below step-by-step.
 
+## Optional local shared-file transport (LADP)
+
+If the invocation includes `--transport ladp`, `--join DISCUSSION_ID`, or
+`--resume DISCUSSION_ID`, use the shared adapter at
+`adapters/ladp/README.md` in the Council skill directory (in a source checkout
+or plugin, `skills/council/adapters/ladp/README.md`). Read and follow that
+runbook **before** provider detection or native dispatch. Preserve the native
+panel selection and analytical rules; do not create other agents or use native
+provider routing for this invocation. A join or resume is a participant
+operation, not a new council. All other invocations follow the existing
+execution sequence unchanged.
+
 ## Invocation
 
 ```
