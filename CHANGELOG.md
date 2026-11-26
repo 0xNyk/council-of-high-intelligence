@@ -7,9 +7,11 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Per-seat call budget for `openai_compatible_api` seats** — optional `max_tokens` (default `1200`) and `timeout_seconds` (default `90`) in the seat config, applied to the `/chat/completions` call and enforced with `curl --max-time`. Reasoning models served through NIM spend part of `max_tokens` on reasoning; at `1200` they returned empty (`finish_reason: length`, no content) or cut-off answers on a full Round 1 prompt, and every such seat silently fell back to Anthropic. The NIM example config now sets `max_tokens: 4096` on its DeepSeek seat. Defaults are unchanged.
 - **Roster validation drift guard** — `scripts/validate-roster.py`, wired into CI. Runs 166 structural checks that `SKILL.md` prose and `agents/*.md` frontmatter describe the same council: profile sizes and enumerated member lists against `profiles:` tags, polarity pairs resolvable/mutual/mirrored in the Polarity Pairs list, `reasoning_method` uniqueness (DMAD), triad references, and roster-table parity. Panel selection reads the frontmatter while the coordinator reads the prose, so drift silently seats the wrong members with no visible error. Complements `council-simulation-checklist.sh`, which greps for protocol features rather than checking roster consistency.
 
 ### Fixed
+- **Truncated `openai_compatible_api` answers were accepted silently** — a response with `finish_reason: length` and partial content passed as a full answer. The coordinator now logs `[TRUNCATED]` and marks the seat `truncated` in the verdict metadata.
 - **Socrates/Watts polarity pair was missing from the Polarity Pairs list** — mutual in frontmatter and present in the duo table, but absent from the list the coordinator reads. Added to `SKILL.md` and `SKILL.opencode.md`.
 - **Sutskever/Machiavelli polarity pair was missing from the Polarity Pairs list** — the frontmatter reciprocation landed in #51 (@xiaolai); this adds the matching prose entry to `SKILL.md` and `SKILL.opencode.md`, where the duo table already carried it.
 

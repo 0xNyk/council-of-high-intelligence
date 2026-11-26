@@ -219,7 +219,7 @@ Follow these steps in order. Do NOT skip steps or merge rounds.
    - Prefer one provider per seat until pool exhausted
    - Avoid placing polarity pair members on same provider when alternatives exist
    - If unavoidable, use different model families or reasoning modes
-4. **OpenAI-compatible seats**: when a seat declares a provider whose archetype is `openai_compatible_api` (e.g. `provider: nvidia_nim`, future `together`, `fireworks`, `vllm`), the seat YAML MUST include `base_url` and `api_key_env`. The coordinator resolves the API key from the named env var at routing time — never inline the value. If the env var is unset, mark the seat as unavailable and trigger the per-seat fallback path (Path C anthropic default for that member only). Set `exec_method: openai_compatible_api` for the seat.
+4. **OpenAI-compatible seats**: when a seat declares a provider whose archetype is `openai_compatible_api` (e.g. `provider: nvidia_nim`, future `together`, `fireworks`, `vllm`), the seat YAML MUST include `base_url` and `api_key_env`. The coordinator resolves the API key from the named env var at routing time — never inline the value. If the env var is unset, mark the seat as unavailable and trigger the per-seat fallback path (Path C anthropic default for that member only). Set `exec_method: openai_compatible_api` for the seat. Two optional seat fields tune the call budget: `max_tokens` (default `1200`) and `timeout_seconds` (default `90`). Reasoning models (DeepSeek, Kimi, Nemotron, GLM and similar) spend part of `max_tokens` on reasoning before any visible answer, so at the default they can return an empty or truncated answer; set `max_tokens: 4096` or higher for those seats.
 5. Log routing metadata: member → provider → model → exec_method (e.g. `feynman → nvidia_nim → deepseek-ai/deepseek-v4-pro → openai_compatible_api`).
 
 **Path B — Auto-routing** (default when no `--models` and no `--no-auto-route`):
@@ -367,18 +367,24 @@ Cursor is a model **aggregator** — one binary (`cursor-agent`) serves GPT-5.x,
 3. Read `base_url` from the seat config (e.g. `https://integrate.api.nvidia.com/v1` for NIM).
 4. Construct an OpenAI-compatible `/chat/completions` call. The Authorization header is passed via process substitution (`-H @<(…)`) so the API key never appears in the process argv (visible to any local user via `ps`):
 ```bash
-curl -sS -X POST "{base_url}/chat/completions" \
+RESP="$(curl -sS --max-time {timeout_seconds} -X POST "{base_url}/chat/completions" \
   -H @<(printf 'Authorization: Bearer %s\n' "${!api_key_env}") \
   -H "Content-Type: application/json" \
   -d "$(jq -nc \
        --arg model "{model}" \
        --arg prompt "{full prompt}" \
        --arg system "You are operating as a council member in a structured deliberation." \
-       '{model: $model, messages: [{role:"system",content:$system},{role:"user",content:$prompt}], temperature: 0.7, max_tokens: 1200}')" \
-  2>/dev/null | jq -r '.choices[0].message.content // empty'
+       --argjson max_tokens {max_tokens} \
+       '{model: $model, messages: [{role:"system",content:$system},{role:"user",content:$prompt}], temperature: 0.7, max_tokens: $max_tokens}')" \
+  2>/dev/null)"
+if [ "$(jq -r '.choices[0].finish_reason // empty' <<<"$RESP" 2>/dev/null)" = "length" ]; then
+  echo "[TRUNCATED] {member} on {provider}/{model} hit max_tokens={max_tokens}" >&2
+fi
+jq -r '.choices[0].message.content // empty' <<<"$RESP" 2>/dev/null
 ```
-5. Capture stdout as the member's output. Timeout: 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
-6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule.
+`{max_tokens}` and `{timeout_seconds}` come from the seat config (defaults `1200` and `90`).
+5. Capture stdout as the member's output. Timeout: the seat's `timeout_seconds`, default 90 seconds (hosted open-weight endpoints are slower than first-party APIs).
+6. If the response is empty or jq fails to extract `.choices[0].message.content`, treat as a failed call and apply the Fallback rule. If `[TRUNCATED]` was logged, keep a non-empty answer but record the seat as `truncated` in the verdict metadata, so a partial position is visible to the Chairman and the user; an empty truncated answer is a failed call.
 
 For auto-detection of NIM specifically (when no `--models` mapping is provided), `scripts/detect-providers.sh` emits an `nvidia_nim` entry with `exec_method: "openai_compatible_api"` and `binary` set to the endpoint URL — the routing algorithm then assigns NIM seats just like any other detected provider.
 
@@ -579,6 +585,7 @@ Required fields:
 - `tools_used`: yes if any subagent invoked Read/Grep/Glob/Bash/WebSearch/WebFetch; no otherwise
 - `provider_count`: from the detection JSON
 - `fallbacks_triggered`: list of `member→provider/model` lines, or `none`
+- `truncated_seats`: list of `member→provider/model` lines whose answer hit `max_tokens` (`[TRUNCATED]`), or `none`
 
 Best-effort fields (write `~unknown` if not available):
 - `input_tokens_estimate`, `output_tokens_estimate` (host-runtime dependent)
@@ -811,6 +818,7 @@ output_tokens_estimate: ~<N>k   # best-effort
 duration_seconds: ~<N>
 provider_count: <N>             # from detect-providers.sh
 fallbacks_triggered: <list of "member→provider/model" entries, or "none">
+truncated_seats: <list of "member→provider/model" entries, or "none">
 ```
 ```
 
@@ -872,6 +880,7 @@ output_tokens_estimate: ~<N>k
 duration_seconds: ~<N>
 provider_count: <N>
 fallbacks_triggered: <list or "none">
+truncated_seats: <list or "none">
 ```
 ```
 
@@ -929,6 +938,7 @@ output_tokens_estimate: ~<N>k
 duration_seconds: ~<N>
 provider_count: <N>
 fallbacks_triggered: <list or "none">
+truncated_seats: <list or "none">
 ```
 ```
 
