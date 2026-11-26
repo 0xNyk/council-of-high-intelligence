@@ -190,6 +190,15 @@ Use `--no-auto-route` to keep native-host defaults. Use `--models <path>` with a
 for an explicit seat map. Provider failure is reported before the seat falls back to the
 native host.
 
+## Shared discussion rules
+
+[`configs/discussion-protocol.yaml`](configs/discussion-protocol.yaml) is the
+canonical configuration for mode stages, panel rules, voting weights and
+thresholds, and discussion limits. All four native Skills read it; the local
+adapter validates and pins it per room. Native host overrides preserve their
+existing differences. The required configuration is installed even without
+`--copy-configs`. New rule values apply to new rooms, not existing rooms.
+
 ## Optional local shared-file transport
 
 Already running agents can join the same local council without starting one
@@ -203,9 +212,12 @@ another, forwarding prompts, or using provider APIs for communication.
 ```
 
 Each seat is an independent session on the same machine. The opt-in adapter
-uses Python 3.9+ (macOS/Linux), a shared append-only log, a rebuildable state
+uses Python 3.9+ (macOS/Linux) with the optional PyYAML dependency described
+in the runbook, a shared append-only log, a rebuildable state
 snapshot and OS file locks. The canonical persona resources and rules are
-pinned at room creation. Native provider routing stays unchanged. For standalone
+pinned at room creation. The local Core and Adapter are modules in this
+repository, with no external LADP package to download. Native provider routing
+stays unchanged. For standalone
 Skill managers, export a self-contained directory with
 `python3 scripts/export-council-skill.py --output /tmp/council-export --host codex`.
 See the
@@ -250,9 +262,11 @@ SKILL.codex.md              Codex host mirror
 SKILL.gemini.md             Gemini CLI host mirror
 SKILL.opencode.md           OpenCode host mirror
 agents/                     18 grounded persona contracts
-configs/                    provider and model-routing examples
+configs/                    shared protocol and provider routing configuration
 demos/                      sample sessions and verdict template
 scripts/                    detection, conversion, and validation tools
+skills/council/core/        generic LADP Core
+skills/council/adapters/    optional local transport adapter
 assets/                     brand system and README visuals
 install.sh                  multi-host installer
 ```

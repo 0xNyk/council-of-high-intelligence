@@ -15,8 +15,11 @@ from unittest.mock import patch
 ADAPTER = Path(__file__).resolve().parents[1]
 CLI = ADAPTER / "adapter.py"
 sys.path.insert(0, str(ADAPTER))
+sys.path.insert(0, str(ADAPTER.parents[1] / "core"))
 import policy
 import resources
+import protocol
+import yaml
 from ladp_core.metadata import DiscussionStore, DiscussionMetadata
 
 
@@ -270,6 +273,8 @@ class AdapterTest(unittest.TestCase):
         code = """
 import os,sys
 sys.path.insert(0,sys.argv[1])
+from pathlib import Path
+sys.path.insert(0,str(Path(sys.argv[1]).parents[1] / "core"))
 from ladp_core.metadata import DiscussionMetadata
 import adapter
 DiscussionMetadata.publish=lambda *args: os._exit(73)
@@ -445,7 +450,7 @@ adapter.main()
         self.act(room, room, "advance")
         self.act(room, b, "leave", "--content", "disconnect")
         self.act(room, replacement, "commit", "--content", "A")
-        self.assertIn("fewer than two", self.act(room, room, "advance", ok=False))
+        self.assertIn("fewer than 2", self.act(room, room, "advance", ok=False))
         self.act(room, room, "abort", "--content", "not enough members")
 
     def test_corrupt_room_does_not_break_other_room_discovery(self):
@@ -480,6 +485,12 @@ adapter.main()
             self.assertFalse(any(p.is_symlink() for p in dest.rglob("*")))
             self.assertFalse((dest / "adapters/ladp/tests").exists())
             self.assertFalse((dest / "configs/provider-model-slots.local.yaml").exists())
+            self.assertEqual((dest / "configs/discussion-protocol.yaml").read_bytes(),
+                             protocol.CONFIG.read_bytes())
+            self.assertTrue((dest / "core/ladp_core/metadata.py").is_file())
+            self.assertTrue((dest / "adapters/ladp/requirements.txt").is_file())
+            self.assertFalse((dest / "adapters/ladp/ladp_core").exists())
+            self.assertIn("configs/discussion-protocol.yaml", (dest / "SKILL.md").read_text())
             paths.append(dest / "adapters/ladp/adapter.py")
         room = self.call("create", "--name", "host", "--title", "exported",
                          "--topic", "test", "--mode", "quick", "--members", "ada,feynman",
@@ -545,19 +556,106 @@ adapter.main()
         self.assertEqual(sum(p.returncode == 0 for p in values), 1)
         self.assertEqual(self.status(room)["phase"], "commit")
 
+    def export_cli(self, name):
+        repo = ADAPTER.parents[3]
+        dest = self.root / "exports" / name
+        proc = subprocess.run([sys.executable, str(repo / "scripts/export-council-skill.py"),
+                               "--output", str(dest), "--host", "codex"],
+                              env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        return dest / "adapters/ladp/adapter.py", dest / "configs/discussion-protocol.yaml"
+
+    def create_exported(self, cli, mode="quick"):
+        return self.call("create", "--name", "host", "--title", "YAML test", "--topic", "test",
+                         "--mode", mode, "--members", "ada,feynman,torvalds", cli=cli)
+
+    def start_exported(self, room):
+        seats = [self.join(room, seat) for seat in ("ada", "feynman", "torvalds")]
+        chair = self.join(room, "chairman")
+        self.act(room, room, "advance")
+        return seats, chair
+
+    def test_yaml_threshold_change_affects_new_rooms_not_existing_rooms(self):
+        cli, file = self.export_cli("threshold")
+        original = protocol.load(file)
+        old_room = self.create_exported(cli)
+        updated = protocol.load(file)
+        updated["voting"]["consensus_threshold"] = {"numerator": 3, "denominator": 4}
+        file.write_text(yaml.safe_dump(updated, sort_keys=False), encoding="utf-8")
+        self.assertEqual(self.call("protocol", cli=cli), updated)
+        new_room = self.create_exported(cli)
+        self.assertNotEqual(old_room["protocol_hash"], new_room["protocol_hash"])
+        # Removing the current YAML must not break an already pinned discussion.
+        file.unlink()
+        for room, config, expected in ((old_room, original, "a"), (new_room, updated, None)):
+            self.assertEqual(self.view(room, room)["protocol"], config)
+            members, chair = self.start_exported(room)
+            self.commit_reveal(room, members)
+            for m, vote in zip(members, ("A", "A", "B")):
+                self.vote(room, m, vote)
+            self.act(room, room, "advance")
+            result = self.status(room)["result"]
+            threshold = config["voting"]["consensus_threshold"]
+            self.assertEqual(result["threshold_fraction"],
+                             f'{threshold["numerator"]}/{threshold["denominator"]}')
+            self.assertEqual(result["consensus"], expected)
+            self.finish(room, chair)
+
+    def test_yaml_optional_stage_and_debate_order_control(self):
+        cli, file = self.export_cli("stages")
+        config = protocol.load(file)
+        mode = config["modes"]["full"]
+        mode["stages"].remove("enforcement")
+        mode["anonymous_stages"].remove("enforcement")
+        mode["sequential_debate_max_panel"] = 0
+        file.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+        room = self.create_exported(cli, "full")
+        members, chair = self.start_exported(room)
+        for m in members:
+            self.act(room, m, "submit", "--content", "frame")
+        self.act(room, room, "advance")
+        self.commit_reveal(room, members)
+        for m in members:
+            v = self.view(room, m)
+            self.assertTrue(v["eligible"])
+            self.assertEqual(v["peer_view"], "pseudonymous")
+            self.assertNotIn("enforce", v["transport_phases"])
+        self.assertNotIn("Post-Round Enforcement Scan", self.view(room, room)["reference"])
+        # A member later in panel order may now submit first.
+        for m in reversed(members):
+            self.act(room, m, "submit", "--content", "challenge")
+        self.act(room, room, "advance", "--enforcement", "unexpected", ok=False)
+        self.act(room, room, "advance")
+        self.assertEqual(self.status(room)["phase"], "position")
+        for m in members:
+            self.vote(room, m, "A")
+        self.act(room, room, "advance")
+        self.finish(room, chair)
+
+    def test_invalid_yaml_never_publishes_room(self):
+        cli, file = self.export_cli("invalid")
+        for raw in ("schema_version: 1\nschema_version: 1\n",
+                    "!!python/object/apply:os.system ['false']",
+                    "schema_version: [unclosed", "root: &a [*a]"):
+            file.write_text(raw, encoding="utf-8")
+            result = self.call("create", "--name", "host", "--title", "bad", "--topic", "test",
+                               "--mode", "quick", "--members", "ada,feynman", cli=cli, ok=False)
+            self.assertIn("protocol", result)
+            self.assertEqual(self.store.ids(), [])
+
     def test_upstream_contract_drift_fails_closed(self):
         source = self.root / "modified-upstream"
         shutil.copytree(resources.source(), source, symlinks=False,
                         ignore=shutil.ignore_patterns(".git", "skills", "__pycache__"))
         path = source / "SKILL.md"
         raw = path.read_text()
-        changed = raw.replace("W_option ≥ (2/3) × W_total", "W_option ≥ (1/2) × W_total")
+        changed = raw.replace("The highest-weight option clearing the configured threshold wins.", "The lowest-weight option clearing the configured threshold wins.")
         self.assertNotEqual(raw, changed)
         path.write_text(changed)
         from ladp_core.storage import ProtocolError
         with patch("resources.source", return_value=source):
             with self.assertRaisesRegex(ProtocolError, "upstream Council protocol changed"):
-                resources.pin(["ada", "feynman"])
+                resources.pin(["ada", "feynman"], policy.VERSION)
 
     def test_incompatible_executable_policy_does_not_mutate_history(self):
         room = self.create("quick", "ada,feynman")

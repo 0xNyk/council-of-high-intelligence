@@ -4,17 +4,21 @@ The LADP core calls this module through its projection interface; it has no
 knowledge of Council, roles or deliberation modes.
 """
 import hashlib
+import math
+from fractions import Fraction
 from pathlib import Path
 from ladp_core.storage import require
+from ladp_core.metadata import checksum
+import protocol
 
-VERSION = 2
+VERSION = 3
 TERMINAL = ("closed", "aborted")
 
 
 def implementation_hash():
     """Pin executable policy, not merely its prose inputs."""
     digest = hashlib.sha256()
-    for name in ("policy.py", "adapter.py", "resources.py"):
+    for name in ("policy.py", "adapter.py", "resources.py", "protocol.py"):
         digest.update(name.encode("ascii"))
         digest.update(Path(__file__).with_name(name).read_bytes())
     return digest.hexdigest()
@@ -25,12 +29,25 @@ def check_version(data):
             and data.get("implementation_hash") == implementation_hash(),
             "incompatible Council policy; use the adapter version that created this room")
 
-PHASES = {
-    "full": ("lobby", "restate", "commit", "reveal", "debate", "enforce", "position", "synthesis"),
-    "quick": ("lobby", "commit", "reveal", "position", "synthesis"),
-    "duo": ("lobby", "commit", "reveal", "debate", "position", "synthesis"),
-}
-CONFIDENCE = {"high": 4, "med": 3, "low": 2}
+
+def rules(state):
+    return state["protocol"]["modes"][state["mode"]]
+
+
+def phases(state):
+    return protocol.transport_phases(state["protocol"], state["mode"])
+
+
+def weighted(state):
+    return rules(state)["voting"] == "weighted"
+
+
+def sequential_debate(state):
+    return len(state["panel"]) <= rules(state)["sequential_debate_max_panel"]
+
+
+def anonymous_stage(state):
+    return protocol.business_stage(state["phase"]) in rules(state)["anonymous_stages"]
 
 
 def digest(content, nonce):
@@ -41,8 +58,11 @@ def initial(first):
     d = first["data"]
     require(first["type"] == "created", "missing creation event")
     check_version(d)
+    require(checksum(d["resources"]) == d["policy_hash"], "pinned policy checksum mismatch")
+    config = protocol.validate(d["resources"]["protocol"])
     return {"policy_version": VERSION, "title": d["title"], "topic": d["topic"],
             "mode": d["mode"], "panel": d["panel"], "expert": d["expert"],
+            "protocol": config, "protocol_hash": checksum(config),
             "policy_hash": d["policy_hash"], "implementation_hash": d["implementation_hash"],
             "coordinator": first["actor"],
             "members": {}, "phase": "lobby", "submissions": {}, "commits": {},
@@ -80,7 +100,7 @@ def apply(state, record):
         state["submissions"][actor] = record["seq"]
     elif kind == "submission":
         state["submissions"][actor] = record["seq"]
-        if data["phase"] == "position" and state["mode"] != "duo":
+        if data["phase"] == "position" and weighted(state):
             state["votes"][actor] = {k: data[k] for k in ("stance", "confidence", "dealbreaker")}
         if data["phase"] == "synthesis":
             state["verdict_seq"] = record["seq"]
@@ -149,7 +169,7 @@ def can_submit(state, actor):
     phase = state["phase"]
     require(phase not in TERMINAL and phase != "lobby", "no submission in this phase")
     require(seat in pending_seats(state), "not eligible or already submitted")
-    if phase == "debate" and state["mode"] == "full" and len(state["panel"]) <= 4:
+    if phase == "debate" and sequential_debate(state):
         require(seat == pending_seats(state)[0], "wait for earlier cross-examination seat")
     return seat
 
@@ -159,7 +179,7 @@ def normalize(label):
 
 
 def tally(state, aliases):
-    if state["mode"] == "duo":
+    if not weighted(state):
         require(not aliases, "duo does not use weighted voting")
         return {"kind": "dialectic", "consensus": None}
     active = occupied(state)
@@ -175,8 +195,16 @@ def tally(state, aliases):
         mapping[old] = new
     require(not any(new in mapping and mapping[new] != new for new in mapping.values()),
             "alias chains are not supported")
-    weights = {seat: 6 if seat == state["expert"] else 4 for seat in state["panel"]}
-    total = sum(weights.values()) * 4
+    voting = state["protocol"]["voting"]
+    base = Fraction(str(voting["member_weight"]))
+    expert = Fraction(str(voting["expert_weight"]))
+    confidence = {k: Fraction(str(v)) for k, v in voting["confidence_weights"].items()}
+    weights = {seat: expert if seat == state["expert"] else base for seat in state["panel"]}
+    # Preserve the existing 1/16 vote display unit for default rules, expanding
+    # to an exact common denominator for other configured rational weights.
+    scale = math.lcm(16, *(w.denominator for w in weights.values()),
+                    *((w * factor).denominator for w in weights.values() for factor in confidence.values()))
+    total = int(sum(weights.values()) * scale)
     scores, ballots = {}, []
     for actor, vote in state["votes"].items():
         seat = state["members"][actor]["seat"]
@@ -185,37 +213,43 @@ def tally(state, aliases):
             continue
         label = normalize(vote["stance"])
         canonical = mapping.get(label, label)
-        units = weights[seat] * CONFIDENCE[vote["confidence"]]
+        units = int(weights[seat] * confidence[vote["confidence"]] * scale)
         ballots.append(dict(vote, seat=seat, canonical=canonical,
                             units=units if canonical != "abstain" else 0))
         if canonical != "abstain":
             scores[canonical] = scores.get(canonical, 0) + units
-    winners = [label for label, units in scores.items() if units * 3 >= total * 2]
-    return {"kind": "weighted", "unit": "1/16 vote", "total_units": total,
-            "threshold_fraction": "2/3", "scores": scores, "ballots": ballots,
+    threshold = voting["consensus_threshold"]
+    numerator, denominator = threshold["numerator"], threshold["denominator"]
+    winners = [label for label, units in scores.items() if units * denominator >= total * numerator]
+    return {"kind": "weighted", "unit": f"1/{scale} vote", "total_units": total,
+            "threshold_fraction": f"{numerator}/{denominator}", "scores": scores, "ballots": ballots,
             "aliases": mapping, "withdrawals": dict(state["withdrawals"]),
             "consensus": winners[0] if len(winners) == 1 else None}
 
 
 def advance(state, args):
-    phase, mode = state["phase"], state["mode"]
-    require(phase in PHASES[mode] and phase != "synthesis", "cannot advance from " + phase)
+    phase = state["phase"]
+    sequence = phases(state)
+    require(phase in sequence and phase != "synthesis", "cannot advance from " + phase)
+    next_phase = sequence[sequence.index(phase) + 1]
+    enforcement_gate = phase == "debate" and next_phase == "enforce"
     require(not pending_seats(state), "pending seats: " + ", ".join(pending_seats(state)))
-    require(len(active_panel(state)) >= 2, "fewer than two active panel seats; abort the room")
+    minimum = state["protocol"]["panel"]["min_active"]
+    require(len(active_panel(state)) >= minimum, f"fewer than {minimum} active panel seats; abort the room")
     require(not args.fallback_reason or phase == "lobby", "start fallback belongs in lobby")
     require(args.fallback_reason is None or args.fallback_reason.strip(), "fallback reason must not be blank")
-    require(not args.followup or (mode == "full" and phase == "debate"),
+    require(not args.followup or enforcement_gate,
             "enforcement follow-ups belong after full cross-examination")
-    require(not args.enforcement or (mode == "full" and phase == "debate"),
+    require(not args.enforcement or enforcement_gate,
             "enforcement scan belongs after full cross-examination")
     require(not args.alias or phase == "position", "stance aliases belong after final positions")
     if phase == "lobby":
         chair_joined = "chairman" in occupied(state)
         require(chair_joined or args.fallback_reason, "chairman must join or record explicit fallback")
         require(not (chair_joined and args.fallback_reason), "a chairman is already seated")
-        return {"phase": "restate" if mode == "full" else "commit",
+        return {"phase": next_phase,
                 "fallback": args.fallback_reason}
-    if phase == "debate" and mode == "full":
+    if enforcement_gate:
         require(args.enforcement and args.enforcement.strip(), "record the upstream enforcement scan")
         followups = {}
         for item in args.followup or []:
@@ -223,8 +257,8 @@ def advance(state, args):
             require(sep and seat in active_panel(state) and reason.strip() and seat not in followups,
                     "followup must be a unique panel seat=instruction")
             followups[seat] = reason
-        return {"phase": "enforce" if followups else "position", "followups": followups,
+        return {"phase": next_phase if followups else sequence[sequence.index(next_phase) + 1], "followups": followups,
                 "enforcement_checks": args.enforcement}
     if phase == "position":
-        return {"phase": "synthesis", "result": tally(state, args.alias)}
-    return {"phase": PHASES[mode][PHASES[mode].index(phase) + 1]}
+        return {"phase": next_phase, "result": tally(state, args.alias)}
+    return {"phase": next_phase}

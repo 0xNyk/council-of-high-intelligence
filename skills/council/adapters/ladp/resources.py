@@ -1,6 +1,7 @@
 """Load upstream personas and canonical rules, pin them in each room."""
 import json
 import re
+import protocol
 from pathlib import Path
 
 from ladp_core.metadata import checksum
@@ -56,7 +57,8 @@ def contract_hash(rules):
     return checksum({title: section(rules, title) for title in CONTRACT_SECTIONS})
 
 
-def pin(seats, policy_version=2):
+def pin(seats, policy_version, config=None):
+    config = protocol.load() if config is None else protocol.validate(config)
     root = source()
     rules = (root / "SKILL.md").read_text(encoding="utf-8")
     manifest = json.loads((ROOT / "compatibility.json").read_text(encoding="utf-8"))
@@ -83,8 +85,9 @@ def pin(seats, policy_version=2):
         for phase in ("restate", "commit", "debate", "enforce", "position", "synthesis"):
             for host in (False, True):
                 key = reference_key(mode, phase, host)
-                references[key] = extract_reference(rules, mode, phase, host)
-    return {"contract_hash": contract, "personas": personas, "references": references}
+                references[key] = extract_reference(rules, mode, phase, host, config["modes"][mode]["stages"])
+    return {"contract_hash": contract, "personas": personas, "references": references,
+            "protocol": config}
 
 
 def reference_key(mode, phase, coordinator):
@@ -95,7 +98,7 @@ def rules_for(resource, mode, phase, coordinator=False):
     return resource["references"].get(reference_key(mode, phase, coordinator), "")
 
 
-def extract_reference(text, mode, phase, coordinator=False):
+def extract_reference(text, mode, phase, coordinator, stages):
     if phase == "restate":
         titles = ["STEP 1.5:"]
     elif phase == "commit":
@@ -107,7 +110,7 @@ def extract_reference(text, mode, phase, coordinator=False):
         titles = ["QUICK STEP 1:" if mode == "quick" else "DUO STEP 1:"]
     elif phase == "debate":
         titles = ["STEP 3:" if mode == "full" else "DUO STEP 2:"]
-        if coordinator and mode == "full":
+        if coordinator and mode == "full" and "enforcement" in stages:
             titles.append("STEP 4:")
     elif phase == "enforce":
         titles = ["STEP 4:"]

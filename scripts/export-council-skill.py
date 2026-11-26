@@ -20,7 +20,7 @@ def export(output, host):
     configs = output / "configs"
     configs.mkdir()
     config_source = REPO / "configs"
-    for path in [config_source / "auto-route-defaults.yaml",
+    for path in [config_source / "auto-route-defaults.yaml", config_source / "discussion-protocol.yaml",
                  *sorted(config_source.glob("provider-model-slots*.example.yaml"))]:
         shutil.copy2(path, configs / path.name)
     scripts = output / "scripts"
@@ -31,11 +31,14 @@ def export(output, host):
     # Copy the same allowlisted files as the native installer. Do not export
     # tests, local config overrides, scratch files or arbitrary user data.
     dest = output / "adapters/ladp"
-    (dest / "ladp_core").mkdir(parents=True)
-    for name in ("README.md", "adapter.py", "policy.py", "resources.py", "compatibility.json"):
+    dest.mkdir(parents=True)
+    core_source = REPO / "skills/council/core/ladp_core"
+    core_dest = output / "core/ladp_core"
+    core_dest.mkdir(parents=True)
+    for name in ("README.md", "adapter.py", "policy.py", "resources.py", "protocol.py", "compatibility.json", "requirements.txt"):
         shutil.copy2(adapter / name, dest / name)
-    for name in ("__init__.py", "storage.py", "metadata.py", "sessions.py", "release.json", "LICENSE"):
-        shutil.copy2(adapter / "ladp_core" / name, dest / "ladp_core" / name)
+    for name in ("__init__.py", "storage.py", "metadata.py", "sessions.py", "LICENSE"):
+        shutil.copy2(core_source / name, core_dest / name)
     pinned = dest / "resources"
     pinned.mkdir()
     shutil.copy2(REPO / "SKILL.md", pinned / "SKILL.md")

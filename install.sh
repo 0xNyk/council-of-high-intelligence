@@ -179,12 +179,15 @@ install_ladp_adapter() {
   local destination="$1/adapters/ladp"
   local source="${SCRIPT_DIR}/skills/council/adapters/ladp"
   local file
-  run_cmd mkdir -p "${destination}/ladp_core" "${destination}/resources/agents"
-  for file in README.md adapter.py policy.py resources.py compatibility.json; do
+  local core="${SCRIPT_DIR}/skills/council/core/ladp_core"
+  run_cmd mkdir -p "$1/core/ladp_core" "$1/configs" "${destination}/resources/agents"
+  # Protocol rules are mandatory for native and LADP, unlike provider configs.
+  run_cmd install -m 0644 "${SCRIPT_DIR}/configs/discussion-protocol.yaml" "$1/configs/discussion-protocol.yaml"
+  for file in README.md adapter.py policy.py resources.py protocol.py compatibility.json requirements.txt; do
     run_cmd install -m 0644 "${source}/${file}" "${destination}/${file}"
   done
-  for file in __init__.py storage.py sessions.py metadata.py release.json LICENSE; do
-    run_cmd install -m 0644 "${source}/ladp_core/${file}" "${destination}/ladp_core/${file}"
+  for file in __init__.py storage.py sessions.py metadata.py LICENSE; do
+    run_cmd install -m 0644 "${core}/${file}" "$1/core/ladp_core/${file}"
   done
   # Copy the canonical source resources, not a separately maintained mirror.
   run_cmd install -m 0644 "${SCRIPT_DIR}/SKILL.md" "${destination}/resources/SKILL.md"

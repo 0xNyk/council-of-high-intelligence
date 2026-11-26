@@ -11,14 +11,17 @@ import time
 import uuid
 from pathlib import Path
 
+# Resolve the adjacent in-tree Core package, independent of caller cwd.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "core"))
 import policy
 import resources
+import protocol
 from ladp_core import API_VERSION
 from ladp_core.metadata import CommittedRequest, DiscussionStore, checksum
 from ladp_core.sessions import SessionStore
 from ladp_core.storage import ID_RE, LockTimeout, ProtocolError, require
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 MAX_CONTENT = 256 * 1024
 
 
@@ -44,17 +47,16 @@ def authenticate(state, actor, session, discussion):
 def pseudonymous_phase(state):
     if len(policy.active_panel(state)) < 3:
         return False
-    return ((state["mode"] == "full" and len(state["panel"]) > 4
-             and state["phase"] in ("debate", "enforce"))
-            or (state["mode"] == "quick" and len(state["panel"]) >= 3
-                and state["phase"] == "position"))
+    return policy.anonymous_stage(state) and not (
+        state["phase"] in ("debate", "enforce") and policy.sequential_debate(state))
+
 
 
 def status(state, discussion, public=True):
     result = {"discussion": discussion, **{k: state[k] for k in
             ("title", "topic", "mode", "panel", "expert", "phase", "policy_hash",
              "last_seq", "updated_at", "fallback", "result", "verdict_seq",
-             "enforcement_checks", "withdrawals")},
+             "enforcement_checks", "withdrawals", "protocol_hash")},
             "members": [{k: m[k] for k in ("seat", "name", "active")}
                         for m in state["members"].values()],
             "pending": policy.pending_seats(state),
@@ -112,7 +114,7 @@ def view(records, actor, sessions, discussion):
     resource = config["resources"]
     require(checksum(resource) == state["policy_hash"], "pinned policy checksum mismatch")
     chair, host = seat == "chairman", seat == "coordinator"
-    sequential = mode == "full" and len(state["panel"]) <= 4
+    sequential = policy.sequential_debate(state)
     anonymous = not (host or chair) and pseudonymous_phase(state)
     named_peer_phase = not pseudonymous_phase(state) and (
         (mode == "full" and phase in ("debate", "enforce"))
@@ -120,13 +122,20 @@ def view(records, actor, sessions, discussion):
     result = status(state, discussion, public=False)
     reference = resources.rules_for(resource, mode, phase, host)
     if named_peer_phase:
-        reference = ("LOCAL TRANSPORT OVERRIDE: this panel is NAMED because its order or size reveals identity. "
+        reference = ("LOCAL TRANSPORT OVERRIDE: this peer view is NAMED under the configured rule or local anonymity limitations. "
                      "Use seat names, not Member labels; ignore the upstream anonymity instructions. "
                      "All other analytical and anti-conformity rules remain in force.\n\n" + reference)
     if phase == "synthesis":
         reference = ("LOCAL TRANSPORT OVERRIDE: report the authoritative decision_key and result separately; "
                      "submit the same decision_key using --decision. The report is non-authoritative analysis. "
                      "Do not replace the computed outcome or votes.\n\n" + reference)
+    result["protocol"] = state["protocol"]
+    result["business_stage"] = protocol.business_stage(phase)
+    result["transport_phases"] = policy.phases(state)
+    if reference:
+        reference = ("Use the pinned protocol object in this view as the authoritative rules. "
+                     "Resolve word limits and enforcement counts from that object; do not read a newer local configuration. "
+                     "Canonical rules apply, not native host overrides.\n\n" + reference)
     result.update({"self": {"actor": actor, "seat": seat, "name": member["name"]},
                    "persona": resource["personas"].get(seat), "reference": reference,
                    "eligible": seat in policy.pending_seats(state),
@@ -204,13 +213,15 @@ def view(records, actor, sessions, discussion):
 
 def run(args):
     require(API_VERSION == 1, "incompatible LADP Core API")
+    command = args.command
+    if command == "roster":
+        return resources.roster()
+    if command == "protocol":
+        return protocol.load()
     root = Path(os.environ.get("COUNCIL_LADP_HOME", str(Path.home() / ".ladp" /
                                                         "council" / "discussions"))).expanduser()
     store = DiscussionStore(root, policy)
     sessions = SessionStore(root, root=root / ".sessions")
-    command = args.command
-    if command == "roster":
-        return resources.roster()
     if command == "create":
         require(ID_RE.fullmatch(args.request_id), "request ID must be 32 lowercase hex characters")
         discussion = args.request_id
@@ -224,17 +235,23 @@ def run(args):
             actor = previous.receipt["actor"]
             authenticate(state, actor, sessions, discussion)
             return {"discussion": discussion, "actor": actor, "seat": "coordinator",
-                    "phase": state["phase"], "policy_hash": state["policy_hash"], "replayed": True}
+                    "phase": state["phase"], "policy_hash": state["policy_hash"],
+                    "protocol_hash": state["protocol_hash"], "replayed": True}
 
         if store.path(discussion).exists():
             return existing()
         seats = [s.strip() for s in args.members.split(",")] if args.members else resources.roster()
-        require(2 <= len(seats) <= len(resources.roster()), "select at least two distinct members")
-        require(args.mode != "duo" or len(seats) == 2, "duo requires exactly two seats")
+        config = protocol.load()
+        mode_rule = config["modes"][args.mode]
+        minimum = config["panel"]["min_active"]
+        require(minimum <= len(seats) <= min(len(resources.roster()), 26),
+                f"select at least {minimum} distinct members within the available roster (maximum 26 labels)")
+        require("panel_size" not in mode_rule or len(seats) == mode_rule["panel_size"],
+                "incorrect panel size for mode")
         require(not args.expert or args.expert in seats, "expert must be a panel seat")
-        require(args.mode != "duo" or not args.expert, "duo has no weighted seat")
+        require(mode_rule["voting"] == "weighted" or not args.expert, "dialectic has no weighted seat")
         require(args.title.strip() and args.topic.strip(), "title and topic required")
-        resource = resources.pin(seats, policy.VERSION)
+        resource = resources.pin(seats, policy.VERSION, config)
         labels = ["Member " + chr(ord("A") + i) for i in range(len(seats))]
         secrets.SystemRandom().shuffle(labels)
         actor, token, member = identity(args.name, "coordinator")
@@ -250,7 +267,8 @@ def run(args):
             # Another exact retry published the room atomically.
             return existing()
         return {"discussion": discussion, "actor": actor, "seat": "coordinator",
-                "phase": "lobby", "policy_hash": checksum(resource), "replayed": False}
+                "phase": "lobby", "policy_hash": checksum(resource),
+                "protocol_hash": checksum(config), "replayed": False}
     if command in ("list", "sessions"):
         rows = []
         for d in ([args.discussion] if command == "sessions" and args.discussion else store.ids()):
@@ -372,9 +390,9 @@ def run(args):
             data["decision_ack"] = args.decision
         else:
             require(args.decision is None, "decision acknowledgement belongs in synthesis")
-        if phase == "position" and state["mode"] != "duo":
+        if phase == "position" and policy.weighted(state):
             require(args.stance and policy.normalize(args.stance) and
-                    len(args.stance) <= 200 and args.confidence and args.dealbreaker,
+                    len(args.stance) <= 200 and args.confidence in state["protocol"]["voting"]["confidence_weights"] and args.dealbreaker,
                     "position requires --stance, --confidence and --dealbreaker")
             data.update(stance=args.stance, confidence=args.confidence, dealbreaker=args.dealbreaker)
         else:
@@ -405,12 +423,13 @@ def parser():
     p.add_argument("--version", action="version", version="Council LADP " + VERSION)
     commands = p.add_subparsers(dest="command", required=True)
     commands.add_parser("roster")
+    commands.add_parser("protocol", help="validate and display the canonical YAML rules")
     create = commands.add_parser("create")
     create.add_argument("--request-id", required=True, help="stable 32-hex ID for the new discussion")
     create.add_argument("--title", required=True)
     create.add_argument("--topic", required=True)
     create.add_argument("--name", required=True)
-    create.add_argument("--mode", choices=policy.PHASES, default="full")
+    create.add_argument("--mode", choices=protocol.MODES, default="full")
     create.add_argument("--members", help="comma-separated upstream persona slugs; omit for all")
     create.add_argument("--expert", help="domain-weight seat, fixed before analysis")
     commands.add_parser("list").add_argument("--all", action="store_true")
@@ -445,7 +464,7 @@ def parser():
             c.add_argument("--alias", action="append", help="submitted label=canonical label")
         if action == "submit":
             c.add_argument("--stance")
-            c.add_argument("--confidence", choices=policy.CONFIDENCE)
+            c.add_argument("--confidence", choices=protocol.CONFIDENCES)
             c.add_argument("--dealbreaker", choices=("yes", "no"))
     return p
 

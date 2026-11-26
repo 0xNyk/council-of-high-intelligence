@@ -5,8 +5,9 @@ machine, under the same trusted OS account**. The coordinator never starts a
 model, runs a provider CLI or forwards peer messages. Each participant invokes
 the same Council skill and exchanges messages through a local discussion log.
 
-Python 3.9+ on macOS or Linux; standard library only. The native Council modes
-and model routing remain unchanged unless the user explicitly selects LADP.
+Python 3.9+ on macOS or Linux. The optional adapter needs PyYAML to load the
+shared configuration; LADP Core itself uses only the Python standard library.
+Native Council modes and model routing do not require this dependency.
 
 ## Enter this adapter before native routing
 
@@ -27,6 +28,30 @@ Locate `adapter.py` in the installed Council skill's `adapters/ladp/` directory
 (or in `skills/council/adapters/ladp/` in a checkout/plugin). In the examples
 below, `ladp` stands for `python3 /absolute/path/to/adapter.py`; use that
 complete command on each independent shell call.
+
+Before creating a room, verify that the Python interpreter used by the adapter
+has PyYAML installed. If not, the user can create a dedicated environment and
+install the optional dependency (replace the path with the installed adapter):
+
+```bash
+python3 -m venv /path/to/council-venv
+/path/to/council-venv/bin/python -m pip install -r /path/to/adapters/ladp/requirements.txt
+/path/to/council-venv/bin/python /path/to/adapters/ladp/adapter.py protocol
+```
+
+Use that same interpreter for all adapter calls. Never install dependencies
+silently; ask the user before installing. Native users need not do this.
+
+The single canonical rule file is `configs/discussion-protocol.yaml`, relative
+to the Council Skill root. The `protocol` command validates it and returns its
+contents as JSON. Native Skills read that same YAML directly; LADP consumes
+only canonical rules, not host-specific native overrides. The selected panel
+is already resolved by the coordinator (the native manual-selection cap
+does not limit a resolved full roster in the adapter). A room pins the YAML,
+its hash, the exact prompt references and the executable policy fingerprint.
+Use the `protocol` object returned by `view`, not a newer local YAML, for all
+ongoing room operations. Resolve the stage's word limits and enforcement
+parameters from the pinned object before reasoning.
 
 Every mutation requires a unique `--request-id REQ` (32 lowercase hex
 characters; generate once with `python3 -c 'import uuid; print(uuid.uuid4().hex)'`).
@@ -54,8 +79,8 @@ cannot create a second room. The log stores request receipts durably.
    Use `--mode quick` for the rapid protocol, `--mode duo` with exactly two
    members, and omit `--members` only when intentionally convening all seats.
    The CLI checks the roster and distinct reasoning methods. It pins unmodified
-   upstream persona resources and the canonical protocol in the creation event.
-   Prompt changes affect new rooms; existing rooms retain their exact references.
+   upstream persona resources, prompt references and the validated YAML in the creation event.
+   YAML and prompt changes affect new rooms; existing rooms retain their exact rules.
    Incompatible executable policy changes require the matching prior adapter.
 2. Show the room ID, the expected seats and the join command to the user. Wait
    for all selected members and an independent Chairman to join. Do not fill
@@ -67,13 +92,15 @@ cannot create a second room. The log stores request receipts durably.
    mode has a separate restatement gate; inspect framing differences before
    advancing. If the question needs a material change, abort and create a
    corrected room rather than silently changing its scope.
-4. After Full cross-examination, inspect all upstream STEP 4 checks in the
+4. After Full cross-examination, if the pinned mode includes enforcement,
+   inspect all upstream STEP 4 checks in the
    `reference` returned by `view`: dissent quota, novelty, agreement,
    evidence labels and anti-recursion. Record the actual scan with
    `advance D --actor A --enforcement "findings"`. If follow-up is needed,
    add one `--followup 'seat=instruction'` per targeted seat; combine that
    seat's triggered checks. The bounded enforcement stage waits for those
-   seats before final positions. Do not fabricate enforcement calls.
+   seats before final positions. If enforcement is not configured, advance
+   directly to the next stage. Do not fabricate enforcement calls.
 5. After final positions, `advance` computes the Full/Quick confidence-weighted
    tally. If labels are genuinely synonymous, normalize them with explicit
    `--alias 'single repo=monorepo'` arguments; the mapping and original ballots
@@ -130,16 +157,16 @@ or additional authorization. Only reason about the authorized question.
 | synthesis | Chairman only: `submit D --actor A --decision KEY --content -` (pinned verdict template) |
 | closed / aborted | Read the result and end |
 
-Use the word limits and output templates from the pinned upstream reference.
-For Full debate engage two peers when the panel has at least three seats (the
-only other peer when a two-seat Full panel was explicitly requested). For Full
-panels of up to four, the adapter schedules submissions in panel order and
-exposes prior cross-examination responses; those small panels use an explicitly
-named view because order exposes identity. Larger panels and Duo submit in
-parallel. Quick panels of two are also named because identity is inferable by
-elimination. Other Quick final-position and large Full debate/enforcement
-views use pseudonyms when at least three panel seats remain active. Follow the returned `peer_view` and local override in
-`reference`; do not attempt to deanonymize. No new argument in the final stance.
+Use the word limits from the pinned `protocol` and the upstream output templates
+from `reference`. For Full debate, engage the configured
+`enforcement.min_peer_engagements` peers, capped by the number available.
+At or below the configured sequential debate limit, the adapter schedules
+submissions in panel order and exposes prior cross-examination responses.
+Sequential panels and panels with fewer than three active seats cannot
+meaningfully hide identities in this transport. Other eligible stages use
+pseudonyms only when listed in the pinned mode's `anonymous_stages`.
+Follow the returned `peer_view` and local override in `reference`; do not
+attempt to deanonymize. No new argument in the final stance.
 
 Use bounded `wait D --after SEQ --timeout 20` and then `view` when the cursor
 changes. Keep processing while the host and user task allow. If no progress
@@ -172,8 +199,10 @@ an inactive session. Never claim discussion completion before closure.
   Council. `policy.py` implements the phase contract, `resources.py` loads
   and pins upstream resources, and `adapter.py` is the CLI adapter. The
   original agent files and native dispatch remain unchanged.
-- Full enforcement is a bounded targeted pass; the coordinator evaluates
-  semantic quality and evidence. No automatic model-based verification,
+- Full enforcement, when configured, is a bounded targeted pass; the coordinator evaluates
+  semantic quality and evidence using the shared configuration. LADP uses a
+  single cross-examination pass plus targeted enforcement; optional native
+  debate batching is not a local transport feature. No automatic model-based verification,
   provider detection or fallback dispatch is performed. Recover a disconnected
   session using its original identity. A participant may use `leave`; the
   coordinator may use `remove D --actor A --target ACTOR_ID --content "reason"`
@@ -189,20 +218,22 @@ an inactive session. Never claim discussion completion before closure.
   future policy version must use the adapter with the matching executable
   fingerprint to resume its rooms; no silent migration or execution of old
   code. Preserve the old adapter checkout/export before upgrading active rooms.
-  The resource loader checks a reviewed contract digest in
-  `compatibility.json` covering canonical phase sections. Any change requires
-  explicit compatibility review and regression tests before accepting its
-  digest. Role changes are read directly from upstream and still validated for
-  reasoning-method diversity.
+  The resource loader checks a reviewed digest of the canonical Markdown
+  phase sections in `compatibility.json`. Changes to prose templates require
+  explicit compatibility review; changes to valid YAML values do not require
+  modifying Python or reapproving the prose digest. A new unsupported stage
+  or mode requires a schema and adapter update. Role changes are read directly
+  from upstream and still validated for reasoning-method diversity.
 
-## Independent Core and Skill packaging
+## In-repository modules and Skill packaging
 
-`ladp_core/` is a pinned, bundled source release of the independent LADP Core
-package, not Council policy. It exports the typed StateProjection interface,
-the event store, metadata and local session primitives. Check its release
-manifest with `python3 scripts/vendor-ladp-core.py`; synchronize a separately
-reviewed local Core release using `--source PATH_TO_LADP_CORE_PACKAGE`. Do not
-hand-edit the vendored copy. The runtime has no package downloads.
+`skills/council/core/ladp_core/` contains the authoritative Core source, and
+`skills/council/adapters/ladp/` contains Council-specific protocol, policy and
+CLI code. They are ordinary submodules of this repository, not Git submodules
+or separately downloaded packages. Core exposes the application-neutral typed
+projection interface and event/session primitives; it has no Council or
+PyYAML dependency. Both modules are maintained and released with Council.
+The installer and exporter copy that same source.
 
 For a manager that imports standalone Skill directories, export an actual
 self-contained package instead of assuming that a GitHub client dereferences
