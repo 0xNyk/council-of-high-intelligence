@@ -313,9 +313,10 @@ PROMPT_FILE="$(mktemp)"
 cat > "$PROMPT_FILE" <<'COUNCIL_PROMPT_EOF'
 {full prompt}
 COUNCIL_PROMPT_EOF
-codex exec -c model="{model}" -c auto_approve=true "$(cat "$PROMPT_FILE")" 2>/dev/null
+codex exec --skip-git-repo-check -c model="{model}" -c auto_approve=true "$(cat "$PROMPT_FILE")" < /dev/null 2>/dev/null
 rm -f "$PROMPT_FILE"
 ```
+`--skip-git-repo-check` lets the seat run from any working directory: `codex exec` otherwise exits with "Not inside a trusted directory" outside a git repo. `< /dev/null` closes stdin: when stdin is not a terminal, `codex exec` reads it to EOF before starting ("Reading additional input from stdin..."), which hangs under a caller that keeps stdin open.
 4. Capture stdout as the member's output. Timeout: 60 seconds.
 
 **For `gemini_cli` (Google)** — run via Bash tool:
